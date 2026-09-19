@@ -9,9 +9,9 @@ export class CollectibleManager {
     this.modelLoader = modelLoader;
     this.items = [];
 
-    this.spawnDistance = 220;
-    this.nextSpawnZ = -20;
-    this.spacing = 18;
+    this.spawnDistance = 240;
+    this.spawnDistanceTraveled = 0;
+    this.spacing = 16;
   }
 
   reset() {
@@ -19,27 +19,37 @@ export class CollectibleManager {
       this.scene.remove(item.mesh);
     }
     this.items = [];
-    this.nextSpawnZ = -20;
+    this.spawnDistanceTraveled = 0;
+
+    // 初始在前方排布一组引导晶石
+    this.spawnWave(-35);
+    this.spawnWave(-65);
+    this.spawnWave(-100);
   }
 
-  update(delta, playerPos, isBoosting) {
-    // 1. 随航程持续向前生成能量球与稀有道具
-    while (this.nextSpawnZ > playerPos.z - this.spawnDistance) {
-      this.spawnWave(this.nextSpawnZ);
-      this.nextSpawnZ -= this.spacing;
+  update(delta, playerPos, isBoosting, currentSpeed = 36) {
+    // 1. 随航程极速向前持续生成
+    this.spawnDistanceTraveled += currentSpeed * delta;
+    while (this.spawnDistanceTraveled >= this.spacing) {
+      this.spawnWave(-this.spawnDistance);
+      this.spawnDistanceTraveled -= this.spacing;
     }
 
-    // 磁吸与自转更新
-    const magnetRadius = isBoosting ? 10.0 : 4.5;
-    const magnetSpeed = isBoosting ? 26.0 : 18.0;
+    // 2. 道具向玩家迎面飞来 (+Z 轴运动)
+    const moveZ = currentSpeed * delta;
+    const magnetRadius = isBoosting ? 11.0 : 5.0;
+    const magnetSpeed = isBoosting ? 28.0 : 18.0;
 
     for (let i = this.items.length - 1; i >= 0; i--) {
       const item = this.items[i];
       const mesh = item.mesh;
 
+      // 沿 Z 轴向玩家推进
+      mesh.position.z += moveZ;
+
       // 自转动画
-      mesh.rotation.y += delta * 2.5;
-      mesh.rotation.x += delta * 1.5;
+      mesh.rotation.y += delta * 2.8;
+      mesh.rotation.x += delta * 1.6;
 
       // 磁吸吸附逻辑
       const dist = mesh.position.distanceTo(playerPos);
@@ -48,8 +58,8 @@ export class CollectibleManager {
         mesh.position.addScaledVector(dir, magnetSpeed * delta);
       }
 
-      // 超出身后则移除
-      if (mesh.position.z > playerPos.z + 20) {
+      // 超出玩家身后则销毁回收
+      if (mesh.position.z > 20) {
         this.scene.remove(mesh);
         this.items.splice(i, 1);
       }
@@ -109,7 +119,6 @@ export class CollectibleManager {
     });
   }
 
-  // 拾取碰撞检测
   checkPickup(playerSphere) {
     const collected = [];
 

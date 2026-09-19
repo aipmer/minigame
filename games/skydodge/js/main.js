@@ -376,7 +376,7 @@ function animate() {
     const shipPos = playerShip.getPosition();
 
     obstacleManager.update(delta, shipPos.z, gameState.currentSpeed, gameState.level);
-    collectibleManager.update(delta, shipPos, gameState.isBoosting);
+    collectibleManager.update(delta, shipPos, gameState.isBoosting, gameState.currentSpeed);
 
     // 4. 碰撞判定 (战机 vs 障碍)
     const collisionResult = obstacleManager.checkCollision(playerShip.collider);

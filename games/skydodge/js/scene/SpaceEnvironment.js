@@ -196,23 +196,26 @@ export class SpaceEnvironment {
     }
     this.starGeometry.attributes.position.needsUpdate = true;
 
-    // 2. 地峡网格随战机平滑向前循环
-    const gridLen = 240;
-    this.canyonFloor.position.z = playerZ - gridLen + ((playerZ * 1.5) % gridLen);
+    // 2. 赛博网格地面与穹顶高速向后流动，呈现强烈的航速感
+    const moveZ = currentSpeed * delta;
+    this.canyonOffsetZ = ((this.canyonOffsetZ || 0) + moveZ) % 40;
+    this.canyonFloor.position.z = -180 + this.canyonOffsetZ;
     this.canyonCeiling.position.z = this.canyonFloor.position.z;
 
-    // 3. 航道两侧霓虹信标循环滚动
+    // 3. 航道两侧霓虹信标迎面极速飞掠 (+Z)
     for (let i = 0; i < this.pillars.length; i++) {
       const p = this.pillars[i];
-      if (p.pLeft.position.z > playerZ + 20) {
-        p.pLeft.position.z -= this.pillarCount * this.pillarSpacing;
-        p.pRight.position.z = p.pLeft.position.z;
+      p.z += moveZ;
+      if (p.z > 20) {
+        p.z -= this.pillarCount * this.pillarSpacing;
       }
+      p.pLeft.position.z = p.z;
+      p.pRight.position.z = p.z;
     }
 
     // 4. 保持摄像机背光灯紧贴玩家后上方，确保战机后背光辉耀眼
     if (this.cameraFollowLight) {
-      this.cameraFollowLight.position.set(0, 14, playerZ + 18);
+      this.cameraFollowLight.position.set(0, 14, 18);
     }
   }
 }

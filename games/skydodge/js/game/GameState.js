@@ -78,9 +78,14 @@ export class GameState {
       this.currentSpeed = speedTarget;
     }
 
-    // 4. 自然飞行得分 (速度越高，加分越快)
-    const basePtsRate = this.isBoosting ? 20 : 10;
-    this.score += Math.round(basePtsRate * this.combo * delta);
+    // 4. 自然飞行得分 (速度越高，加分越快；浮点累加避免小步进丢分)
+    const basePtsRate = this.isBoosting ? 30 : 15;
+    this.scoreAccumulator = (this.scoreAccumulator || 0) + basePtsRate * this.combo * delta;
+    if (this.scoreAccumulator >= 1) {
+      const whole = Math.floor(this.scoreAccumulator);
+      this.score += whole;
+      this.scoreAccumulator -= whole;
+    }
 
     // 5. 连击计时器衰减
     if (this.combo > 1) {

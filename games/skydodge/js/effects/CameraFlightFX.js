@@ -10,9 +10,9 @@ export class CameraFlightFX {
     this.boostFOV = 74;
     this.currentFOV = this.baseFOV;
 
-    // 相机相对于战机的偏移
-    this.offset = new THREE.Vector3(0, 2.6, 7.2);
-    this.lookOffset = new THREE.Vector3(0, 0.8, -14);
+    // 相机相对于战机的偏移 (稍抬高并后拉，俯瞰战机流线型机身)
+    this.offset = new THREE.Vector3(0, 3.8, 9.2);
+    this.lookOffset = new THREE.Vector3(0, 0.4, -24);
 
     // 屏幕震动
     this.shakeDuration = 0;

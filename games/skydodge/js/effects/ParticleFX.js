@@ -1,21 +1,40 @@
 // ═══════════════════════════════════════════
-// 粒子与视觉特效系统 (ParticleFX)
+// 粒子与次世代视觉特效系统 (ParticleFX)
 // ═══════════════════════════════════════════
 import * as THREE from 'three';
 
 export class ParticleFX {
   constructor(scene) {
     this.scene = scene;
-
-    // 活跃粒子数组
     this.activeBursts = [];
 
-    // 尾气粒子缓冲
+    // 生成软边缘发光粒子纹理 (彻底消除方块硬边缘)
+    this.glowParticleTexture = this.createGlowParticleTexture();
+
+    // 离子尾焰粒子系统
     this.initThrusterTrails();
   }
 
+  createGlowParticleTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+
+    const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    grad.addColorStop(0.25, 'rgba(0, 242, 254, 0.85)');
+    grad.addColorStop(0.6, 'rgba(0, 110, 255, 0.3)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 64, 64);
+
+    return new THREE.CanvasTexture(canvas);
+  }
+
   initThrusterTrails() {
-    this.trailCount = 80;
+    this.trailCount = 100;
     this.trailGeo = new THREE.BufferGeometry();
     this.trailPositions = new Float32Array(this.trailCount * 3);
     this.trailColors = new Float32Array(this.trailCount * 3);
@@ -23,17 +42,18 @@ export class ParticleFX {
     this.trailVelocities = new Float32Array(this.trailCount * 3);
 
     for (let i = 0; i < this.trailCount; i++) {
-      this.trailLifes[i] = 0; // 初始未激活
+      this.trailLifes[i] = 0;
     }
 
     this.trailGeo.setAttribute('position', new THREE.BufferAttribute(this.trailPositions, 3));
     this.trailGeo.setAttribute('color', new THREE.BufferAttribute(this.trailColors, 3));
 
     const trailMat = new THREE.PointsMaterial({
-      size: 0.9,
+      size: 1.6,
+      map: this.glowParticleTexture,
       vertexColors: true,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.9,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
@@ -43,11 +63,11 @@ export class ParticleFX {
     this.trailIndex = 0;
   }
 
-  // 每帧由引擎喷口发射粒子
+  // 双喷口发射等离子羽流 (自机尾 +1.7 向后喷涌)
   emitThruster(shipPos, isBoosting) {
-    const pX = [shipPos.x - 0.45, shipPos.x + 0.45];
-    const pY = shipPos.y - 0.05;
-    const pZ = shipPos.z - 1.6;
+    const pX = [shipPos.x - 0.48, shipPos.x + 0.48];
+    const pY = shipPos.y + 0.02;
+    const pZ = shipPos.z + 1.75;
 
     for (let k = 0; k < 2; k++) {
       const idx = this.trailIndex;
@@ -57,29 +77,28 @@ export class ParticleFX {
       this.trailPositions[i3 + 1] = pY + (Math.random() - 0.5) * 0.12;
       this.trailPositions[i3 + 2] = pZ;
 
-      // 喷射初速度 (向后喷涌)
       this.trailVelocities[i3] = (Math.random() - 0.5) * 1.5;
       this.trailVelocities[i3 + 1] = (Math.random() - 0.5) * 1.5;
-      this.trailVelocities[i3 + 2] = -(isBoosting ? 35 : 18);
+      this.trailVelocities[i3 + 2] = (isBoosting ? 38 : 20);
 
       if (isBoosting) {
         this.trailColors[i3] = 1.0;
-        this.trailColors[i3 + 1] = 0.55;
-        this.trailColors[i3 + 2] = 0.1;
+        this.trailColors[i3 + 1] = 0.45;
+        this.trailColors[i3 + 2] = 0.05;
       } else {
         this.trailColors[i3] = 0.0;
         this.trailColors[i3 + 1] = 0.95;
         this.trailColors[i3 + 2] = 1.0;
       }
 
-      this.trailLifes[idx] = 0.35; // 存活 0.35 秒
+      this.trailLifes[idx] = 0.4;
       this.trailIndex = (this.trailIndex + 1) % this.trailCount;
     }
   }
 
-  // 拾取晶石时的环形闪光
+  // 拾取晶石时的能量光环扩散
   createPickupBurst(pos, colorHex = 0x00ffcc) {
-    const count = 28;
+    const count = 32;
     const geo = new THREE.BufferGeometry();
     const positions = new Float32Array(count * 3);
     const vels = [];
@@ -91,7 +110,7 @@ export class ParticleFX {
       positions[i3 + 2] = pos.z;
 
       const angle = Math.random() * Math.PI * 2;
-      const speed = 4 + Math.random() * 8;
+      const speed = 5 + Math.random() * 9;
       vels.push(new THREE.Vector3(
         Math.cos(angle) * speed,
         Math.sin(angle) * speed,
@@ -101,7 +120,8 @@ export class ParticleFX {
 
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     const mat = new THREE.PointsMaterial({
-      size: 1.2,
+      size: 1.8,
+      map: this.glowParticleTexture,
       color: colorHex,
       transparent: true,
       opacity: 1,
@@ -117,14 +137,14 @@ export class ParticleFX {
       geo,
       positions,
       vels,
-      life: 0.5,
-      maxLife: 0.5,
+      life: 0.55,
+      maxLife: 0.55,
     });
   }
 
-  // 战机撞击爆炸粒子飞散
+  // 撞击爆炸粒子飞散
   createExplosion(pos) {
-    const count = 90;
+    const count = 110;
     const geo = new THREE.BufferGeometry();
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
@@ -137,14 +157,14 @@ export class ParticleFX {
       positions[i3 + 2] = pos.z;
 
       const v = new THREE.Vector3(
-        (Math.random() - 0.5) * 24,
-        (Math.random() - 0.5) * 24,
-        (Math.random() - 0.5) * 24
+        (Math.random() - 0.5) * 28,
+        (Math.random() - 0.5) * 28,
+        (Math.random() - 0.5) * 28
       );
       vels.push(v);
 
       colors[i3] = 1.0;
-      colors[i3 + 1] = Math.random() < 0.5 ? 0.3 : 0.8;
+      colors[i3 + 1] = Math.random() < 0.6 ? 0.35 : 0.85;
       colors[i3 + 2] = 0.05;
     }
 
@@ -152,7 +172,8 @@ export class ParticleFX {
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const mat = new THREE.PointsMaterial({
-      size: 1.6,
+      size: 2.2,
+      map: this.glowParticleTexture,
       vertexColors: true,
       transparent: true,
       opacity: 1,
@@ -168,13 +189,12 @@ export class ParticleFX {
       geo,
       positions,
       vels,
-      life: 1.1,
-      maxLife: 1.1,
+      life: 1.2,
+      maxLife: 1.2,
     });
   }
 
   update(delta) {
-    // 1. 更新尾焰粒子
     for (let i = 0; i < this.trailCount; i++) {
       if (this.trailLifes[i] > 0) {
         this.trailLifes[i] -= delta;
@@ -186,7 +206,6 @@ export class ParticleFX {
     }
     this.trailGeo.attributes.position.needsUpdate = true;
 
-    // 2. 更新瞬态爆破粒子
     for (let i = this.activeBursts.length - 1; i >= 0; i--) {
       const b = this.activeBursts[i];
       b.life -= delta;

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════
-// 3D 资产加载器与程序化几何体回退 (ModelLoader)
+// 3D 资产加载器与次世代程序化几何体系统 (ModelLoader)
 // ═══════════════════════════════════════════
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -17,7 +17,6 @@ export class ModelLoader {
     this.isLoaded = false;
   }
 
-  // 尝试加载所有 GLB 资产，若找不到或出错则平滑使用高保真程序化几何体
   async loadAll() {
     const assets = [
       { key: 'spaceship', path: 'models/spaceship.glb' },
@@ -30,7 +29,6 @@ export class ModelLoader {
     const promises = assets.map(async ({ key, path }) => {
       try {
         const gltf = await this.loadGLTF(path);
-        // 调整模型缩放和阴影
         gltf.scene.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = true;
@@ -38,9 +36,9 @@ export class ModelLoader {
           }
         });
         this.models[key] = gltf.scene;
-        console.log(`[ModelLoader] 成功载入 GLB 模型: ${key}`);
+        console.log(`[ModelLoader] 成功装载 GLB 资产: ${key}`);
       } catch {
-        console.log(`[ModelLoader] 模型 ${key} 未就绪，启动高保真程序化几何体兜底`);
+        console.log(`[ModelLoader] 模型 ${key} 未检出，激活次世代程序化几何体增强`);
         this.models[key] = this.createFallbackModel(key);
       }
     });
@@ -61,7 +59,6 @@ export class ModelLoader {
     });
   }
 
-  // 获取特定模型的克隆副本
   getModel(key) {
     if (this.models[key]) {
       return this.models[key].clone();
@@ -69,246 +66,330 @@ export class ModelLoader {
     return this.createFallbackModel(key);
   }
 
-  // ════ 程序化高保真几何体兜底 ════
+  // ════ 次世代程序化几何体 ════
   createFallbackModel(key) {
     switch (key) {
       case 'spaceship':
-        return this.createProceduralShip();
+        return this.createHighEndStarfighter();
       case 'asteroid':
-        return this.createProceduralAsteroid();
+        return this.createGlowingGeodeAsteroid();
       case 'laser_gate':
-        return this.createProceduralLaserGate();
+        return this.createNeonLaserGate();
       case 'energy_core':
-        return this.createProceduralEnergyCore();
+        return this.createQuantumCore();
       case 'shield_orb':
-        return this.createProceduralShieldOrb();
+        return this.createPlasmaShieldOrb();
       default:
         return new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial());
     }
   }
 
-  // 1. 程序化超音速战机
-  createProceduralShip() {
+  // 1. 次世代高精度科幻拦截机 (正向朝向 -Z 极速穿梭)
+  createHighEndStarfighter() {
     const ship = new THREE.Group();
 
-    // 核心机身
-    const fuselageGeo = new THREE.ConeGeometry(0.7, 3.2, 5);
-    fuselageGeo.rotateX(Math.PI / 2);
-    const fuselageMat = new THREE.MeshStandardMaterial({
-      color: 0x1a2639,
-      metalness: 0.85,
-      roughness: 0.25,
+    // 材质配置：钛金外壳、哑光暗部与超炫发光霓虹
+    const hullMat = new THREE.MeshStandardMaterial({
+      color: 0x334e72,
+      metalness: 0.6,
+      roughness: 0.32,
       flatShading: true,
     });
-    const fuselage = new THREE.Mesh(fuselageGeo, fuselageMat);
-    ship.add(fuselage);
 
-    // 驾驶舱顶棚 (全息反光玻璃)
-    const cockpitGeo = new THREE.SphereGeometry(0.35, 16, 12);
-    cockpitGeo.scale(0.8, 0.6, 1.8);
+    const hullDarkMat = new THREE.MeshStandardMaterial({
+      color: 0x111927,
+      metalness: 0.85,
+      roughness: 0.2,
+      flatShading: true,
+    });
+
+    const neonCyanMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
+    const neonAmberMat = new THREE.MeshBasicMaterial({ color: 0xff9900 });
+    const neonMagentaMat = new THREE.MeshBasicMaterial({ color: 0xff007f });
+
+    // A. 尖锐流线型机身机头 (尖端朝向 -Z，尾部在 +Z)
+    const noseGeo = new THREE.ConeGeometry(0.75, 3.4, 6);
+    noseGeo.rotateX(-Math.PI / 2); // 尖端旋转至 -Z
+    const nose = new THREE.Mesh(noseGeo, hullMat);
+    nose.scale.set(1.1, 0.55, 1.0);
+    nose.position.set(0, 0, -0.4);
+    ship.add(nose);
+
+    // 机背龙脊装甲板
+    const spineGeo = new THREE.BoxGeometry(0.25, 0.2, 2.4);
+    const spine = new THREE.Mesh(spineGeo, hullDarkMat);
+    spine.position.set(0, 0.28, 0.1);
+    ship.add(spine);
+
+    // B. 全息发光座舱 (位于机头斜前方，背部微倾)
+    const cockpitGeo = new THREE.SphereGeometry(0.32, 16, 12);
+    cockpitGeo.scale(0.75, 0.55, 1.6);
     const cockpitMat = new THREE.MeshStandardMaterial({
-      color: 0x00f2fe,
-      emissive: 0x00a8ff,
-      emissiveIntensity: 0.5,
-      roughness: 0.1,
+      color: 0x00d4ff,
+      emissive: 0x0099ff,
+      emissiveIntensity: 0.8,
       metalness: 0.9,
+      roughness: 0.1,
     });
     const cockpit = new THREE.Mesh(cockpitGeo, cockpitMat);
-    cockpit.position.set(0, 0.25, 0.2);
+    cockpit.position.set(0, 0.28, -0.6);
     ship.add(cockpit);
 
-    // 左右前掠机翼
+    // 座舱两侧全息发光导光条
+    const glowStripGeo = new THREE.BoxGeometry(0.05, 0.05, 1.2);
+    const leftStrip = new THREE.Mesh(glowStripGeo, neonCyanMat);
+    leftStrip.position.set(0.24, 0.24, -0.6);
+    ship.add(leftStrip);
+
+    const rightStrip = leftStrip.clone();
+    rightStrip.position.x = -0.24;
+    ship.add(rightStrip);
+
+    // C. 后掠式超音速战斗主翼 (根部在 -Z，翼尖后掠至 +Z)
     const wingShape = new THREE.Shape();
-    wingShape.moveTo(0, 0);
-    wingShape.lineTo(2.4, -0.6);
-    wingShape.lineTo(2.0, -1.6);
-    wingShape.lineTo(0, -1.2);
+    wingShape.moveTo(0, -0.8);      // 翼根前沿
+    wingShape.lineTo(2.3, 0.8);     // 翼尖后掠
+    wingShape.lineTo(2.1, 1.3);     // 翼梢外沿
+    wingShape.lineTo(0.3, 1.2);     // 翼根后沿
+    wingShape.lineTo(0, 0.6);
     wingShape.closePath();
 
     const extrudeSettings = { depth: 0.08, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.02, bevelThickness: 0.02 };
     const wingGeo = new THREE.ExtrudeGeometry(wingShape, extrudeSettings);
     wingGeo.rotateX(-Math.PI / 2);
-    const wingMat = new THREE.MeshStandardMaterial({
-      color: 0x0f172a,
-      metalness: 0.9,
-      roughness: 0.3,
-    });
 
-    const leftWing = new THREE.Mesh(wingGeo, wingMat);
-    leftWing.position.set(0, 0, 0.4);
+    const leftWing = new THREE.Mesh(wingGeo, hullMat);
+    leftWing.position.set(0, -0.02, 0);
     ship.add(leftWing);
 
     const rightWing = leftWing.clone();
     rightWing.scale.set(-1, 1, 1);
     ship.add(rightWing);
 
-    // 机翼荧光边缘条带
-    const stripeGeo = new THREE.BoxGeometry(0.12, 0.05, 1.2);
-    const stripeMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc });
-    const leftStripe = new THREE.Mesh(stripeGeo, stripeMat);
-    leftStripe.position.set(1.9, 0.02, -0.8);
-    leftStripe.rotation.y = -0.3;
-    ship.add(leftStripe);
+    // 机翼上表面发光等离子能量管
+    const wingPipeGeo = new THREE.BoxGeometry(0.08, 0.05, 1.5);
+    const leftPipe = new THREE.Mesh(wingPipeGeo, neonCyanMat);
+    leftPipe.position.set(1.1, 0.06, 0.35);
+    leftPipe.rotation.y = 0.38;
+    ship.add(leftPipe);
 
-    const rightStripe = leftStripe.clone();
-    rightStripe.position.x = -1.9;
-    rightStripe.rotation.y = 0.3;
-    ship.add(rightStripe);
+    const rightPipe = leftPipe.clone();
+    rightPipe.position.x = -1.1;
+    rightPipe.rotation.y = -0.38;
+    ship.add(rightPipe);
 
-    // 双离子喷射口 (Engine Thrusters)
-    const engineGeo = new THREE.CylinderGeometry(0.22, 0.28, 0.8, 12);
-    engineGeo.rotateX(Math.PI / 2);
-    const engineMat = new THREE.MeshStandardMaterial({ color: 0x222233, metalness: 0.9, roughness: 0.4 });
+    // 翼尖航行红/紫信标
+    const leftTipBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), neonMagentaMat);
+    leftTipBeacon.position.set(2.2, 0.05, 0.95);
+    ship.add(leftTipBeacon);
 
-    const leftEngine = new THREE.Mesh(engineGeo, engineMat);
-    leftEngine.position.set(0.45, -0.05, -1.4);
-    ship.add(leftEngine);
+    const rightTipBeacon = leftTipBeacon.clone();
+    rightTipBeacon.position.x = -2.2;
+    ship.add(rightTipBeacon);
 
-    const rightEngine = leftEngine.clone();
-    rightEngine.position.x = -0.45;
-    ship.add(rightEngine);
+    // D. 隐身外倾双垂尾 (V-Tail Stabilizers) - 朝向玩家镜头一目了然
+    const vTailShape = new THREE.Shape();
+    vTailShape.moveTo(0, 0);
+    vTailShape.lineTo(0.35, 1.1);
+    vTailShape.lineTo(0.15, 1.1);
+    vTailShape.lineTo(-0.25, 0);
+    vTailShape.closePath();
 
-    // 引擎喷口辉光圆环
-    const glowGeo = new THREE.RingGeometry(0.05, 0.22, 16);
-    const glowMat = new THREE.MeshBasicMaterial({
-      color: 0x00ffff,
-      side: THREE.DoubleSide,
+    const vTailGeo = new THREE.ExtrudeGeometry(vTailShape, { depth: 0.05, bevelEnabled: false });
+    const leftVTail = new THREE.Mesh(vTailGeo, hullDarkMat);
+    leftVTail.position.set(0.55, 0.12, 0.8);
+    leftVTail.rotation.z = -0.32; // 外倾角
+    ship.add(leftVTail);
+
+    const rightVTail = leftVTail.clone();
+    rightVTail.position.x = -0.55;
+    rightVTail.rotation.z = 0.32;
+    ship.add(rightVTail);
+
+    // 垂尾边缘荧光线
+    const vTailLineGeo = new THREE.BoxGeometry(0.04, 1.05, 0.06);
+    const leftVLine = new THREE.Mesh(vTailLineGeo, neonCyanMat);
+    leftVLine.position.set(0.72, 0.65, 0.8);
+    leftVLine.rotation.z = -0.32;
+    ship.add(leftVLine);
+
+    const rightVLine = leftVLine.clone();
+    rightVLine.position.x = -0.72;
+    rightVLine.rotation.z = 0.32;
+    ship.add(rightVLine);
+
+    // E. 机尾双重重型等离子推进器 (位于 +Z，正对玩家镜头)
+    const nozzleGeo = new THREE.CylinderGeometry(0.24, 0.32, 0.8, 14);
+    nozzleGeo.rotateX(-Math.PI / 2); // 喷口正对镜头 (+Z)
+    const nozzleMat = new THREE.MeshStandardMaterial({
+      color: 0x181820,
+      metalness: 0.9,
+      roughness: 0.2,
     });
-    const leftGlow = new THREE.Mesh(glowGeo, glowMat);
-    leftGlow.position.set(0.45, -0.05, -1.81);
-    ship.add(leftGlow);
 
-    const rightGlow = leftGlow.clone();
-    rightGlow.position.x = -0.45;
-    ship.add(rightGlow);
+    const leftNozzle = new THREE.Mesh(nozzleGeo, nozzleMat);
+    leftNozzle.position.set(0.48, 0.02, 1.25);
+    ship.add(leftNozzle);
+
+    const rightNozzle = leftNozzle.clone();
+    rightNozzle.position.x = -0.48;
+    ship.add(rightNozzle);
+
+    // 喷口发光内环 (Bloom 核心发光圈)
+    const flameRingGeo = new THREE.RingGeometry(0.05, 0.22, 16);
+    const leftFlame = new THREE.Mesh(flameRingGeo, neonCyanMat);
+    leftFlame.position.set(0.48, 0.02, 1.66);
+    ship.add(leftFlame);
+
+    const rightFlame = leftFlame.clone();
+    rightFlame.position.x = -0.48;
+    ship.add(rightFlame);
+
+    // 内部微型等离子焰心
+    const flameCoreGeo = new THREE.ConeGeometry(0.12, 0.5, 12);
+    flameCoreGeo.rotateX(Math.PI / 2);
+    const leftCore = new THREE.Mesh(flameCoreGeo, neonAmberMat);
+    leftCore.position.set(0.48, 0.02, 1.8);
+    ship.add(leftCore);
+
+    const rightCore = leftCore.clone();
+    rightCore.position.x = -0.48;
+    ship.add(rightCore);
 
     return ship;
   }
 
-  // 2. 程序化深空陨石
-  createProceduralAsteroid() {
-    const geo = new THREE.DodecahedronGeometry(1.4, 1);
-    // 顶点微扰动增加崎岖感
+  // 2. 发光晶脉深空巨石 (Glowing Geode Asteroid)
+  createGlowingGeodeAsteroid() {
+    const group = new THREE.Group();
+
+    const geo = new THREE.DodecahedronGeometry(1.4, 2);
     const pos = geo.attributes.position;
     for (let i = 0; i < pos.count; i++) {
       const v = new THREE.Vector3().fromBufferAttribute(pos, i);
-      v.multiplyScalar(0.85 + Math.random() * 0.35);
+      v.multiplyScalar(0.8 + Math.random() * 0.4);
       pos.setXYZ(i, v.x, v.y, v.z);
     }
     geo.computeVertexNormals();
 
     const mat = new THREE.MeshStandardMaterial({
-      color: 0x5a5568,
-      roughness: 0.9,
-      metalness: 0.15,
+      color: 0x272b38,
+      roughness: 0.85,
+      metalness: 0.25,
       flatShading: true,
     });
+    const rock = new THREE.Mesh(geo, mat);
+    rock.castShadow = true;
+    rock.receiveShadow = true;
+    group.add(rock);
 
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    return mesh;
+    // 晶簇外嵌
+    const crystalGeo = new THREE.OctahedronGeometry(0.35, 0);
+    const crystalMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
+
+    for (let i = 0; i < 4; i++) {
+      const c = new THREE.Mesh(crystalGeo, crystalMat);
+      const angle = (i / 4) * Math.PI * 2;
+      c.position.set(Math.cos(angle) * 1.15, Math.sin(angle) * 1.15, (Math.random() - 0.5) * 1.0);
+      c.scale.set(0.8, 1.4, 0.8);
+      group.add(c);
+    }
+
+    return group;
   }
 
-  // 3. 程序化多维激光门
-  createProceduralLaserGate() {
+  // 3. 次世代霓虹激光屏障门 (Neon Laser Gate)
+  createNeonLaserGate() {
     const gate = new THREE.Group();
 
-    // 左右立柱
-    const pillarGeo = new THREE.BoxGeometry(0.6, 5.0, 0.6);
+    const pillarGeo = new THREE.BoxGeometry(0.7, 5.2, 0.7);
     const pillarMat = new THREE.MeshStandardMaterial({
-      color: 0x111625,
-      metalness: 0.9,
+      color: 0x151928,
+      metalness: 0.85,
       roughness: 0.3,
     });
 
     const leftPillar = new THREE.Mesh(pillarGeo, pillarMat);
-    leftPillar.position.set(-3.2, 0, 0);
+    leftPillar.position.set(-3.4, 0, 0);
     gate.add(leftPillar);
 
     const rightPillar = leftPillar.clone();
-    rightPillar.position.x = 3.2;
+    rightPillar.position.x = 3.4;
     gate.add(rightPillar);
 
-    // 激光屏障核心 (半透明发光薄板)
-    const beamGeo = new THREE.PlaneGeometry(6.4, 4.4);
+    const beaconMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
+    const leftBeacon = new THREE.Mesh(new THREE.BoxGeometry(0.15, 4.8, 0.72), beaconMat);
+    leftBeacon.position.set(-3.4, 0, 0);
+    gate.add(leftBeacon);
+
+    const rightBeacon = leftBeacon.clone();
+    rightBeacon.position.x = 3.4;
+    gate.add(rightBeacon);
+
+    const beamGeo = new THREE.PlaneGeometry(6.6, 4.2);
     const beamMat = new THREE.MeshBasicMaterial({
       color: 0xff0055,
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.75,
       side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
     });
     const beam = new THREE.Mesh(beamGeo, beamMat);
-    beam.userData.isLaser = true;
     gate.add(beam);
 
-    // 激光上下光束边缘
-    const lineGeo = new THREE.CylinderGeometry(0.08, 0.08, 6.4, 8);
-    lineGeo.rotateZ(Math.PI / 2);
-    const lineMat = new THREE.MeshBasicMaterial({ color: 0xff3377 });
-    const topLine = new THREE.Mesh(lineGeo, lineMat);
-    topLine.position.y = 2.2;
-    gate.add(topLine);
+    const railGeo = new THREE.CylinderGeometry(0.12, 0.12, 6.8, 8);
+    railGeo.rotateZ(Math.PI / 2);
+    const railMat = new THREE.MeshBasicMaterial({ color: 0xff3388 });
+    const topRail = new THREE.Mesh(railGeo, railMat);
+    topRail.position.y = 2.15;
+    gate.add(topRail);
 
-    const btmLine = topLine.clone();
-    btmLine.position.y = -2.2;
-    gate.add(btmLine);
+    const btmRail = topRail.clone();
+    btmRail.position.y = -2.15;
+    gate.add(btmRail);
 
     return gate;
   }
 
-  // 4. 程序化量子能量晶石
-  createProceduralEnergyCore() {
+  // 4. 双陀螺量子能量晶石 (Quantum Core)
+  createQuantumCore() {
     const group = new THREE.Group();
 
-    // 旋转的八面体
-    const crystalGeo = new THREE.OctahedronGeometry(0.6, 0);
-    const crystalMat = new THREE.MeshStandardMaterial({
-      color: 0x00f2fe,
-      emissive: 0x00c3ff,
-      emissiveIntensity: 0.8,
-      metalness: 0.5,
-      roughness: 0.2,
-      flatShading: true,
-    });
+    const crystalGeo = new THREE.OctahedronGeometry(0.65, 0);
+    const crystalMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
     const crystal = new THREE.Mesh(crystalGeo, crystalMat);
     group.add(crystal);
 
-    // 环绕光环
-    const ringGeo = new THREE.TorusGeometry(0.9, 0.04, 8, 24);
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.rotation.x = Math.PI / 3;
-    group.add(ring);
+    const ring1Geo = new THREE.TorusGeometry(1.0, 0.05, 8, 28);
+    const ring1Mat = new THREE.MeshBasicMaterial({ color: 0x00ffcc });
+    const ring1 = new THREE.Mesh(ring1Geo, ring1Mat);
+    ring1.rotation.x = Math.PI / 3;
+    group.add(ring1);
 
-    group.userData.crystal = crystal;
-    group.userData.ring = ring;
+    const ring2Geo = new THREE.TorusGeometry(1.2, 0.04, 8, 28);
+    const ring2Mat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+    const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
+    ring2.rotation.y = Math.PI / 4;
+    group.add(ring2);
+
     return group;
   }
 
-  // 5. 程序化等离子护盾球
-  createProceduralShieldOrb() {
+  // 5. 等离子超能护盾球 (Plasma Shield Orb)
+  createPlasmaShieldOrb() {
     const group = new THREE.Group();
 
-    const orbGeo = new THREE.IcosahedronGeometry(0.7, 1);
-    const orbMat = new THREE.MeshStandardMaterial({
-      color: 0xffde59,
-      emissive: 0xffa500,
-      emissiveIntensity: 0.9,
-      metalness: 0.8,
-      roughness: 0.2,
-    });
+    const orbGeo = new THREE.IcosahedronGeometry(0.75, 2);
+    const orbMat = new THREE.MeshBasicMaterial({ color: 0xffde59 });
     const orb = new THREE.Mesh(orbGeo, orbMat);
     group.add(orb);
 
-    const haloGeo = new THREE.TorusGeometry(1.05, 0.05, 8, 24);
-    const haloMat = new THREE.MeshBasicMaterial({ color: 0xffde59 });
+    const haloGeo = new THREE.TorusGeometry(1.15, 0.06, 8, 28);
+    const haloMat = new THREE.MeshBasicMaterial({ color: 0xffa500 });
     const halo = new THREE.Mesh(haloGeo, haloMat);
     halo.rotation.x = Math.PI / 4;
     group.add(halo);
 
-    group.userData.orb = orb;
-    group.userData.halo = halo;
     return group;
   }
 }

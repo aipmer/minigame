@@ -30,9 +30,9 @@ export class PlayerShip {
     this.shieldMesh = null;
     this.initShieldVisual();
 
-    // 引擎动态光源
-    this.engineLight = new THREE.PointLight(0x00f2fe, 3, 12);
-    this.engineLight.position.set(0, 0, -1.8);
+    // 引擎动态光源 (柔和光晕，不遮挡机身细节)
+    this.engineLight = new THREE.PointLight(0x00f2fe, 0.8, 8);
+    this.engineLight.position.set(0, 0, -2.1);
     this.mesh.add(this.engineLight);
 
     // 装载战机外观
@@ -133,10 +133,10 @@ export class PlayerShip {
     }
 
     if (isBoosting) {
-      this.engineLight.intensity = 6;
+      this.engineLight.intensity = 1.6;
       this.engineLight.color.setHex(0xffaa00);
     } else {
-      this.engineLight.intensity = 2.5;
+      this.engineLight.intensity = 0.8;
       this.engineLight.color.setHex(0x00f2fe);
     }
   }

@@ -1,0 +1,195 @@
+/* ═══════════════════════════════════════════
+   3D 贪吃蛇 — 全局样式
+   ═══════════════════════════════════════════ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  overflow: hidden;
+  background: #0A0D17;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+
+#game-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+canvas { display: block; }
+
+.hidden { display: none !important; }
+
+/* ── HUD 面板 ── */
+.ui-panel {
+  position: fixed;
+  z-index: 10;
+}
+
+#hud {
+  top: 16px;
+  left: 16px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px 20px;
+  min-width: 180px;
+}
+
+.hud-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.hud-row {
+  font-size: 14px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.hud-level {
+  color: #FFDD44;
+  font-weight: 600;
+}
+
+/* ── Combo 显示 ── */
+#combo {
+  position: fixed;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  font-size: 32px;
+  font-weight: 800;
+  color: #FFD700;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 2px;
+  transition: transform 0.15s ease;
+}
+
+#combo.punch {
+  transform: translateX(-50%) scale(1.3);
+}
+
+/* ── 全屏覆盖层 ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 13, 23, 0.88);
+  backdrop-filter: blur(6px);
+}
+
+.overlay-content {
+  text-align: center;
+  max-width: 420px;
+  padding: 40px;
+}
+
+.title-glow {
+  font-size: 48px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  background: linear-gradient(135deg, #14EB73, #00D4FF);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 0 30px rgba(20, 235, 115, 0.3));
+  margin-bottom: 24px;
+}
+
+.subtitle {
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 12px;
+}
+
+.hint {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* 呼吸闪烁 */
+.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* ── Game Over ── */
+.gameover-title {
+  font-size: 42px;
+  font-weight: 800;
+  color: #FF4444;
+  text-shadow: 0 0 30px rgba(255, 68, 68, 0.4);
+  margin-bottom: 16px;
+}
+
+.gameover-reason {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 12px;
+}
+
+.gameover-score {
+  font-size: 22px;
+  color: #FFD700;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+/* ── 浮动得分 ── */
+#floating-scores {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+}
+
+.floating-score {
+  position: absolute;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  animation: floatUp 0.8s ease-out forwards;
+}
+
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.7); }
+}
+
+/* ── 移动端 ── */
+.touch-hint {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── 响应式 ── */
+@media (max-width: 600px) {
+  .title-glow { font-size: 32px; }
+  .gameover-title { font-size: 28px; }
+  #hud { padding: 10px 14px; min-width: 140px; }
+  .hud-title { font-size: 15px; }
+  .hud-row { font-size: 12px; }
+  #combo { font-size: 24px; }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "3d-snake",
+  "version": "1.0.0",
+  "description": "3D 贪吃蛇 — Three.js + Tripo3D Web 版",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve . -p 3000",
+    "generate-models": "node scripts/generate-models.mjs"
+  },
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}

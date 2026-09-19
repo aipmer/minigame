@@ -101,7 +101,7 @@ if (isTouchDevice) {
   const startSubtitle = ui.startScreen.querySelector('.subtitle');
   if (startSubtitle) startSubtitle.textContent = '轻触屏幕 开始游戏';
   const startHint = ui.startScreen.querySelector('.hint');
-  if (startHint) startHint.textContent = '滑动屏幕 或 屏幕右下角按键 控制方向';
+  if (startHint) startHint.textContent = '滑动屏幕 或 屏幕左下角按键 控制方向';
 
   const overSubtitle = ui.gameoverScreen.querySelector('.subtitle');
   if (overSubtitle) overSubtitle.textContent = '轻触屏幕 重新开始';

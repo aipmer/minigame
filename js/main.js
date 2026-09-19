@@ -36,6 +36,7 @@ const modelLoader = new ModelLoader();
 // 异步触发模型预加载
 modelLoader.loadAll().then(() => {
   console.log('[3D Snake] 模型载入流程就绪');
+  snake.applyModels();
 });
 
 const ground    = new Ground(scene);

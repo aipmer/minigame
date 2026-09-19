@@ -41,6 +41,16 @@ export class Snake {
     this.scene.add(this.head);
     this.reset();
   }
+
+  // 动态应用异步加载完毕的 3D 模型
+  applyModels() {
+    if (!this.hasCustomHead && this.modelLoader && this.modelLoader.has('head')) {
+      while (this.head.children.length > 0) {
+        this.head.remove(this.head.children[0]);
+      }
+      this.initVisuals();
+    }
+  }
   
   // 初始化头部网格
   initVisuals() {

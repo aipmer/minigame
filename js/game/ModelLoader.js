@@ -3,10 +3,12 @@
 // ═══════════════════════════════════════════
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 export class ModelLoader {
   constructor() {
     this.loader = new GLTFLoader();
+    this.loader.setMeshoptDecoder(MeshoptDecoder);
     this.models = new Map();
     this.modelConfigs = {
       head: { path: 'models/snake_head.glb', targetSize: 1.0 },

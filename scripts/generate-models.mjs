@@ -71,6 +71,7 @@ async function createModelTask(prompt) {
     },
     body: JSON.stringify({
       prompt: prompt,
+      model: 'v3.1-20260211',
     }),
   });
 

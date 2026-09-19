@@ -90,27 +90,88 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// 移动端触摸
+// ── 移动端手势与触控控制 ──
 let touchStartX = 0, touchStartY = 0;
+let isTouching = false;
+const SWIPE_THRESHOLD = 22; // 极速响应滑动阈值 (像素)
+
+// 检测移动端并更新提示文案
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth < 768);
+if (isTouchDevice) {
+  const startSubtitle = ui.startScreen.querySelector('.subtitle');
+  if (startSubtitle) startSubtitle.textContent = '轻触屏幕 开始游戏';
+  const startHint = ui.startScreen.querySelector('.hint');
+  if (startHint) startHint.textContent = '滑动屏幕 或 屏幕右下角按键 控制方向';
+
+  const overSubtitle = ui.gameoverScreen.querySelector('.subtitle');
+  if (overSubtitle) overSubtitle.textContent = '轻触屏幕 重新开始';
+}
+
+// 触屏开始
 document.addEventListener('touchstart', (e) => {
   sound.init();
-  touchStartX = e.touches[0].clientX;
-  touchStartY = e.touches[0].clientY;
+  if (e.target.closest('.dpad-btn') || e.target.closest('.back-home-btn')) return;
+  
+  isTouching = true;
+  const touch = e.touches[0];
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+
+  // 开始屏或结束屏轻触直接开始
+  if (gameState.state !== 'playing') {
+    startGame();
+  }
 }, { passive: true });
 
-document.addEventListener('touchend', (e) => {
-  const dx = e.changedTouches[0].clientX - touchStartX;
-  const dy = e.changedTouches[0].clientY - touchStartY;
-  if (Math.max(Math.abs(dx), Math.abs(dy)) < 30) {
-    if (gameState.state !== 'playing') startGame();
-    return;
+// 即时连续滑动手势 (无需抬起手指即可连贯转弯)
+document.addEventListener('touchmove', (e) => {
+  if (!isTouching || gameState.state !== 'playing') return;
+  if (e.target.closest('.dpad-btn')) return;
+
+  const touch = e.touches[0];
+  const dx = touch.clientX - touchStartX;
+  const dy = touch.clientY - touchStartY;
+  const distance = Math.hypot(dx, dy);
+
+  if (distance >= SWIPE_THRESHOLD) {
+    if (Math.abs(dx) > Math.abs(dy)) {
+      snake.handleInput(dx > 0 ? 'ArrowRight' : 'ArrowLeft');
+    } else {
+      snake.handleInput(dy > 0 ? 'ArrowDown' : 'ArrowUp');
+    }
+    // 连续滑动手势锚点更新，支持不抬手无缝连续转向
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
   }
-  if (gameState.state !== 'playing') return;
-  if (Math.abs(dx) > Math.abs(dy)) {
-    snake.handleInput(dx > 0 ? 'ArrowRight' : 'ArrowLeft');
-  } else {
-    snake.handleInput(dy > 0 ? 'ArrowDown' : 'ArrowUp');
-  }
+}, { passive: true });
+
+document.addEventListener('touchend', () => {
+  isTouching = false;
+}, { passive: true });
+
+// ── 虚拟十字键 (D-Pad) 触控响应 ──
+const dpadButtons = document.querySelectorAll('.dpad-btn');
+dpadButtons.forEach(btn => {
+  const triggerDirection = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sound.init();
+
+    if (gameState.state !== 'playing') {
+      startGame();
+      return;
+    }
+
+    const dir = btn.getAttribute('data-dir');
+    if (dir) {
+      snake.handleInput(dir);
+      btn.classList.add('active');
+      setTimeout(() => btn.classList.remove('active'), 150);
+    }
+  };
+
+  btn.addEventListener('touchstart', triggerDirection, { passive: false });
+  btn.addEventListener('mousedown', triggerDirection);
 });
 
 // ── 开始游戏 ──

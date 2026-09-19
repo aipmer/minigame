@@ -1,11 +1,13 @@
 {
   "name": "3d-snake",
   "version": "1.0.0",
-  "description": "3D 贪吃蛇 — Three.js + Tripo3D Web 版",
+  "description": "MiniGame — Three.js + Tripo3D 现代 Web 3D 小游戏矩阵",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "npx serve . -p 3000",
-    "generate-models": "node scripts/generate-models.mjs"
+    "generate-models": "node scripts/generate-models.mjs",
+    "generate-skydodge-models": "node scripts/generate-skydodge-models.mjs"
   },
   "devDependencies": {
     "serve": "^14.2.0"

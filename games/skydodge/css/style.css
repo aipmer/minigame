@@ -1,0 +1,498 @@
+/* ═══════════════════════════════════════════
+   Sky Dodge 3D (星空冲锋) — 界面与科幻 HUD 样式
+   ═══════════════════════════════════════════ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #050813;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif;
+  touch-action: manipulation;
+}
+
+#game-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+/* 返回大厅按钮 */
+.back-home-btn {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 50;
+  background: rgba(13, 22, 45, 0.7);
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  text-decoration: none;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.back-home-btn:hover {
+  background: rgba(0, 242, 254, 0.2);
+  border-color: #00f2fe;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.4);
+}
+
+/* ════ HUD 容器 ════ */
+.hud-container {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.hud-group {
+  display: flex;
+  gap: 16px;
+}
+
+.hud-left {
+  margin-left: 110px; /* 留出返回按钮空间 */
+}
+
+.hud-item {
+  background: rgba(6, 14, 33, 0.7);
+  border: 1px solid rgba(0, 242, 254, 0.25);
+  border-radius: 10px;
+  padding: 8px 14px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  min-width: 80px;
+}
+
+.hud-item.align-right {
+  align-items: flex-end;
+}
+
+.hud-label {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: rgba(0, 242, 254, 0.7);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.hud-value {
+  font-size: 18px;
+  font-weight: 800;
+  font-family: 'Courier New', Courier, monospace;
+  color: #fff;
+  text-shadow: 0 0 8px rgba(0, 242, 254, 0.5);
+}
+
+.hud-value.highlight {
+  color: #00ffcc;
+}
+
+.hud-value small {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+}
+
+.hud-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+.shield-offline {
+  background: rgba(255, 75, 75, 0.15);
+  color: #ff5e5e;
+  border: 1px solid rgba(255, 75, 75, 0.4);
+}
+
+.shield-active {
+  background: rgba(0, 255, 200, 0.2);
+  color: #00ffc8;
+  border: 1px solid #00ffc8;
+  box-shadow: 0 0 10px rgba(0, 255, 200, 0.5);
+  animation: pulseShield 1.5s infinite alternate;
+}
+
+@keyframes pulseShield {
+  0% { transform: scale(1); box-shadow: 0 0 6px rgba(0, 255, 200, 0.4); }
+  100% { transform: scale(1.05); box-shadow: 0 0 14px rgba(0, 255, 200, 0.8); }
+}
+
+/* ════ 连击显示 ════ */
+.combo-banner {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  text-align: center;
+  pointer-events: none;
+  animation: popCombo 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.combo-text {
+  font-size: 28px;
+  font-weight: 900;
+  color: #ffde59;
+  text-shadow: 0 0 14px rgba(255, 222, 89, 0.7), 0 0 28px rgba(255, 140, 0, 0.5);
+  letter-spacing: 2px;
+}
+
+.combo-sub {
+  font-size: 13px;
+  font-weight: 700;
+  color: #00ffcc;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+@keyframes popCombo {
+  0% { transform: translateX(-50%) scale(0.6); opacity: 0; }
+  70% { transform: translateX(-50%) scale(1.15); opacity: 1; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+/* ════ 底部脉冲冲刺条 ════ */
+.boost-container {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.boost-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(0, 242, 254, 0.8);
+  text-shadow: 0 0 6px rgba(0, 242, 254, 0.5);
+}
+
+.boost-track {
+  width: 260px;
+  height: 8px;
+  background: rgba(0, 10, 25, 0.7);
+  border: 1px solid rgba(0, 242, 254, 0.4);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
+}
+
+.boost-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #00f2fe 0%, #4facfe 50%, #00ff87 100%);
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.8);
+  transition: width 0.1s linear;
+}
+
+/* ════ 全屏弹窗面板 ════ */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, rgba(10, 15, 30, 0.75) 0%, rgba(5, 7, 15, 0.92) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.glass-panel {
+  background: rgba(13, 22, 45, 0.75);
+  border: 1px solid rgba(0, 242, 254, 0.35);
+  border-radius: 20px;
+  padding: 36px 42px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(0, 242, 254, 0.08);
+  animation: fadeInModal 0.3s ease-out;
+}
+
+.glass-panel.danger-theme {
+  border-color: rgba(255, 75, 75, 0.45);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(255, 75, 75, 0.1);
+}
+
+.mission-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(0, 242, 254, 0.15);
+  color: #00f2fe;
+  border: 1px solid rgba(0, 242, 254, 0.35);
+  margin-bottom: 14px;
+}
+
+.mission-tag.danger {
+  background: rgba(255, 75, 75, 0.2);
+  color: #ff5e5e;
+  border-color: rgba(255, 75, 75, 0.45);
+}
+
+.glitch-title {
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #00ff87 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 4px;
+  filter: drop-shadow(0 0 16px rgba(0, 242, 254, 0.4));
+}
+
+.sub-title {
+  font-size: 14px;
+  letter-spacing: 4px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 24px;
+}
+
+.gameover-title {
+  font-size: 34px;
+  font-weight: 900;
+  color: #ff4d4d;
+  text-shadow: 0 0 18px rgba(255, 77, 77, 0.6);
+  margin-bottom: 20px;
+}
+
+.control-guides {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guide-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.guide-icon {
+  font-size: 18px;
+}
+
+.score-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 4px;
+}
+
+.stat-val {
+  font-size: 20px;
+  font-weight: 800;
+  font-family: 'Courier New', Courier, monospace;
+  color: #00f2fe;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 15px 24px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #00ff87 100%);
+  color: #060b18;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(0, 242, 254, 0.4);
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 10px 30px rgba(0, 242, 254, 0.6);
+}
+
+.action-btn.restart {
+  background: linear-gradient(135deg, #ff7675 0%, #d63031 100%);
+  color: #fff;
+  box-shadow: 0 6px 24px rgba(214, 48, 49, 0.4);
+}
+
+.action-btn.restart:hover {
+  box-shadow: 0 10px 30px rgba(214, 48, 49, 0.6);
+}
+
+.key-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 12px;
+}
+
+/* ════ 移动端触控辅助 ════ */
+.touch-controls {
+  position: absolute;
+  bottom: 30px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.virtual-stick {
+  width: 110px;
+  height: 110px;
+  background: rgba(0, 242, 254, 0.08);
+  border: 2px dashed rgba(0, 242, 254, 0.3);
+  border-radius: 50%;
+  position: relative;
+  pointer-events: auto;
+  backdrop-filter: blur(4px);
+}
+
+.stick-knob {
+  width: 44px;
+  height: 44px;
+  background: radial-gradient(circle, #00f2fe 0%, #0099ff 100%);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 14px rgba(0, 242, 254, 0.8);
+  pointer-events: none;
+  transition: transform 0.05s linear;
+}
+
+.touch-boost-btn {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 140, 0, 0.8) 0%, rgba(255, 75, 75, 0.8) 100%);
+  border: 2px solid rgba(255, 222, 89, 0.6);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 1px;
+  box-shadow: 0 0 16px rgba(255, 140, 0, 0.5);
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.touch-boost-btn:active {
+  transform: scale(0.92);
+}
+
+.hidden {
+  display: none !important;
+}
+
+@keyframes fadeInModal {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .hud-left {
+    margin-left: 0;
+  }
+  .hud-container {
+    top: 58px; /* 避开返回按钮 */
+    gap: 8px;
+  }
+  .hud-item {
+    padding: 5px 8px;
+    min-width: 60px;
+  }
+  .hud-label {
+    font-size: 9px;
+  }
+  .hud-value {
+    font-size: 14px;
+  }
+  .glass-panel {
+    padding: 24px 20px;
+  }
+  .glitch-title {
+    font-size: 28px;
+  }
+  .mobile-only {
+    display: flex;
+  }
+  .key-hint {
+    display: none;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none;
+  }
+}

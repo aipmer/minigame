@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>🚀 星空冲锋 (Sky Dodge 3D)</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- Three.js 画布容器 -->
+  <div id="game-container"></div>
+
+  <!-- 返回主页按钮 -->
+  <a href="../../" class="back-home-btn" title="返回游戏大厅">🏠 游戏大厅</a>
+
+  <!-- 顶部科幻 HUD 仪表盘 -->
+  <div id="hud" class="hud-container hidden">
+    <!-- 左侧状态：航程与航速 -->
+    <div class="hud-group hud-left">
+      <div class="hud-item">
+        <span class="hud-label">DISTANCE</span>
+        <span class="hud-value" id="hud-distance">0 <small>m</small></span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">SPEED</span>
+        <span class="hud-value highlight" id="hud-speed">120 <small>km/h</small></span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">SECTOR</span>
+        <span class="hud-value" id="hud-level">Lv.1</span>
+      </div>
+    </div>
+
+    <!-- 右侧状态：得分与护盾 -->
+    <div class="hud-group hud-right">
+      <div class="hud-item align-right">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value" id="hud-score">0</span>
+      </div>
+      <div class="hud-item align-right">
+        <span class="hud-label">BEST</span>
+        <span class="hud-value" id="hud-highscore">0</span>
+      </div>
+      <div class="hud-item align-right">
+        <span class="hud-label">SHIELD</span>
+        <span class="hud-badge shield-offline" id="hud-shield">OFFLINE</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 动态连击提示 (屏幕正上方) -->
+  <div id="combo-banner" class="combo-banner hidden">
+    <div class="combo-text" id="combo-text">COMBO x2!</div>
+    <div class="combo-sub" id="combo-sub">+200 PTS</div>
+  </div>
+
+  <!-- 底部冲刺能量条 -->
+  <div id="boost-meter-container" class="boost-container hidden">
+    <div class="boost-label">WARP OVERDRIVE [SPACE / SHIFT]</div>
+    <div class="boost-track">
+      <div class="boost-fill" id="boost-fill"></div>
+    </div>
+  </div>
+
+  <!-- 任务准备 / 开始画面 -->
+  <div id="start-screen" class="overlay">
+    <div class="glass-panel">
+      <div class="mission-tag">MISSION BRIEFING</div>
+      <h1 class="glitch-title">🚀 星空冲锋</h1>
+      <h2 class="sub-title">SKY DODGE 3D</h2>
+      
+      <div class="control-guides">
+        <div class="guide-item">
+          <span class="guide-icon">🎮</span>
+          <span class="guide-desc"><strong>WASD / 方向键</strong>：控制机体俯仰与横滚转向</span>
+        </div>
+        <div class="guide-item">
+          <span class="guide-icon">⚡</span>
+          <span class="guide-desc"><strong>空格 / Shift</strong>：启动脉冲过载冲刺 (积分翻倍)</span>
+        </div>
+        <div class="guide-item">
+          <span class="guide-icon">💎</span>
+          <span class="guide-desc"><strong>收集能量球</strong>：维持连击 Combo 并充能护盾</span>
+        </div>
+        <div class="guide-item mobile-only">
+          <span class="guide-icon">📱</span>
+          <span class="guide-desc"><strong>滑动屏幕 / 虚拟摇杆</strong>：拖拽战机飞行并点击冲刺</span>
+        </div>
+      </div>
+
+      <button id="start-btn" class="action-btn">启动引擎，立即起飞 🚀</button>
+      <p class="key-hint">桌面端按 [空格键] 直接起飞</p>
+    </div>
+  </div>
+
+  <!-- 任务终止 / 结算画面 -->
+  <div id="gameover-screen" class="overlay hidden">
+    <div class="glass-panel danger-theme">
+      <div class="mission-tag danger">MISSION FAILED · CRITICAL COLLISION</div>
+      <h1 class="gameover-title">战机坠毁</h1>
+      
+      <div class="score-summary">
+        <div class="stat-card">
+          <span class="stat-label">本次得分</span>
+          <span class="stat-val" id="final-score">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">最高记录</span>
+          <span class="stat-val" id="final-highscore">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">航行距离</span>
+          <span class="stat-val" id="final-distance">0m</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">最高连击</span>
+          <span class="stat-val" id="final-maxcombo">x1</span>
+        </div>
+      </div>
+
+      <button id="restart-btn" class="action-btn restart">重新起飞 (R) 🔄</button>
+    </div>
+  </div>
+
+  <!-- 移动端触控辅助控制 -->
+  <div id="touch-controls" class="touch-controls hidden">
+    <div id="virtual-stick" class="virtual-stick">
+      <div class="stick-knob" id="stick-knob"></div>
+    </div>
+    <button id="touch-boost-btn" class="touch-boost-btn" aria-label="推进冲刺">⚡ BOOST</button>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -18,7 +18,7 @@ async function test() {
   page.on('console', msg => logs.push(`[${msg.type()}] ${msg.text()}`));
   page.on('pageerror', err => errors.push(err.toString()));
 
-  await page.goto('http://localhost:3000', { waitUntil: 'networkidle0' });
+  await page.goto('http://localhost:3000/games/snake3d/', { waitUntil: 'networkidle0' });
 
   console.log('[Test] 页面加载成功，按空格键开始游戏...');
   await page.keyboard.press('Space');

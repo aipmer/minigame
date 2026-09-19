@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>🐍 3D 贪吃蛇</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- Three.js 渲染容器 -->
+  <div id="game-container"></div>
+
+  <!-- 返回游戏大厅 -->
+  <a href="../../" class="back-home-btn" title="返回游戏大厅">🏠 游戏大厅</a>
+
+  <!-- HUD：左上角 -->
+  <div id="hud" class="ui-panel hidden">
+    <div class="hud-title">🐍 3D 贪吃蛇</div>
+    <div class="hud-row">得分: <span id="hud-score">0</span></div>
+    <div class="hud-row">最高: <span id="hud-highscore">0</span></div>
+    <div class="hud-row">长度: <span id="hud-length">1</span></div>
+    <div class="hud-row hud-level">关卡: <span id="hud-level">Lv.1</span></div>
+  </div>
+
+  <!-- Combo 显示：顶部居中 -->
+  <div id="combo" class="hidden">COMBO x2!</div>
+
+  <!-- 开始画面 -->
+  <div id="start-screen" class="overlay">
+    <div class="overlay-content">
+      <h1 class="title-glow">🐍 3D 贪吃蛇</h1>
+      <p class="subtitle pulse">按 空格键 开始游戏</p>
+      <p class="hint">方向键 / WASD 控制移动</p>
+    </div>
+  </div>
+
+  <!-- Game Over 画面 -->
+  <div id="gameover-screen" class="overlay hidden">
+    <div class="overlay-content">
+      <h1 class="gameover-title">游戏结束</h1>
+      <p id="gameover-reason" class="gameover-reason"></p>
+      <p class="gameover-score">最终得分: <span id="gameover-score">0</span></p>
+      <p class="subtitle pulse">按 R 或 空格 重新开始</p>
+    </div>
+  </div>
+
+  <!-- 浮动得分容器 -->
+  <div id="floating-scores"></div>
+
+  <!-- 移动端触控提示 -->
+  <div id="mobile-controls" class="hidden">
+    <div class="touch-hint">← 滑动控制方向 →</div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

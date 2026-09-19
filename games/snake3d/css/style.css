@@ -22,6 +22,34 @@ canvas { display: block; }
 
 .hidden { display: none !important; }
 
+/* ── 返回大厅按钮 ── */
+.back-home-btn {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.back-home-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(20, 235, 115, 0.6);
+  transform: translateY(-1px);
+}
+
 /* ── HUD 面板 ── */
 .ui-panel {
   position: fixed;

@@ -61,6 +61,8 @@ const collectibleManager = new CollectibleManager(scene, modelLoader);
 const weaponSystem = new WeaponSystem(scene);
 
 // 异步加载模型并在就绪后无缝热挂载
+window.playerShip = playerShip;
+window.modelLoader = modelLoader;
 modelLoader.loadAll().then(() => {
   console.log('[太空战机] 模型资源加载完毕，装配战机外观');
   playerShip.loadShipModel();

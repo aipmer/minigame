@@ -20,26 +20,26 @@ export class SpaceEnvironment {
 
   initLights() {
     // 1. 全局深空双色半球漫射光 (天顶亮冷天蓝 + 底部深空紫罗兰，全角度消除死黑)
-    const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x581c87, 2.8);
+    const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x3b0764, 1.8);
     this.scene.add(hemiLight);
 
-    // 2. 基础白光漫反射环境光 (提供 100% 真实纯正反射率，让机身钛金白亮清晰)
-    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
+    // 2. 基础白光漫反射环境光 (提供纯正自然漫反射，让机身钛金白亮清晰)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
     this.scene.add(ambientLight);
 
-    // 3. 远方主恒星定向光 (纯净日光白，照亮战机与陨石向光面)
-    const dirLight = new THREE.DirectionalLight(0xffffff, 3.8);
+    // 3. 远方主恒星日光 (从右上方照亮战机与陨石向光面，产生雕塑般的明暗分界)
+    const dirLight = new THREE.DirectionalLight(0xffffff, 3.2);
     dirLight.position.set(25, 45, 10);
     this.scene.add(dirLight);
 
-    // 4. 强力正前方逆光轮廓光 (Backlight / Rim Light: 从远方深处 -Z 照射，为所有战机边缘与陨石勾勒锐利冰蓝边缘)
-    const rimBackLight = new THREE.DirectionalLight(0x38bdf8, 3.2);
-    rimBackLight.position.set(0, 12, -180);
+    // 4. 正前方逆光轮廓光 (Backlight: 从远方深处照射，勾勒战机与陨石边缘)
+    const rimBackLight = new THREE.DirectionalLight(0x38bdf8, 1.2);
+    rimBackLight.position.set(0, 8, -160);
     this.scene.add(rimBackLight);
 
     // 5. 侧后方暖金副补光 (金琥珀暖光，丰富冷暖对比)
-    const subLight = new THREE.DirectionalLight(0xfbbf24, 2.2);
-    subLight.position.set(-30, -15, 30);
+    const subLight = new THREE.DirectionalLight(0xfbbf24, 1.4);
+    subLight.position.set(-25, -12, 25);
     this.scene.add(subLight);
   }
 
@@ -76,8 +76,8 @@ export class SpaceEnvironment {
 
     for (let i = 0; i < this.starCount; i++) {
       const i3 = i * 3;
-      positions[i3] = (Math.random() - 0.5) * 120;
-      positions[i3 + 1] = (Math.random() - 0.5) * 85;
+      positions[i3] = (Math.random() - 0.5) * 140;
+      positions[i3 + 1] = (Math.random() - 0.5) * 95;
       positions[i3 + 2] = -Math.random() * 500;
 
       velocities[i] = 1.0 + Math.random() * 2.0;
@@ -110,115 +110,167 @@ export class SpaceEnvironment {
     this.starVelocities = velocities;
   }
 
-  // 赛博朋克深空流光光轨地峡 (降低地网杂色，凸显战机主体)
+  // 赛博深空全开放宇宙：远景光环气态巨行星、深空星云与航标浮标
   initCyberCanyon() {
-    // 1. 底层高频微光网格地面 (地面位于 y = -6.5，采用沉稳冷钢蓝，彻底不干扰战机轮廓)
-    const floorGeo = new THREE.PlaneGeometry(64, 480, 24, 80);
-    floorGeo.rotateX(-Math.PI / 2);
-
-    const floorMat = new THREE.MeshBasicMaterial({
-      color: 0x0369a1,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.14,
-      blending: THREE.NormalBlending,
-    });
-
-    this.canyonFloor = new THREE.Mesh(floorGeo, floorMat);
-    this.canyonFloor.position.set(0, -6.5, -200);
-    this.scene.add(this.canyonFloor);
-
-    // 航道双侧高光引导光轨 (左右两条高亮青色激光标线)
-    const railGeo = new THREE.BoxGeometry(0.12, 0.08, 480);
-    const railMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
-    const leftRail = new THREE.Mesh(railGeo, railMat);
-    leftRail.position.set(-13, -6.45, -200);
-    this.scene.add(leftRail);
-
-    const rightRail = leftRail.clone();
-    rightRail.position.x = 13;
-    this.scene.add(rightRail);
-
-    // 2. 顶层能量天花网格 (顶层位于 y = 10.5，深紫星际微光)
-    const ceilingGeo = new THREE.PlaneGeometry(64, 480, 24, 80);
-    ceilingGeo.rotateX(Math.PI / 2);
-
-    const ceilingMat = new THREE.MeshBasicMaterial({
-      color: 0x6d28d9,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.10,
-      blending: THREE.NormalBlending,
-    });
-
-    this.canyonCeiling = new THREE.Mesh(ceilingGeo, ceilingMat);
-    this.canyonCeiling.position.set(0, 10.5, -200);
-    this.scene.add(this.canyonCeiling);
+    this.initDistantPlanet();
+    this.initNavigationalBuoys();
   }
 
-  // 航道两侧霓虹信标立柱
-  initSpacePillars() {
+  // 1. 远景宏伟光环气态巨行星 (Distant Ringed Gas Giant)
+  initDistantPlanet() {
+    this.planetGroup = new THREE.Group();
+    this.planetGroup.position.set(85, 36, -380);
+
+    // 行星本体：程序化气态云带纹理
+    const planetCanvas = document.createElement('canvas');
+    planetCanvas.width = 512;
+    planetCanvas.height = 256;
+    const ctx = planetCanvas.getContext('2d');
+
+    // 绘制气态巨行星层次分明的气态云带 (琥珀暖金、深邃紫罗兰与冷天蓝交织)
+    const pGrad = ctx.createLinearGradient(0, 0, 0, 256);
+    pGrad.addColorStop(0.0, '#3b0764');
+    pGrad.addColorStop(0.20, '#1e1b4b');
+    pGrad.addColorStop(0.38, '#0284c7');
+    pGrad.addColorStop(0.52, '#38bdf8');
+    pGrad.addColorStop(0.70, '#f59e0b');
+    pGrad.addColorStop(0.85, '#b45309');
+    pGrad.addColorStop(1.0, '#451a03');
+    ctx.fillStyle = pGrad;
+    ctx.fillRect(0, 0, 512, 256);
+
+    // 添加气流湍流细节线条
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    for (let y = 10; y < 250; y += 8) {
+      const h = 2 + Math.sin(y * 0.15) * 2;
+      ctx.fillRect(0, y, 512, h);
+    }
+
+    const planetTex = new THREE.CanvasTexture(planetCanvas);
+    const planetGeo = new THREE.SphereGeometry(22, 32, 24);
+    const planetMat = new THREE.MeshStandardMaterial({
+      map: planetTex,
+      roughness: 0.85,
+      metalness: 0.05,
+    });
+    this.planetMesh = new THREE.Mesh(planetGeo, planetMat);
+    this.planetGroup.add(this.planetMesh);
+
+    // 土星式倾斜宏伟行星光环 (Planetary Rings)
+    const ringCanvas = document.createElement('canvas');
+    ringCanvas.width = 256;
+    ringCanvas.height = 1;
+    const rCtx = ringCanvas.getContext('2d');
+    const rGrad = rCtx.createLinearGradient(0, 0, 256, 0);
+    rGrad.addColorStop(0.0, 'rgba(0, 0, 0, 0)');
+    rGrad.addColorStop(0.12, 'rgba(56, 189, 248, 0.45)');
+    rGrad.addColorStop(0.35, 'rgba(251, 191, 36, 0.7)');
+    rGrad.addColorStop(0.55, 'rgba(255, 255, 255, 0.85)');
+    rGrad.addColorStop(0.72, 'rgba(192, 132, 252, 0.6)');
+    rGrad.addColorStop(0.92, 'rgba(56, 189, 248, 0.3)');
+    rGrad.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
+    rCtx.fillStyle = rGrad;
+    rCtx.fillRect(0, 0, 256, 1);
+
+    const ringTex = new THREE.CanvasTexture(ringCanvas);
+    const ringGeo = new THREE.RingGeometry(28, 48, 64);
+    ringGeo.rotateX(Math.PI / 2);
+    const ringMat = new THREE.MeshStandardMaterial({
+      map: ringTex,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.75,
+      roughness: 0.8,
+    });
+    this.ringMesh = new THREE.Mesh(ringGeo, ringMat);
+    this.ringMesh.rotation.z = -0.42;
+    this.ringMesh.rotation.x = 0.35;
+    this.planetGroup.add(this.ringMesh);
+
+    this.scene.add(this.planetGroup);
+  }
+
+  // 2. 悬浮全息航标浮标 (替换原本单调粗劣的竖立光柱)
+  initNavigationalBuoys() {
     this.pillarGroup = new THREE.Group();
     this.pillars = [];
-    this.pillarCount = 12;
-    this.pillarSpacing = 45;
+    this.pillarCount = 10;
+    this.pillarSpacing = 55;
 
-    const pillarGeo = new THREE.CylinderGeometry(0.18, 0.18, 18, 8);
-    const pillarMatLeft = new THREE.MeshBasicMaterial({
+    // 核心悬浮菱形浮标
+    const buoyGeo = new THREE.OctahedronGeometry(0.7, 0);
+    const buoyMatLeft = new THREE.MeshBasicMaterial({
       color: 0x00f2fe,
+      wireframe: true,
       transparent: true,
-      opacity: 0.55,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.75,
+      blending: THREE.AdditiveBlending
     });
-    const pillarMatRight = new THREE.MeshBasicMaterial({
+    const buoyMatRight = new THREE.MeshBasicMaterial({
       color: 0xff00aa,
+      wireframe: true,
       transparent: true,
-      opacity: 0.55,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.75,
+      blending: THREE.AdditiveBlending
     });
+
+    // 浮标内芯高亮能量核
+    const innerGeo = new THREE.SphereGeometry(0.3, 8, 8);
+    const innerMatLeft = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+    const innerMatRight = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
 
     for (let i = 0; i < this.pillarCount; i++) {
       const z = -i * this.pillarSpacing;
 
-      const pLeft = new THREE.Mesh(pillarGeo, pillarMatLeft);
-      pLeft.position.set(-16, 2, z);
-      this.pillarGroup.add(pLeft);
+      // 左航标
+      const gLeft = new THREE.Group();
+      gLeft.add(new THREE.Mesh(buoyGeo, buoyMatLeft));
+      gLeft.add(new THREE.Mesh(innerGeo, innerMatLeft));
+      gLeft.position.set(-14, 0, z);
+      this.pillarGroup.add(gLeft);
 
-      const pRight = new THREE.Mesh(pillarGeo, pillarMatRight);
-      pRight.position.set(16, 2, z);
-      this.pillarGroup.add(pRight);
+      // 右航标
+      const gRight = new THREE.Group();
+      gRight.add(new THREE.Mesh(buoyGeo, buoyMatRight));
+      gRight.add(new THREE.Mesh(innerGeo, innerMatRight));
+      gRight.position.set(14, 0, z);
+      this.pillarGroup.add(gRight);
 
-      this.pillars.push({ pLeft, pRight, z });
+      this.pillars.push({ pLeft: gLeft, pRight: gRight, z, rotOffset: Math.random() * Math.PI * 2 });
     }
 
     this.scene.add(this.pillarGroup);
   }
 
+  initSpacePillars() {
+    // 兼容原构造调用，实际功能已整合到 initCyberCanyon -> initNavigationalBuoys
+  }
+
   update(delta, currentSpeed, playerZ = 0) {
     // 1. 羽化星空流光推演
     const pos = this.starPositions;
-    const speedFactor = currentSpeed * delta * 2.2;
+    const speedFactor = currentSpeed * delta * 2.5;
 
     for (let i = 0; i < this.starCount; i++) {
       const i3 = i * 3;
       pos[i3 + 2] += speedFactor * this.starVelocities[i];
 
-      // 当星辰接近战机前方时即刻回收重置，绝不穿越战机与相机之间的视锥空间
+      // 当星辰接近战机前方时即刻回收重置
       if (pos[i3 + 2] > playerZ - 2) {
-        pos[i3 + 2] = playerZ - 450 - Math.random() * 60;
-        pos[i3] = (Math.random() - 0.5) * 120;
-        pos[i3 + 1] = (Math.random() - 0.5) * 85;
+        pos[i3 + 2] = playerZ - 480 - Math.random() * 60;
+        pos[i3] = (Math.random() - 0.5) * 140;
+        pos[i3 + 1] = (Math.random() - 0.5) * 95;
       }
     }
     this.starGeometry.attributes.position.needsUpdate = true;
 
-    // 2. 赛博网格地面与穹顶高速向后流动
-    const moveZ = currentSpeed * delta;
-    this.canyonOffsetZ = ((this.canyonOffsetZ || 0) + moveZ) % 40;
-    this.canyonFloor.position.z = -180 + this.canyonOffsetZ;
-    this.canyonCeiling.position.z = this.canyonFloor.position.z;
+    // 2. 远景气态行星缓缓自转
+    if (this.planetMesh) {
+      this.planetMesh.rotation.y += delta * 0.03;
+    }
 
-    // 3. 航道两侧霓虹信标迎面飞掠
+    // 3. 悬浮航标浮标沿 Z 轴向后流动并自转悬浮
+    const moveZ = currentSpeed * delta;
     for (let i = 0; i < this.pillars.length; i++) {
       const p = this.pillars[i];
       p.z += moveZ;
@@ -227,6 +279,12 @@ export class SpaceEnvironment {
       }
       p.pLeft.position.z = p.z;
       p.pRight.position.z = p.z;
+
+      // 零重力微自转
+      p.pLeft.rotation.y += delta * 1.2;
+      p.pLeft.rotation.x += delta * 0.8;
+      p.pRight.rotation.y -= delta * 1.2;
+      p.pRight.rotation.x += delta * 0.8;
     }
   }
 }

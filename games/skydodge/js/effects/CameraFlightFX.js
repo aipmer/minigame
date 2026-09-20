@@ -10,9 +10,9 @@ export class CameraFlightFX {
     this.boostFOV = 74;
     this.currentFOV = this.baseFOV;
 
-    // 相机相对于战机的偏移 (稍抬高并后拉，俯瞰战机流线型机身)
-    this.offset = new THREE.Vector3(0, 3.8, 9.2);
-    this.lookOffset = new THREE.Vector3(0, 0.4, -24);
+    // 相机相对于战机的偏移 (微俯视后上方，饱览战机立体装甲与双翼)
+    this.offset = new THREE.Vector3(0, 3.2, 7.2);
+    this.lookOffset = new THREE.Vector3(0, 0.2, -18);
 
     // 屏幕震动
     this.shakeDuration = 0;
@@ -32,9 +32,9 @@ export class CameraFlightFX {
     this.camera.fov = this.currentFOV;
     this.camera.updateProjectionMatrix();
 
-    // 2. 目标跟随位置 (带平滑延迟)
+    // 2. 目标跟随位置 (带平滑延迟与侧倾微联动)
     const targetCamX = playerPos.x * 0.45;
-    const targetCamY = playerPos.y * 0.45 + this.offset.y;
+    const targetCamY = playerPos.y * 0.35 + this.offset.y;
     const targetCamZ = playerPos.z + this.offset.z;
 
     const posSmooth = 1 - Math.pow(0.0008, delta);
@@ -50,19 +50,22 @@ export class CameraFlightFX {
       this.camera.position.y += (Math.random() - 0.5) * this.shakeIntensity * factor;
     }
 
-    // 4. 朝向战机前方略偏下的航道
+    // 4. 朝向战机前方瞄准中心
     this.camera.lookAt(
-      playerPos.x * 0.3,
-      playerPos.y * 0.3 + this.lookOffset.y,
+      playerPos.x * 0.25,
+      playerPos.y * 0.25 + this.lookOffset.y,
       playerPos.z + this.lookOffset.z
     );
+
+    // 5. 战机大角度横滚时的动态镜头微倾斜
+    this.camera.rotation.z = -playerPos.x * 0.015;
   }
 
   reset() {
     this.currentFOV = this.baseFOV;
     this.camera.fov = this.baseFOV;
     this.camera.updateProjectionMatrix();
-    this.camera.position.set(0, 3.5, 9);
+    this.camera.position.set(0, 3.2, 7.2);
     this.shakeDuration = 0;
   }
 }

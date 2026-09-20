@@ -17,8 +17,8 @@ export class ModelLoader {
       shield_orb: null,
     };
     this.modelConfigs = {
-      spaceship: { path: 'models/spaceship.glb', targetSize: 3.0, rotateY: -Math.PI / 2 },
-      asteroid: { path: 'models/asteroid.glb', targetSize: 2.8, rotateY: 0 },
+      spaceship: { path: 'models/spaceship.glb', targetSize: 3.2, rotateY: -Math.PI / 2 },
+      asteroid: { path: 'models/asteroid.glb', targetSize: 3.2, rotateY: 0 },
       laser_gate: { path: 'models/laser_gate.glb', targetSize: 6.0, rotateY: 0 },
       energy_core: { path: 'models/energy_core.glb', targetSize: 1.6, rotateY: 0 },
       shield_orb: { path: 'models/shield_orb.glb', targetSize: 1.6, rotateY: 0 },
@@ -27,8 +27,8 @@ export class ModelLoader {
   }
 
   async loadAll() {
-    // 1. 战机与激光门加载优化 GLB
-    const gltfKeys = ['spaceship', 'laser_gate'];
+    // 1. 战机、发光晶脉熔岩陨石与激光门加载次世代 PBR GLB 资产
+    const gltfKeys = ['spaceship', 'asteroid', 'laser_gate'];
     const promises = gltfKeys.map(async (key) => {
       const config = this.modelConfigs[key];
       if (!config) return;
@@ -36,17 +36,16 @@ export class ModelLoader {
         const gltf = await this.loadGLTF(config.path);
         const normalized = this.normalizeModel(gltf.scene, config.targetSize, config.rotateY, key);
         this.models[key] = normalized;
-        console.log(`[ModelLoader] 成功装载并优化 GLB 资产: ${key} (${config.path})`);
+        console.log(`[ModelLoader] 成功装载并优化次世代 PBR 资产: ${key} (${config.path})`);
       } catch (err) {
         console.log(`[ModelLoader] 模型 ${key} 加载降级，使用次世代程序化几何体: ${err.message || err}`);
         this.models[key] = this.createFallbackModel(key);
       }
     });
 
-    // 2. 能量核心、护盾球与发光晶脉陨石：直接装配自发光高对比度次世代几何体 (用户选定方案1)
+    // 2. 能量核心与护盾球：升级实心多层菲涅尔实体道具
     this.models.energy_core = this.createQuantumCore();
     this.models.shield_orb = this.createPlasmaShieldOrb();
-    this.models.asteroid = this.createGlowingGeodeAsteroid();
 
     await Promise.all(promises);
     this.isLoaded = true;
@@ -83,55 +82,35 @@ export class ModelLoader {
         child.castShadow = true;
         child.receiveShadow = true;
 
-        // 战机专属材质提亮与漫反射调优：高光银白钛合金涂装 + 自发光轮廓增强
-        if (key === 'spaceship' && child.material) {
+        if (child.material) {
           const mat = child.material;
-          if (mat.isMeshStandardMaterial) {
-            mat.metalness = 0.35;
-            mat.roughness = 0.22;
-            mat.envMapIntensity = 2.4;
-            if (mat.color) {
-              mat.color.setHex(0xe2e8f0); // 银白航空钛合金底色
+
+          // 战机次世代 PBR 材质强化：保留高精贴图，增强金属质感与迎光面漫反射
+          if (key === 'spaceship' && mat.isMeshStandardMaterial) {
+            mat.metalness = 0.55;
+            mat.roughness = 0.28;
+            mat.envMapIntensity = 2.0;
+            if (mat.normalMap) {
+              mat.normalScale = new THREE.Vector2(1.2, 1.2);
             }
-            mat.emissive = new THREE.Color(0x1e3a5f); // 柔和深蓝底光，消除死黑
-            mat.emissiveIntensity = 0.35;
+            // 柔和幽蓝底光，消除死黑
+            mat.emissive = new THREE.Color(0x0f172a);
+            mat.emissiveIntensity = 0.2;
+          }
+
+          // 熔岩晶脉陨石次世代 PBR 材质强化：凸显深灰色真实岩体表皮与火山口裂隙蓝光
+          if (key === 'asteroid' && mat.isMeshStandardMaterial) {
+            mat.roughness = 0.85;
+            mat.metalness = 0.15;
+            if (mat.normalMap) {
+              mat.normalScale = new THREE.Vector2(1.6, 1.6);
+            }
+            mat.emissive = new THREE.Color(0x0284c7);
+            mat.emissiveIntensity = 0.15;
           }
         }
       }
     });
-
-    // 为战机附加机翼高亮自发光边缘光导条与喷口发光环
-    if (key === 'spaceship') {
-      const neonCyanMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
-
-      // 翼尖航行高光导光条
-      const wingBarGeo = new THREE.BoxGeometry(0.06, 0.05, 1.1);
-      const leftWingBar = new THREE.Mesh(wingBarGeo, neonCyanMat);
-      leftWingBar.position.set(1.42, 0.05, 0.1);
-      leftWingBar.rotation.y = 0.32;
-      wrapper.add(leftWingBar);
-
-      const rightWingBar = leftWingBar.clone();
-      rightWingBar.position.x = -1.42;
-      rightWingBar.rotation.y = -0.32;
-      wrapper.add(rightWingBar);
-
-      // 双推进器喷口发光内环 (精致紧凑光环，避免过爆遮挡机身)
-      const nozzleRingGeo = new THREE.RingGeometry(0.06, 0.16, 16);
-      const nozzleMat = new THREE.MeshBasicMaterial({
-        color: 0x00d2ff,
-        transparent: true,
-        opacity: 0.85,
-        side: THREE.DoubleSide
-      });
-      const leftNozzleGlow = new THREE.Mesh(nozzleRingGeo, nozzleMat);
-      leftNozzleGlow.position.set(0.46, 0.06, 1.48);
-      wrapper.add(leftNozzleGlow);
-
-      const rightNozzleGlow = leftNozzleGlow.clone();
-      rightNozzleGlow.position.x = -0.46;
-      wrapper.add(rightNozzleGlow);
-    }
 
     return wrapper;
   }

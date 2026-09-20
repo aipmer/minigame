@@ -14,19 +14,19 @@ export class SceneSetup {
     // 检测移动设备
     this.isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 900);
 
-    // 1. 场景与星空迷雾 (深邃蓝紫星云基底，降低雾浓度大幅提升能见度与深空层次)
+    // 1. 场景与星空迷雾 (深邃蓝紫星云基底，降低雾浓度至 0.0009，赋予深空无限景深与远景行星通透度)
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x090e24);
-    this.scene.fog = new THREE.FogExp2(0x090e24, 0.0020);
+    this.scene.background = new THREE.Color(0x050816);
+    this.scene.fog = new THREE.FogExp2(0x050816, 0.0009);
 
-    // 2. 摄像机 (针对高速飞行优化的 FOV 与透视)
+    // 2. 摄像机 (微俯视第三人称英雄机动视角，呈现机体立体装甲与双翼)
     this.camera = new THREE.PerspectiveCamera(
-      60,
+      58,
       window.innerWidth / window.innerHeight,
       0.1,
       950
     );
-    this.camera.position.set(0, 3.5, 9);
+    this.camera.position.set(0, 3.2, 7.2);
 
     // 3. WebGL 渲染器 (关闭 preserveDrawingBuffer 消除每帧拷贝，移动端限 DPR 1.5)
     const targetDPR = this.isMobile 

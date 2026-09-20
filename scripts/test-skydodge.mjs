@@ -42,8 +42,11 @@ async function testSkyDodge() {
   await page.keyboard.up('KeyA');
 
   await page.keyboard.down('KeyD');
-  await new Promise((r) => setTimeout(r, 500));
+  await new Promise((r) => setTimeout(r, 400));
   await page.keyboard.up('KeyD');
+
+  // 等待平稳回正
+  await new Promise((r) => setTimeout(r, 700));
 
   // 截取运行态屏幕快照
   const screenshotPath = '/Users/hunkwu/.gemini/antigravity/brain/6e9932af-f962-4a6d-aafb-687a5aa2bdae/skydodge_gameplay.png';

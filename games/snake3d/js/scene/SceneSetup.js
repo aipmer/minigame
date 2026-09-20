@@ -4,57 +4,63 @@ export class SceneSetup {
   constructor(container) {
     this.container = container;
     
-    // 初始化场景 (Initialize scene)
+    // 初始化场景
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color('#0A0D17');
-    this.scene.fog = new THREE.FogExp2('#0A0D17', 0.012);
     
-    // 初始化相机 (Initialize camera)
+    // 初始托底明媚天空蓝，并异步载入 3D 粘土全景天幕背景图
+    this.scene.background = new THREE.Color('#7ED8FC');
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.load('./assets/ui/snake3d_sky_bg.jpg', (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      this.scene.background = tex;
+    });
+
+    // 初始化全景开阔机位
     const aspect = window.innerWidth / window.innerHeight;
-    this.camera = new THREE.PerspectiveCamera(56, aspect, 0.1, 200);
-    this.camera.position.set(0, 22, 14);
-    this.camera.lookAt(0, 0, 0);
+    this.camera = new THREE.PerspectiveCamera(46, aspect, 0.1, 250);
+    this.camera.position.set(0, 28.5, 19.5);
+    this.camera.lookAt(0, 0, 0.5);
     
-    // 初始化渲染器 (Initialize renderer)
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setPixelRatio(window.devicePixelRatio);
+    // 初始化渲染器
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.2;
+    this.renderer.toneMappingExposure = 1.18;
     this.container.appendChild(this.renderer.domElement);
     
-    // 初始化时钟 (Initialize clock)
     this.clock = new THREE.Clock();
     
-    // 设置光照 (Setup lighting)
+    // 设置自然暖亮光照
     this.setupLights();
     
-    // 监听窗口大小调整 (Listen for window resize)
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
   }
   
   setupLights() {
-    // 平行光 (Directional Light)
-    const dirLight = new THREE.DirectionalLight('#FFF5E0', 1.5);
-    dirLight.position.set(8, 15, 10);
+    // 太阳主平行光 (Sun Light)
+    const dirLight = new THREE.DirectionalLight('#FFF7E6', 1.75);
+    dirLight.position.set(12, 26, 14);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
     dirLight.shadow.mapSize.height = 2048;
-    dirLight.shadow.camera.left = -15;
-    dirLight.shadow.camera.right = 15;
-    dirLight.shadow.camera.top = 15;
-    dirLight.shadow.camera.bottom = -15;
+    dirLight.shadow.camera.left = -16;
+    dirLight.shadow.camera.right = 16;
+    dirLight.shadow.camera.top = 16;
+    dirLight.shadow.camera.bottom = -16;
     dirLight.shadow.camera.near = 0.5;
-    dirLight.shadow.camera.far = 50;
+    dirLight.shadow.camera.far = 65;
+    dirLight.shadow.bias = -0.0005;
     this.scene.add(dirLight);
     
-    // 环境光 (Ambient Light)
-    const ambientLight = new THREE.AmbientLight('#4466AA', 0.4);
+    // 天空温和漫反射环境光
+    const ambientLight = new THREE.AmbientLight('#E0F2FE', 0.82);
     this.scene.add(ambientLight);
     
-    // 半球光 (Hemisphere Light)
-    const hemiLight = new THREE.HemisphereLight('#8899FF', '#334455', 0.3);
+    // 天空与草坪双向反射光
+    const hemiLight = new THREE.HemisphereLight('#BAE6FD', '#86EFAC', 0.55);
     this.scene.add(hemiLight);
   }
   
@@ -62,10 +68,6 @@ export class SceneSetup {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-  }
-  
-  update(delta) {
-    // 处理每一帧的更新 (Handle per-frame updates)
   }
   
   render() {

@@ -134,6 +134,23 @@ export class ObstacleManager {
     }
   }
   
+  // 清除指定位置附近的障碍物 (被无敌蛇撞碎)
+  removeAt(pos, threshold = 0.9) {
+    for (let i = 0; i < this.positions.length; i++) {
+      if (this.positions[i].distanceTo(pos) < threshold) {
+        const mesh = this.obstacles[i];
+        if (mesh) {
+          this.scene.remove(mesh);
+        }
+        const removedPos = this.positions[i].clone();
+        this.positions.splice(i, 1);
+        this.obstacles.splice(i, 1);
+        return { mesh, pos: removedPos };
+      }
+    }
+    return null;
+  }
+
   // 清除所有障碍物
   clearAll() {
     for (let mesh of this.obstacles) {

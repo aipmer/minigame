@@ -20,35 +20,57 @@ async function test() {
 
   await page.goto('http://localhost:3000/games/snake3d/', { waitUntil: 'networkidle0' });
 
-  console.log('[Test] 页面加载成功，按空格键开始游戏...');
-  await page.keyboard.press('Space');
+  // 等待纹理加载
+  await new Promise(r => setTimeout(r, 800));
 
-  // 等待 1.5 秒
-  await new Promise(r => setTimeout(r, 1500));
+  // 1. 截图：全新 3D 粘土质感开始画面
+  const startScreenPath = '/Users/hunkwu/.gemini/antigravity/brain/7933faa5-951d-4997-81be-da87775ddbb5/snake3d_start_screen.png';
+  await page.screenshot({ path: startScreenPath });
+  console.log(`[Test] 开始画面截图已保存: ${startScreenPath}`);
 
-  // 按方向键右
+  // 2. 点击开始按钮
+  console.log('[Test] 点击开始游戏按钮...');
+  await page.click('#start-btn');
+  await new Promise(r => setTimeout(r, 1200));
+
+  // 操纵蛇转向并生长身体（验证锥度收束、尾尖与游动弯曲形态）
   await page.keyboard.press('ArrowRight');
-  await new Promise(r => setTimeout(r, 1000));
+  await page.evaluate(() => {
+    if (window._snake) {
+      window._snake.grow();
+      window._snake.grow();
+      window._snake.grow();
+      window._snake.grow();
+      window._snake.grow();
+    }
+  });
+  await new Promise(r => setTimeout(r, 800));
 
-  // 截图
-  const screenshotPath = '/Users/hunkwu/.gemini/antigravity/brain/3c70172b-4a8c-439c-88bf-b8067a345cff/threejs_snake_gameplay.png';
-  await page.screenshot({ path: screenshotPath });
-  console.log(`[Test] 运行态截图已保存: ${screenshotPath}`);
+  // 3. 截图：全新 3D 浮空岛与拟真有机萌系蛇身运行态
+  const gameplayPath = '/Users/hunkwu/.gemini/antigravity/brain/7933faa5-951d-4997-81be-da87775ddbb5/snake3d_gameplay.png';
+  await page.screenshot({ path: gameplayPath });
+  console.log(`[Test] 运行态截图已保存: ${gameplayPath}`);
 
-  // 提取 HUD 状态
-  const hudState = await page.evaluate(() => {
+  // 4. 继续直行撞击边界以触发 GameOver 弹窗
+  console.log('[Test] 继续前进触发游戏结束...');
+  await new Promise(r => setTimeout(r, 2200));
+
+  // 5. 截图：全新 3D 粘土质感 GameOver 弹窗（验证对比度与美观度）
+  const gameoverPath = '/Users/hunkwu/.gemini/antigravity/brain/7933faa5-951d-4997-81be-da87775ddbb5/snake3d_gameover_modal.png';
+  await page.screenshot({ path: gameoverPath });
+  console.log(`[Test] GameOver 弹窗截图已保存: ${gameoverPath}`);
+
+  // 提取状态
+  const endState = await page.evaluate(() => {
     return {
-      hudVisible: !document.getElementById('hud').classList.contains('hidden'),
-      score: document.getElementById('hud-score').textContent,
-      highScore: document.getElementById('hud-highscore').textContent,
-      length: document.getElementById('hud-length').textContent,
-      level: document.getElementById('hud-level').textContent,
-      startScreenHidden: document.getElementById('start-screen').classList.contains('hidden'),
-      gameoverHidden: document.getElementById('gameover-screen').classList.contains('hidden'),
+      gameoverVisible: !document.getElementById('gameover-screen').classList.contains('hidden'),
+      reason: document.getElementById('gameover-reason').textContent,
+      score: document.getElementById('gameover-score').textContent,
+      hudScore: document.getElementById('hud-score').textContent,
     };
   });
 
-  console.log('[Test] HUD 状态:', JSON.stringify(hudState, null, 2));
+  console.log('[Test] 游戏结束状态:', JSON.stringify(endState, null, 2));
   console.log(`[Test] 页面错误数量: ${errors.length}`);
   if (errors.length > 0) {
     console.error('[Test] 错误列表:', errors);

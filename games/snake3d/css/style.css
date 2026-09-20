@@ -6,7 +6,7 @@
 
 body {
   overflow: hidden;
-  background: #0A0D17;
+  background: #7ED8FC;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   color: #fff;
   -webkit-font-smoothing: antialiased;
@@ -32,58 +32,85 @@ canvas { display: block; }
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 20px;
-  color: #fff;
+  color: #1E293B;
   text-decoration: none;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
   transition: all 0.2s ease;
 }
 
 .back-home-btn:hover {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(20, 235, 115, 0.6);
+  background: #fff;
   transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
 }
 
-/* ── HUD 面板 ── */
-.ui-panel {
+/* ── HUD 仪表盘 ── */
+.hud-container {
   position: fixed;
-  z-index: 10;
-}
-
-#hud {
   top: 16px;
-  left: 16px;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  left: 20px;
+  right: 130px; /* 避开返回大厅按钮 */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.hud-group {
+  display: flex;
+  gap: 12px;
+  pointer-events: auto;
+}
+
+.hud-item {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
   border-radius: 12px;
-  padding: 14px 20px;
-  min-width: 180px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
-.hud-title {
+.hud-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #64748B;
+  text-transform: uppercase;
+}
+
+.hud-value {
   font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 8px;
-  letter-spacing: 0.5px;
+  font-weight: 800;
+  color: #0F172A;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-.hud-row {
-  font-size: 14px;
-  line-height: 1.8;
-  color: rgba(255, 255, 255, 0.85);
+.hud-value.highlight {
+  color: #16A34A;
 }
 
-.hud-level {
-  color: #FFDD44;
-  font-weight: 600;
+.hud-badge {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 800;
+  color: #B45309;
+  padding: 2px 8px;
+  background: rgba(251, 191, 36, 0.3);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  border-radius: 6px;
+  margin-top: 2px;
 }
 
 /* ── Combo 显示 ── */
@@ -95,8 +122,8 @@ canvas { display: block; }
   z-index: 20;
   font-size: 32px;
   font-weight: 800;
-  color: #FFD700;
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.5);
+  color: #F59E0B;
+  text-shadow: 0 0 16px rgba(245, 158, 11, 0.4), 0 2px 4px rgba(0, 0, 0, 0.15);
   letter-spacing: 2px;
   transition: transform 0.15s ease;
 }
@@ -105,7 +132,7 @@ canvas { display: block; }
   transform: translateX(-50%) scale(1.3);
 }
 
-/* ── 全屏覆盖层 ── */
+/* ── 3D 粘土质感卡片弹窗 (Claymorphism 3D Toy Modal) ── */
 .overlay {
   position: fixed;
   inset: 0;
@@ -113,70 +140,142 @@ canvas { display: block; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(10, 13, 23, 0.88);
-  backdrop-filter: blur(6px);
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 16px;
 }
 
-.overlay-content {
+.toy-card {
   text-align: center;
+  width: 100%;
   max-width: 420px;
-  padding: 40px;
+  padding: 30px 24px 28px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFFBEB 100%);
+  border: 4px solid #FFFFFF;
+  border-radius: 32px;
+  box-shadow: 
+    0 24px 60px rgba(15, 23, 42, 0.32),
+    0 8px 0 #E2E8F0,
+    inset 0 2px 4px rgba(255, 255, 255, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.title-glow {
-  font-size: 48px;
-  font-weight: 800;
-  letter-spacing: 3px;
-  background: linear-gradient(135deg, #14EB73, #00D4FF);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: none;
-  filter: drop-shadow(0 0 30px rgba(20, 235, 115, 0.3));
-  margin-bottom: 24px;
+@keyframes popIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal-badge-img {
+  width: 270px;
+  max-width: 90%;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.14));
+  margin-bottom: -2px;
 }
 
 .subtitle {
-  font-size: 20px;
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 12px;
-}
-
-.hint {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-/* 呼吸闪烁 */
-.pulse {
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
-
-/* ── Game Over ── */
-.gameover-title {
-  font-size: 42px;
+  font-size: 16px;
+  color: #334155;
   font-weight: 800;
-  color: #FF4444;
-  text-shadow: 0 0 30px rgba(255, 68, 68, 0.4);
-  margin-bottom: 16px;
+  letter-spacing: 0.5px;
 }
 
-.gameover-reason {
-  font-size: 18px;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 12px;
+.hint-pill {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  background: #F1F5F9;
+  border: 1.5px solid #E2E8F0;
+  padding: 7px 18px;
+  border-radius: 18px;
 }
 
-.gameover-score {
-  font-size: 22px;
-  color: #FFD700;
-  font-weight: 600;
-  margin-bottom: 24px;
+.reason-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FEE2E2;
+  border: 2px solid #FCA5A5;
+  border-radius: 20px;
+  padding: 6px 18px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #991B1B;
+  box-shadow: 0 3px 8px rgba(239, 68, 68, 0.15);
+}
+
+.gameover-reason-text {
+  color: #991B1B !important;
+  font-weight: 800;
+}
+
+.score-card {
+  width: 100%;
+  max-width: 330px;
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  border: 2.5px solid #FCD34D;
+  border-radius: 22px;
+  padding: 12px 20px;
+  box-shadow: inset 0 -3px 0 #F59E0B, 0 6px 16px rgba(245, 158, 11, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.score-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #B45309;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.score-number {
+  font-size: 46px;
+  font-weight: 900;
+  color: #D97706;
+  text-shadow: 0 2px 0 #FFFFFF, 0 3px 6px rgba(180, 83, 9, 0.25);
+  line-height: 1.1;
+  margin-top: 2px;
+}
+
+.toy-btn {
+  width: 100%;
+  max-width: 330px;
+  padding: 14px 24px;
+  font-size: 17px;
+  font-weight: 800;
+  color: #FFFFFF;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 24px;
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  margin-top: 4px;
+}
+
+.toy-btn-primary {
+  background: linear-gradient(180deg, #10B981 0%, #059669 100%);
+  box-shadow: 0 6px 0 #047857, 0 10px 20px rgba(5, 150, 105, 0.35);
+}
+
+.toy-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #047857, 0 12px 24px rgba(5, 150, 105, 0.45);
+}
+
+.toy-btn-primary:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #047857;
 }
 
 /* ── 浮动得分 ── */
@@ -202,59 +301,45 @@ canvas { display: block; }
   100% { opacity: 0; transform: translateY(-60px) scale(0.7); }
 }
 
-/* ── 移动端虚拟方向键 (D-Pad) ── */
-.dpad-container {
-  display: none;
+/* ── 移动端 360° 弹性虚拟摇杆 ── */
+.touch-controls {
   position: fixed;
-  bottom: 28px;
+  bottom: 24px;
   left: 24px;
-  right: auto;
   z-index: 50;
-  flex-direction: column;
+  display: flex;
   align-items: center;
-  gap: 6px;
+  pointer-events: auto;
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
 }
 
-.dpad-middle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.dpad-center {
-  width: 48px;
-  height: 48px;
+.virtual-stick {
+  width: 110px;
+  height: 110px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 2px dashed rgba(116, 192, 67, 0.6);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.dpad-btn {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.12);
+  position: relative;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  outline: none;
-  transition: all 0.15s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
-.dpad-btn:active, .dpad-btn.active {
-  background: rgba(20, 235, 115, 0.4);
-  border-color: #14eb73;
-  transform: scale(0.92);
-  box-shadow: 0 0 16px rgba(20, 235, 115, 0.5);
+.stick-knob {
+  width: 48px;
+  height: 48px;
+  background: radial-gradient(circle, #86D152 0%, #74C043 100%);
+  border: 2.5px solid rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 4px 14px rgba(116, 192, 67, 0.6);
+  pointer-events: none;
+  transition: transform 0.04s linear;
 }
 
 /* ── 响应式与触屏显示 ── */
@@ -264,30 +349,29 @@ canvas { display: block; }
     user-select: none;
     -webkit-user-select: none;
   }
-  .dpad-container {
-    display: flex;
-  }
 }
 
 @media (max-width: 600px) {
-  .title-glow { font-size: 32px; }
-  .gameover-title { font-size: 28px; }
-  #hud { padding: 10px 14px; min-width: 140px; }
-  .hud-title { font-size: 15px; }
-  .hud-row { font-size: 12px; }
+  .title-glow { font-size: 36px; }
+  .gameover-title { font-size: 32px; }
+  .hud-container {
+    top: 56px; /* 避开右上角返回按钮 */
+    left: 14px;
+    right: 14px;
+    gap: 8px;
+  }
+  .hud-group {
+    gap: 6px;
+  }
+  .hud-item {
+    padding: 5px 8px;
+  }
+  .hud-value {
+    font-size: 15px;
+  }
   #combo { font-size: 24px; }
-  .dpad-container {
+  .touch-controls {
     bottom: 20px;
-    left: 16px;
-    right: auto;
-  }
-  .dpad-btn {
-    width: 48px;
-    height: 48px;
-    font-size: 16px;
-  }
-  .dpad-center {
-    width: 40px;
-    height: 40px;
+    left: 20px;
   }
 }

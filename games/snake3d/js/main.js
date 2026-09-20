@@ -24,7 +24,12 @@ const ui = {
   gameoverScreen:document.getElementById('gameover-screen'),
   gameoverReason:document.getElementById('gameover-reason'),
   gameoverScore: document.getElementById('gameover-score'),
+  startBtn:      document.getElementById('start-btn'),
+  restartBtn:    document.getElementById('restart-btn'),
   floatingScores:document.getElementById('floating-scores'),
+  touchControls: document.getElementById('touch-controls'),
+  virtualStick:  document.getElementById('virtual-stick'),
+  stickKnob:     document.getElementById('stick-knob'),
 };
 
 // ── 初始化系统 ──
@@ -41,6 +46,7 @@ modelLoader.loadAll().then(() => {
 
 const ground    = new Ground(scene);
 const snake     = new Snake(scene, modelLoader);
+window._snake   = snake;
 const food      = new Food(scene, modelLoader);
 const obstacles = new ObstacleManager(scene, modelLoader);
 const gameState = new GameState();
@@ -51,20 +57,25 @@ const cameraFX  = new CameraFX(camera);
 // ── 跟踪蛇上次逻辑位置用于检测 step 发生 ──
 let lastSnakePos = null;
 
-// ── 相机跟随 ──
+// ── 开阔全景平稳视角 ──
 function updateCamera(delta) {
   if (!snake.head) return;
   const headPos = snake.head.position;
-  const tx = headPos.x;
-  const ty = headPos.y + 22;
-  const tz = headPos.z + 14;
 
-  const smooth = 1 - Math.pow(0.001, delta);
-  camera.position.x += (tx - camera.position.x) * smooth;
-  camera.position.y += (ty - camera.position.y) * smooth;
-  camera.position.z += (tz - camera.position.z) * smooth;
+  // 开阔稳定全景基准：高度 28.5，纵深 19.5
+  // 对蛇头仅做极微量有机呼吸微动（0.12 系数），彻底消除剧烈晃动与抖动
+  const targetX = headPos.x * 0.12;
+  const targetY = 28.5;
+  const targetZ = 19.5 + headPos.z * 0.08;
 
-  camera.lookAt(headPos.x, headPos.y + 1, headPos.z);
+  const smooth = 1 - Math.pow(0.02, delta);
+  camera.position.x += (targetX - camera.position.x) * smooth;
+  camera.position.y += (targetY - camera.position.y) * smooth;
+  camera.position.z += (targetZ - camera.position.z) * smooth;
+
+  const lookX = headPos.x * 0.08;
+  const lookZ = headPos.z * 0.08;
+  camera.lookAt(lookX, 0, lookZ);
 }
 
 // ── 输入处理 ──
@@ -90,29 +101,141 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ── 移动端手势与触控控制 ──
-let touchStartX = 0, touchStartY = 0;
-let isTouching = false;
-const SWIPE_THRESHOLD = 22; // 极速响应滑动阈值 (像素)
-
-// 检测移动端并更新提示文案
-const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth < 768);
-if (isTouchDevice) {
-  const startSubtitle = ui.startScreen.querySelector('.subtitle');
-  if (startSubtitle) startSubtitle.textContent = '轻触屏幕 开始游戏';
-  const startHint = ui.startScreen.querySelector('.hint');
-  if (startHint) startHint.textContent = '滑动屏幕 或 屏幕左下角按键 控制方向';
-
-  const overSubtitle = ui.gameoverScreen.querySelector('.subtitle');
-  if (overSubtitle) overSubtitle.textContent = '轻触屏幕 重新开始';
+// ── 弹窗按钮事件 ──
+const onActionBtnClick = (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  sound.init();
+  startGame();
+};
+if (ui.startBtn) {
+  ui.startBtn.addEventListener('click', onActionBtnClick);
+  ui.startBtn.addEventListener('touchend', onActionBtnClick);
+}
+if (ui.restartBtn) {
+  ui.restartBtn.addEventListener('click', onActionBtnClick);
+  ui.restartBtn.addEventListener('touchend', onActionBtnClick);
 }
 
-// 触屏开始
+// ── 移动端检测与文案自适应 ──
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 1024);
+if (isTouchDevice) {
+  if (ui.startBtn) ui.startBtn.textContent = '🚀 开始游戏 (轻触)';
+  if (ui.restartBtn) ui.restartBtn.textContent = '🔄 重新开始 (轻触)';
+}
+
+// ── 360° 弹性虚拟摇杆操控 ──
+let stickActive = false;
+let stickCenterX = 0;
+let stickCenterY = 0;
+const STICK_MAX_RADIUS = 38; // 最大视觉拨动半径 (px)
+const STICK_DEAD_ZONE = 10;  // 死区阈值 (px)
+
+function updateStickKnob(dx, dy) {
+  if (!ui.stickKnob) return;
+  ui.stickKnob.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), calc(-50% + ${dy.toFixed(1)}px))`;
+}
+
+function resetStick() {
+  stickActive = false;
+  if (ui.stickKnob) {
+    ui.stickKnob.style.transform = 'translate(-50%, -50%)';
+  }
+}
+
+function handleStickVector(dx, dy) {
+  const distance = Math.hypot(dx, dy);
+  if (distance < STICK_DEAD_ZONE) return;
+
+  // 限制摇杆钮视觉位移
+  const clampedDist = Math.min(distance, STICK_MAX_RADIUS);
+  const angle = Math.atan2(dy, dx);
+  const knobX = Math.cos(angle) * clampedDist;
+  const knobY = Math.sin(angle) * clampedDist;
+  updateStickKnob(knobX, knobY);
+
+  // 360° 映射至 4 扇区：
+  // 右: [-PI/4, PI/4]
+  // 下: [PI/4, 3PI/4]
+  // 上: [-3PI/4, -PI/4]
+  // 左: > 3PI/4 或 < -3PI/4
+  let dir = null;
+  if (angle >= -Math.PI / 4 && angle <= Math.PI / 4) {
+    dir = 'ArrowRight';
+  } else if (angle > Math.PI / 4 && angle < 3 * Math.PI / 4) {
+    dir = 'ArrowDown';
+  } else if (angle >= -3 * Math.PI / 4 && angle <= -Math.PI / 4) {
+    dir = 'ArrowUp';
+  } else {
+    dir = 'ArrowLeft';
+  }
+
+  if (dir && gameState.state === 'playing') {
+    snake.handleInput(dir);
+  }
+}
+
+if (ui.virtualStick) {
+  const onStickStart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sound.init();
+
+    if (gameState.state !== 'playing') {
+      startGame();
+      return;
+    }
+
+    stickActive = true;
+    const rect = ui.virtualStick.getBoundingClientRect();
+    stickCenterX = rect.left + rect.width / 2;
+    stickCenterY = rect.top + rect.height / 2;
+
+    const touch = e.touches ? e.touches[0] : e;
+    handleStickVector(touch.clientX - stickCenterX, touch.clientY - stickCenterY);
+  };
+
+  const onStickMove = (e) => {
+    if (!stickActive) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const touch = e.touches ? e.touches[0] : e;
+    handleStickVector(touch.clientX - stickCenterX, touch.clientY - stickCenterY);
+  };
+
+  const onStickEnd = (e) => {
+    if (!stickActive) return;
+    e.preventDefault();
+    e.stopPropagation();
+    resetStick();
+  };
+
+  ui.virtualStick.addEventListener('touchstart', onStickStart, { passive: false });
+  ui.virtualStick.addEventListener('touchmove', onStickMove, { passive: false });
+  ui.virtualStick.addEventListener('touchend', onStickEnd, { passive: false });
+  ui.virtualStick.addEventListener('touchcancel', onStickEnd, { passive: false });
+
+  // 鼠标拖拽支持（便于桌面调试）
+  ui.virtualStick.addEventListener('mousedown', onStickStart);
+  window.addEventListener('mousemove', (e) => {
+    if (stickActive) onStickMove(e);
+  });
+  window.addEventListener('mouseup', () => {
+    if (stickActive) resetStick();
+  });
+}
+
+// ── 全局滑动手势 (辅助备用) ──
+let touchStartX = 0, touchStartY = 0;
+let isScreenSwiping = false;
+const SWIPE_THRESHOLD = 24;
+
 document.addEventListener('touchstart', (e) => {
   sound.init();
-  if (e.target.closest('.dpad-btn') || e.target.closest('.back-home-btn')) return;
-  
-  isTouching = true;
+  if (e.target.closest('#virtual-stick') || e.target.closest('.back-home-btn')) return;
+
+  isScreenSwiping = true;
   const touch = e.touches[0];
   touchStartX = touch.clientX;
   touchStartY = touch.clientY;
@@ -123,10 +246,9 @@ document.addEventListener('touchstart', (e) => {
   }
 }, { passive: true });
 
-// 即时连续滑动手势 (无需抬起手指即可连贯转弯)
 document.addEventListener('touchmove', (e) => {
-  if (!isTouching || gameState.state !== 'playing') return;
-  if (e.target.closest('.dpad-btn')) return;
+  if (!isScreenSwiping || gameState.state !== 'playing') return;
+  if (e.target.closest('#virtual-stick') || e.target.closest('.back-home-btn')) return;
 
   const touch = e.touches[0];
   const dx = touch.clientX - touchStartX;
@@ -139,40 +261,14 @@ document.addEventListener('touchmove', (e) => {
     } else {
       snake.handleInput(dy > 0 ? 'ArrowDown' : 'ArrowUp');
     }
-    // 连续滑动手势锚点更新，支持不抬手无缝连续转向
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
   }
 }, { passive: true });
 
 document.addEventListener('touchend', () => {
-  isTouching = false;
+  isScreenSwiping = false;
 }, { passive: true });
-
-// ── 虚拟十字键 (D-Pad) 触控响应 ──
-const dpadButtons = document.querySelectorAll('.dpad-btn');
-dpadButtons.forEach(btn => {
-  const triggerDirection = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    sound.init();
-
-    if (gameState.state !== 'playing') {
-      startGame();
-      return;
-    }
-
-    const dir = btn.getAttribute('data-dir');
-    if (dir) {
-      snake.handleInput(dir);
-      btn.classList.add('active');
-      setTimeout(() => btn.classList.remove('active'), 150);
-    }
-  };
-
-  btn.addEventListener('touchstart', triggerDirection, { passive: false });
-  btn.addEventListener('mousedown', triggerDirection);
-});
 
 // ── 开始游戏 ──
 function startGame() {
@@ -193,6 +289,9 @@ function startGame() {
   ui.startScreen.classList.add('hidden');
   ui.gameoverScreen.classList.add('hidden');
   ui.combo.classList.add('hidden');
+  if (ui.touchControls && (isTouchDevice || window.innerWidth <= 1024)) {
+    ui.touchControls.classList.remove('hidden');
+  }
 
   sound.startBGM();
   updateHUD();
@@ -208,14 +307,13 @@ function handleSnakeStep() {
 
   if (ateNormal || ateSpecial) {
     const basePoints = ateSpecial ? 30 : 10;
-    snake.grow();
+    snake.grow(null, ateSpecial);
 
     const scoreResult = gameState.addScore(basePoints, ateSpecial);
 
     // 粒子特效
     const pos = snake.head.position.clone();
     particles.spawnEatBurst(pos, ateSpecial ? 0xFFD700 : 0xFF6600);
-    cameraFX.punch(52, 0.2);
 
     // 音效
     if (scoreResult.comboMultiplier > 1) {
@@ -262,7 +360,15 @@ function handleSnakeStep() {
   // 障碍物碰撞
   if (obstacles.count > 0 && snake.checkObstacleCollision(obstacles.getPositions())) {
     if (snake.isInvincible) {
-      cameraFX.shake(0.15, 0.3);
+      const removed = obstacles.removeAt(snake.logicalPos, 1.2);
+      if (removed) {
+        sound.playRockShatter();
+        particles.spawnRockShatter(removed.pos || snake.head.position);
+        cameraFX.shake(0.25, 0.35);
+        gameState.addScore(50, true);
+        showFloatingScore(snake.head.position, `+50 SMASH!`, '#FFD700');
+        updateHUD();
+      }
     } else {
       handleDeath('撞到障碍物');
     }
@@ -280,6 +386,10 @@ function handleDeath(reason) {
   ui.gameoverReason.textContent = reason;
   ui.gameoverScore.textContent = gameState.score;
   ui.gameoverScreen.classList.remove('hidden');
+  if (ui.touchControls) {
+    ui.touchControls.classList.add('hidden');
+  }
+  resetStick();
 }
 
 // ── 特殊食物定时器 ──
@@ -322,8 +432,6 @@ function updateHUD() {
 function showCombo(multiplier) {
   ui.combo.textContent = `COMBO x${multiplier}!`;
   ui.combo.classList.remove('hidden');
-  ui.combo.classList.add('punch');
-  setTimeout(() => ui.combo.classList.remove('punch'), 150);
 }
 
 let lastComboMult = 0;
@@ -379,10 +487,6 @@ function gameLoop() {
     gameState.update(adjustedDelta);
     updateSpecialFood(adjustedDelta);
     updateComboUI();
-
-    // 动态 FOV
-    const speed = snake.getNormalizedSpeed();
-    cameraFX.setDynamicFOV(56 + speed * 8, 2);
   }
 
   food.update(delta);

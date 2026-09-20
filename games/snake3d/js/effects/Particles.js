@@ -11,6 +11,12 @@ export class ParticleSystem {
     this._createBurst(position, color, 30, 0.5, 2.0);
   }
 
+  // 生成碎石爆炸
+  spawnRockShatter(position) {
+    this._createBurst(position, 0x998877, 50, 0.7, 5.0);
+    this._createBurst(position, 0xFFD700, 25, 0.5, 3.5);
+  }
+
   // 生成死亡粒子爆炸
   spawnDeathBurst(position) {
     this._createBurst(position, 0xff3300, 40, 1.0, 4.0);

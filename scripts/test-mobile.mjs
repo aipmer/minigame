@@ -23,7 +23,7 @@ async function testMobile() {
   await page.goto('http://localhost:3000/games/snake3d/', { waitUntil: 'networkidle0' });
 
   // 截图 1: 移动端开始界面
-  await page.screenshot({ path: '/Users/hunkwu/.gemini/antigravity/brain/3c70172b-4a8c-439c-88bf-b8067a345cff/mobile_start_view.png' });
+  await page.screenshot({ path: '/Users/hunkwu/.gemini/antigravity/brain/7933faa5-951d-4997-81be-da87775ddbb5/snake3d_mobile_start.png' });
   console.log('[Mobile Test] 已保存开始界面截图');
 
   // 轻触屏幕开始
@@ -47,14 +47,31 @@ async function testMobile() {
 
   await new Promise(r => setTimeout(r, 1000));
 
-  // 模拟轻触右虚拟按键 (D-Pad Right)
-  console.log('[Mobile Test] 点击虚拟十字键右键...');
-  await page.click('.dpad-right');
+  // 模拟触控虚拟摇杆 (向右拨动摇杆)
+  console.log('[Mobile Test] 触控操作 360° 弹性虚拟摇杆...');
+  await page.evaluate(async () => {
+    const stick = document.getElementById('virtual-stick');
+    if (stick) {
+      const rect = stick.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+
+      const tStart = new Touch({ identifier: 2, target: stick, clientX: cx, clientY: cy });
+      stick.dispatchEvent(new TouchEvent('touchstart', { touches: [tStart], changedTouches: [tStart] }));
+
+      await new Promise(r => setTimeout(r, 60));
+      const tMove = new Touch({ identifier: 2, target: stick, clientX: cx + 32, clientY: cy });
+      stick.dispatchEvent(new TouchEvent('touchmove', { touches: [tMove], changedTouches: [tMove] }));
+
+      await new Promise(r => setTimeout(r, 200));
+      stick.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [tMove] }));
+    }
+  });
 
   await new Promise(r => setTimeout(r, 1000));
 
-  // 截图 2: 移动端运行态与 D-Pad 渲染
-  await page.screenshot({ path: '/Users/hunkwu/.gemini/antigravity/brain/3c70172b-4a8c-439c-88bf-b8067a345cff/mobile_gameplay_view.png' });
+  // 截图 2: 移动端运行态与 虚拟摇杆 渲染
+  await page.screenshot({ path: '/Users/hunkwu/.gemini/antigravity/brain/7933faa5-951d-4997-81be-da87775ddbb5/snake3d_mobile_gameplay.png' });
   console.log('[Mobile Test] 已保存移动端运行截图');
 
   console.log('[Mobile Test] 页面错误数量:', errors.length);

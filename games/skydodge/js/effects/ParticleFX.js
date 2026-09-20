@@ -194,6 +194,14 @@ export class ParticleFX {
     });
   }
 
+  emitExplosion(pos) {
+    this.createExplosion(pos);
+  }
+
+  emitHitSparks(pos) {
+    this.createPickupBurst(pos, 0xff0055);
+  }
+
   update(delta) {
     for (let i = 0; i < this.trailCount; i++) {
       if (this.trailLifes[i] > 0) {

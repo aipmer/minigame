@@ -9,6 +9,7 @@ import { ModelLoader } from './game/ModelLoader.js';
 import { PlayerShip } from './game/PlayerShip.js';
 import { ObstacleManager } from './game/ObstacleManager.js';
 import { CollectibleManager } from './game/CollectibleManager.js';
+import { WeaponSystem } from './game/WeaponSystem.js';
 import { ParticleFX } from './effects/ParticleFX.js';
 import { CameraFlightFX } from './effects/CameraFlightFX.js';
 import { FlightAudio } from './audio/FlightAudio.js';
@@ -38,6 +39,7 @@ const ui = {
   touchControls: document.getElementById('touch-controls'),
   virtualStick: document.getElementById('virtual-stick'),
   stickKnob: document.getElementById('stick-knob'),
+  touchFireBtn: document.getElementById('touch-fire-btn'),
   touchBoostBtn: document.getElementById('touch-boost-btn'),
 };
 
@@ -56,6 +58,7 @@ const cameraFX = new CameraFlightFX(camera);
 const playerShip = new PlayerShip(scene, modelLoader);
 const obstacleManager = new ObstacleManager(scene, modelLoader);
 const collectibleManager = new CollectibleManager(scene, modelLoader);
+const weaponSystem = new WeaponSystem(scene);
 
 // 异步加载模型并在就绪后无缝热挂载
 modelLoader.loadAll().then(() => {
@@ -70,6 +73,7 @@ const keys = {
   left: false,
   right: false,
   boost: false,
+  fire: false,
 };
 
 let isMouseDown = false;
@@ -90,6 +94,7 @@ function startGame() {
   playerShip.reset();
   obstacleManager.reset();
   collectibleManager.reset();
+  weaponSystem.reset();
   particles.reset();
   cameraFX.reset();
 
@@ -197,10 +202,14 @@ window.addEventListener('keydown', (e) => {
       case 'ArrowRight':
         keys.right = true;
         break;
-      case 'Space':
       case 'ShiftLeft':
       case 'ShiftRight':
         keys.boost = true;
+        break;
+      case 'Space':
+      case 'KeyJ':
+      case 'KeyK':
+        keys.fire = true;
         break;
     }
   }
@@ -224,10 +233,14 @@ window.addEventListener('keyup', (e) => {
     case 'ArrowRight':
       keys.right = false;
       break;
-    case 'Space':
     case 'ShiftLeft':
     case 'ShiftRight':
       keys.boost = false;
+      break;
+    case 'Space':
+    case 'KeyJ':
+    case 'KeyK':
+      keys.fire = false;
       break;
   }
 });
@@ -321,6 +334,18 @@ function handleStickMove(clientX, clientY) {
   touchMoveY = -knobY / maxRadius;
 }
 
+if (ui.touchFireBtn) {
+  ui.touchFireBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    audio.init();
+    keys.fire = true;
+  }, { passive: false });
+  ui.touchFireBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    keys.fire = false;
+  });
+}
+
 if (ui.touchBoostBtn) {
   ui.touchBoostBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
@@ -374,6 +399,17 @@ function animate() {
     // 3. 实体与环境逻辑演进
     playerShip.update(delta, gameState.isBoosting, gameState.hasShield);
     const shipPos = playerShip.getPosition();
+
+    // 激光主炮发射与弹道演进
+    if (keys.fire) {
+      weaponSystem.tryFire(shipPos, playerShip.currentRoll, audio);
+    }
+    weaponSystem.update(delta, obstacleManager, particles, audio, (destroyedObstacle, hitPos, pts) => {
+      const result = gameState.addScore(pts || 200, 'BLASTER');
+      const combo = gameState.increaseCombo();
+      cameraFX.triggerShake(0.35, 0.2);
+      showComboUI(combo, result.earned);
+    });
 
     obstacleManager.update(delta, shipPos.z, gameState.currentSpeed, gameState.level);
     collectibleManager.update(delta, shipPos, gameState.isBoosting, gameState.currentSpeed);

@@ -3,10 +3,12 @@
 // ═══════════════════════════════════════════
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 export class ModelLoader {
   constructor() {
     this.loader = new GLTFLoader();
+    this.loader.setMeshoptDecoder(MeshoptDecoder);
     this.models = {
       spaceship: null,
       asteroid: null,
@@ -14,31 +16,25 @@ export class ModelLoader {
       energy_core: null,
       shield_orb: null,
     };
+    this.modelConfigs = {
+      spaceship: { path: 'models/spaceship.glb', targetSize: 3.0, rotateY: Math.PI },
+      asteroid: { path: 'models/asteroid.glb', targetSize: 2.8, rotateY: 0 },
+      laser_gate: { path: 'models/laser_gate.glb', targetSize: 6.0, rotateY: 0 },
+      energy_core: { path: 'models/energy_core.glb', targetSize: 1.6, rotateY: 0 },
+      shield_orb: { path: 'models/shield_orb.glb', targetSize: 1.6, rotateY: 0 },
+    };
     this.isLoaded = false;
   }
 
   async loadAll() {
-    const assets = [
-      { key: 'spaceship', path: 'models/spaceship.glb' },
-      { key: 'asteroid', path: 'models/asteroid.glb' },
-      { key: 'laser_gate', path: 'models/laser_gate.glb' },
-      { key: 'energy_core', path: 'models/energy_core.glb' },
-      { key: 'shield_orb', path: 'models/shield_orb.glb' },
-    ];
-
-    const promises = assets.map(async ({ key, path }) => {
+    const promises = Object.entries(this.modelConfigs).map(async ([key, config]) => {
       try {
-        const gltf = await this.loadGLTF(path);
-        gltf.scene.traverse((child) => {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-          }
-        });
-        this.models[key] = gltf.scene;
-        console.log(`[ModelLoader] 成功装载 GLB 资产: ${key}`);
-      } catch {
-        console.log(`[ModelLoader] 模型 ${key} 未检出，激活次世代程序化几何体增强`);
+        const gltf = await this.loadGLTF(config.path);
+        const normalized = this.normalizeModel(gltf.scene, config.targetSize, config.rotateY);
+        this.models[key] = normalized;
+        console.log(`[ModelLoader] 成功装载并优化 GLB 资产: ${key} (${config.path})`);
+      } catch (err) {
+        console.log(`[ModelLoader] 模型 ${key} 加载降级，使用次世代程序化几何体: ${err.message || err}`);
         this.models[key] = this.createFallbackModel(key);
       }
     });
@@ -46,6 +42,41 @@ export class ModelLoader {
     await Promise.all(promises);
     this.isLoaded = true;
     return this.models;
+  }
+
+  normalizeModel(sceneObj, targetSize, rotateY = 0) {
+    if (rotateY) {
+      sceneObj.rotation.y = rotateY;
+      sceneObj.updateMatrixWorld(true);
+    }
+
+    const box = new THREE.Box3().setFromObject(sceneObj);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z);
+
+    if (maxDim > 0) {
+      const scale = targetSize / maxDim;
+      sceneObj.scale.set(scale, scale, scale);
+    }
+
+    // 重新居中
+    const center = new THREE.Vector3();
+    box.setFromObject(sceneObj);
+    box.getCenter(center);
+    sceneObj.position.sub(center);
+
+    const wrapper = new THREE.Group();
+    wrapper.add(sceneObj);
+
+    wrapper.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+
+    return wrapper;
   }
 
   loadGLTF(url) {

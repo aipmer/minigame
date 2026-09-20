@@ -17,24 +17,21 @@ export class CameraFX {
     this.slowMoScale = 1.0;
   }
 
-  // 震动效果
+  // 震动效果 (仅在粉碎碎石与游戏结束时提供短促微震反馈)
   shake(duration, magnitude) {
     this.shakeDuration = duration;
     this.shakeMagnitude = magnitude;
     this.shakeTimer = duration;
   }
 
-  // 镜头冲击效果
+  // 镜头冲击效果 (已禁用以杜绝突兀收缩)
   punch(targetFOV, duration) {
-    this.punchTarget = targetFOV;
-    this.punchDuration = duration;
-    this.punchTimer = duration;
+    // No-op: 保持视野开阔与视点稳定
   }
 
-  // 动态视场角
+  // 动态视场角 (已禁用以保持舒展开阔视野)
   setDynamicFOV(targetFOV, speed) {
-    this.targetFOV = targetFOV;
-    this.fovSpeed = speed;
+    // No-op: 保持视野恒定开阔
   }
 
   // 慢动作效果
@@ -49,7 +46,7 @@ export class CameraFX {
     let returnDelta = delta;
 
     if (this.slowMoTimer > 0) {
-      this.slowMoTimer -= delta; // Using real delta for the timer
+      this.slowMoTimer -= delta;
       returnDelta *= this.slowMoScale;
     }
 
@@ -61,7 +58,7 @@ export class CameraFX {
 
     // Apply shake
     if (this.shakeTimer > 0) {
-      this.shakeTimer -= returnDelta; // Use game time for effects
+      this.shakeTimer -= returnDelta;
       const progress = Math.max(0, this.shakeTimer / this.shakeDuration);
       const mag = this.shakeMagnitude * progress;
       
@@ -71,26 +68,6 @@ export class CameraFX {
       this.camera.position.x += this.lastShakeX;
       this.camera.position.y += this.lastShakeY;
     }
-
-    // Apply FOV (lerp + punch)
-    let currentBaseFOV = this.camera.fov;
-    if (this.fovSpeed > 0 && Math.abs(currentBaseFOV - this.targetFOV) > 0.1) {
-      currentBaseFOV += (this.targetFOV - currentBaseFOV) * this.fovSpeed * returnDelta;
-    } else {
-      currentBaseFOV = this.targetFOV;
-    }
-
-    let fovOffset = 0;
-    if (this.punchTimer > 0) {
-      this.punchTimer -= returnDelta;
-      const progress = 1 - Math.max(0, this.punchTimer / this.punchDuration);
-      // Sine wave: 0 -> 1 -> 0
-      const sine = Math.sin(progress * Math.PI);
-      fovOffset = (this.punchTarget - this.baseFOV) * sine;
-    }
-
-    this.camera.fov = currentBaseFOV + fovOffset;
-    this.camera.updateProjectionMatrix();
 
     return returnDelta;
   }

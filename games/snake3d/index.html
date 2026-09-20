@@ -21,13 +21,28 @@
   <!-- 返回游戏大厅 -->
   <a href="../../" class="back-home-btn" title="返回游戏大厅">🏠 游戏大厅</a>
 
-  <!-- HUD：左上角 -->
-  <div id="hud" class="ui-panel hidden">
-    <div class="hud-title">🐍 3D 贪吃蛇</div>
-    <div class="hud-row">得分: <span id="hud-score">0</span></div>
-    <div class="hud-row">最高: <span id="hud-highscore">0</span></div>
-    <div class="hud-row">长度: <span id="hud-length">1</span></div>
-    <div class="hud-row hud-level">关卡: <span id="hud-level">Lv.1</span></div>
+  <!-- HUD：顶部状态栏 -->
+  <div id="hud" class="hud-container hidden">
+    <div class="hud-group hud-left">
+      <div class="hud-item">
+        <span class="hud-label">SCORE</span>
+        <span class="hud-value highlight" id="hud-score">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">BEST</span>
+        <span class="hud-value" id="hud-highscore">0</span>
+      </div>
+    </div>
+    <div class="hud-group hud-right">
+      <div class="hud-item">
+        <span class="hud-label">LENGTH</span>
+        <span class="hud-value" id="hud-length">1</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">LEVEL</span>
+        <span class="hud-badge" id="hud-level">Lv.1</span>
+      </div>
+    </div>
   </div>
 
   <!-- Combo 显示：顶部居中 -->
@@ -35,35 +50,38 @@
 
   <!-- 开始画面 -->
   <div id="start-screen" class="overlay">
-    <div class="overlay-content">
-      <h1 class="title-glow">🐍 3D 贪吃蛇</h1>
-      <p class="subtitle pulse">按 空格键 开始游戏</p>
-      <p class="hint">方向键 / WASD 控制移动</p>
+    <div class="overlay-content toy-card">
+      <img src="assets/ui/snake3d_start_badge.png" alt="SNAKE 3D" class="modal-badge-img">
+      <p class="subtitle">趣味 3D 清新乐园版</p>
+      <div class="hint-pill">方向键 / WASD / 摇杆 控制转向</div>
+      <button id="start-btn" class="toy-btn toy-btn-primary">🚀 开始游戏 (空格 / 轻触)</button>
     </div>
   </div>
 
   <!-- Game Over 画面 -->
   <div id="gameover-screen" class="overlay hidden">
-    <div class="overlay-content">
-      <h1 class="gameover-title">游戏结束</h1>
-      <p id="gameover-reason" class="gameover-reason"></p>
-      <p class="gameover-score">最终得分: <span id="gameover-score">0</span></p>
-      <p class="subtitle pulse">按 R 或 空格 重新开始</p>
+    <div class="overlay-content toy-card">
+      <img src="assets/ui/snake3d_gameover_badge.png" alt="GAME OVER" class="modal-badge-img">
+      <div class="reason-pill">
+        <span class="reason-icon">💥</span>
+        <span id="gameover-reason" class="gameover-reason-text">撞到障碍物</span>
+      </div>
+      <div class="score-card">
+        <div class="score-label">最终得分</div>
+        <div class="score-number" id="gameover-score">0</div>
+      </div>
+      <button id="restart-btn" class="toy-btn toy-btn-primary">🔄 重新开始 (R / 空格 / 轻触)</button>
     </div>
   </div>
 
   <!-- 浮动得分容器 -->
   <div id="floating-scores"></div>
 
-  <!-- 移动端虚拟方向键 (D-Pad) -->
-  <div id="dpad" class="dpad-container">
-    <button class="dpad-btn dpad-up" data-dir="ArrowUp" aria-label="向上">▲</button>
-    <div class="dpad-middle">
-      <button class="dpad-btn dpad-left" data-dir="ArrowLeft" aria-label="向左">◀</button>
-      <div class="dpad-center"></div>
-      <button class="dpad-btn dpad-right" data-dir="ArrowRight" aria-label="向右">▶</button>
+  <!-- 移动端 360° 弹性虚拟摇杆 -->
+  <div id="touch-controls" class="touch-controls hidden">
+    <div id="virtual-stick" class="virtual-stick">
+      <div class="stick-knob" id="stick-knob"></div>
     </div>
-    <button class="dpad-btn dpad-down" data-dir="ArrowDown" aria-label="向下">▼</button>
   </div>
 
   <script type="module" src="js/main.js"></script>

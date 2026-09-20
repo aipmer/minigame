@@ -428,21 +428,56 @@ html, body {
   transition: transform 0.05s linear;
 }
 
+.touch-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  pointer-events: auto;
+}
+
+.touch-fire-btn {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.85) 0%, rgba(0, 110, 255, 0.9) 100%);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  color: #fff;
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 1px;
+  box-shadow: 0 0 20px rgba(0, 242, 254, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.touch-fire-btn:active {
+  transform: scale(0.9);
+  background: linear-gradient(135deg, #00f2fe 0%, #00ff87 100%);
+  box-shadow: 0 0 26px rgba(0, 255, 135, 0.9);
+}
+
 .touch-boost-btn {
-  width: 80px;
-  height: 80px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
   background: linear-gradient(135deg, rgba(255, 140, 0, 0.8) 0%, rgba(255, 75, 75, 0.8) 100%);
   border: 2px solid rgba(255, 222, 89, 0.6);
   color: #fff;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 11px;
   letter-spacing: 1px;
-  box-shadow: 0 0 16px rgba(255, 140, 0, 0.5);
-  pointer-events: auto;
+  box-shadow: 0 0 14px rgba(255, 140, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .touch-boost-btn:active {
@@ -488,6 +523,13 @@ html, body {
   }
   .key-hint {
     display: none;
+  }
+  .boost-label {
+    display: none;
+  }
+  .boost-container {
+    bottom: 14px;
+    width: 130px;
   }
 }
 

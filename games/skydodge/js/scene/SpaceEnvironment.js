@@ -19,22 +19,27 @@ export class SpaceEnvironment {
   }
 
   initLights() {
-    // 1. 全局深空双色半球漫射光 (天顶冷青 + 底部星际紫，全角度杜绝死黑)
-    const hemiLight = new THREE.HemisphereLight(0x38bdf8, 0x8b5cf6, 2.2);
+    // 1. 全局深空双色半球漫射光 (天顶亮冷天蓝 + 底部深空紫罗兰，全角度消除死黑)
+    const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x581c87, 2.8);
     this.scene.add(hemiLight);
 
-    // 2. 基础中性漫反射光 (提供白/灰/钛金原色反射率)
-    const ambientLight = new THREE.AmbientLight(0x64748b, 1.5);
+    // 2. 基础白光漫反射环境光 (提供 100% 真实纯正反射率，让机身钛金白亮清晰)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
     this.scene.add(ambientLight);
 
-    // 3. 远方主恒星定向光 (冷天蓝，照亮陨石与空间构造)
-    const dirLight = new THREE.DirectionalLight(0x00f2fe, 3.0);
-    dirLight.position.set(30, 50, 25);
+    // 3. 远方主恒星定向光 (纯净日光白，照亮战机与陨石向光面)
+    const dirLight = new THREE.DirectionalLight(0xffffff, 3.8);
+    dirLight.position.set(25, 45, 10);
     this.scene.add(dirLight);
 
-    // 4. 侧后方暖金副光源 (金红光束，与主星光形成丰富冷暖对比)
-    const subLight = new THREE.DirectionalLight(0xf59e0b, 1.8);
-    subLight.position.set(-35, -20, -30);
+    // 4. 强力正前方逆光轮廓光 (Backlight / Rim Light: 从远方深处 -Z 照射，为所有战机边缘与陨石勾勒锐利冰蓝边缘)
+    const rimBackLight = new THREE.DirectionalLight(0x38bdf8, 3.2);
+    rimBackLight.position.set(0, 12, -180);
+    this.scene.add(rimBackLight);
+
+    // 5. 侧后方暖金副补光 (金琥珀暖光，丰富冷暖对比)
+    const subLight = new THREE.DirectionalLight(0xfbbf24, 2.2);
+    subLight.position.set(-30, -15, 30);
     this.scene.add(subLight);
   }
 
@@ -105,17 +110,17 @@ export class SpaceEnvironment {
     this.starVelocities = velocities;
   }
 
-  // 赛博朋克深空流光光轨地峡
+  // 赛博朋克深空流光光轨地峡 (降低地网杂色，凸显战机主体)
   initCyberCanyon() {
-    // 1. 底层高频流光网格地面 (地面位于 y = -7)
-    const floorGeo = new THREE.PlaneGeometry(60, 480, 24, 80);
+    // 1. 底层高频微光网格地面 (地面位于 y = -6.5，采用沉稳冷钢蓝，彻底不干扰战机轮廓)
+    const floorGeo = new THREE.PlaneGeometry(64, 480, 24, 80);
     floorGeo.rotateX(-Math.PI / 2);
 
     const floorMat = new THREE.MeshBasicMaterial({
-      color: 0x00d4ff,
+      color: 0x0369a1,
       wireframe: true,
       transparent: true,
-      opacity: 0.28,
+      opacity: 0.14,
       blending: THREE.NormalBlending,
     });
 
@@ -123,15 +128,26 @@ export class SpaceEnvironment {
     this.canyonFloor.position.set(0, -6.5, -200);
     this.scene.add(this.canyonFloor);
 
-    // 2. 顶层能量天花网格 (顶层位于 y = 11)
-    const ceilingGeo = new THREE.PlaneGeometry(60, 480, 24, 80);
+    // 航道双侧高光引导光轨 (左右两条高亮青色激光标线)
+    const railGeo = new THREE.BoxGeometry(0.12, 0.08, 480);
+    const railMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
+    const leftRail = new THREE.Mesh(railGeo, railMat);
+    leftRail.position.set(-13, -6.45, -200);
+    this.scene.add(leftRail);
+
+    const rightRail = leftRail.clone();
+    rightRail.position.x = 13;
+    this.scene.add(rightRail);
+
+    // 2. 顶层能量天花网格 (顶层位于 y = 10.5，深紫星际微光)
+    const ceilingGeo = new THREE.PlaneGeometry(64, 480, 24, 80);
     ceilingGeo.rotateX(Math.PI / 2);
 
     const ceilingMat = new THREE.MeshBasicMaterial({
-      color: 0xa855f7,
+      color: 0x6d28d9,
       wireframe: true,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.10,
       blending: THREE.NormalBlending,
     });
 

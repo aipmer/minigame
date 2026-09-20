@@ -135,15 +135,17 @@ export class WeaponSystem {
               if (particleFX && particleFX.emitExplosion) {
                 particleFX.emitExplosion(hitPos);
               }
-              if (audio && audio.playAsteroidExplode) {
-                audio.playAsteroidExplode();
-              } else if (audio && audio.playExplosion) {
-                audio.playExplosion();
+
+              // 回调加分与击杀反馈，获取当前连击数
+              let currentCombo = 1;
+              if (onHitCallback) {
+                currentCombo = onHitCallback(obs, hitPos, 200) || 1; // 击碎陨石加 200 分
               }
 
-              // 回调加分与击杀反馈
-              if (onHitCallback) {
-                onHitCallback(obs, hitPos, 200); // 击碎陨石加 200 分
+              if (audio && audio.playAsteroidExplode) {
+                audio.playAsteroidExplode(currentCombo);
+              } else if (audio && audio.playExplosion) {
+                audio.playExplosion();
               }
 
               // 从场景与数组中移除该陨石

@@ -30,25 +30,25 @@ export class PlayerShip {
     this.shieldMesh = null;
     this.initShieldVisual();
 
-    // 战机专属三点式电影级布光系统 (跟随战机姿态，精准照亮机身与机翼，不污染远景)
-    // 1. 机背主视线高光 (Dorsal Key Light): 从后上方直射机背与主翼
-    this.dorsalLight = new THREE.PointLight(0xffffff, 3.2, 10, 1.2);
-    this.dorsalLight.position.set(0, 3.2, 2.2);
+    // 战机专属三点式电影级布光系统 (高清晰度，凸显钛金银白机体轮廓与切面)
+    // 1. 机背主视线高光 (Dorsal Key Light): 从上方略靠前投射机身与主翼切面
+    this.dorsalLight = new THREE.PointLight(0xffffff, 2.8, 14, 1.2);
+    this.dorsalLight.position.set(0, 3.2, 0.2);
     this.mesh.add(this.dorsalLight);
 
     // 2. 侧前翼缘轮廓光 (Wing Rim Light): 冰蓝色侧前锐利边缘光，勾勒钛金双翼
-    this.rimLight = new THREE.PointLight(0x38bdf8, 2.8, 8, 1.2);
+    this.rimLight = new THREE.PointLight(0x38bdf8, 2.8, 12, 1.2);
     this.rimLight.position.set(-3.5, 1.2, -1.5);
     this.mesh.add(this.rimLight);
 
     // 3. 侧下方暖光补光 (Fill Kicker): 展现机械接缝与立体凹凸感
-    this.fillLight = new THREE.PointLight(0xfde047, 1.8, 8, 1.2);
+    this.fillLight = new THREE.PointLight(0xfde047, 1.8, 10, 1.2);
     this.fillLight.position.set(3.0, -1.8, 0.8);
     this.mesh.add(this.fillLight);
 
     // 4. 引擎动态光源 (柔和尾焰光晕)
     this.engineLight = new THREE.PointLight(0x00f2fe, 1.2, 6);
-    this.engineLight.position.set(0, 0.1, 1.8);
+    this.engineLight.position.set(0, 0.1, 1.6);
     this.mesh.add(this.engineLight);
 
     // 装载战机外观
@@ -78,15 +78,32 @@ export class PlayerShip {
   }
 
   initShieldVisual() {
-    const shieldGeo = new THREE.SphereGeometry(1.8, 24, 20);
-    const shieldMat = new THREE.MeshBasicMaterial({
-      color: 0x00ffff,
+    const shieldGroup = new THREE.Group();
+
+    // 内层蜂窝等离子力场网
+    const innerGeo = new THREE.IcosahedronGeometry(1.7, 3);
+    const innerMat = new THREE.MeshBasicMaterial({
+      color: 0x00f2fe,
       wireframe: true,
       transparent: true,
-      opacity: 0.35,
+      opacity: 0.45,
       blending: THREE.AdditiveBlending,
     });
-    this.shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
+    const innerShield = new THREE.Mesh(innerGeo, innerMat);
+    shieldGroup.add(innerShield);
+
+    // 外层天蓝能量呼吸光罩
+    const outerGeo = new THREE.SphereGeometry(1.88, 20, 16);
+    const outerMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.18,
+      blending: THREE.AdditiveBlending,
+    });
+    const outerShield = new THREE.Mesh(outerGeo, outerMat);
+    shieldGroup.add(outerShield);
+
+    this.shieldMesh = shieldGroup;
     this.shieldMesh.visible = false;
     this.mesh.add(this.shieldMesh);
   }

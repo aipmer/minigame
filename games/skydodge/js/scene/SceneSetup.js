@@ -14,10 +14,10 @@ export class SceneSetup {
     // 检测移动设备
     this.isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 900);
 
-    // 1. 场景与星空迷雾 (深邃蓝紫星云基底，降低雾浓度提升能见度)
+    // 1. 场景与星空迷雾 (深邃蓝紫星云基底，降低雾浓度大幅提升能见度与深空层次)
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x060A1D);
-    this.scene.fog = new THREE.FogExp2(0x060A1D, 0.0032);
+    this.scene.background = new THREE.Color(0x090e24);
+    this.scene.fog = new THREE.FogExp2(0x090e24, 0.0020);
 
     // 2. 摄像机 (针对高速飞行优化的 FOV 与透视)
     this.camera = new THREE.PerspectiveCamera(
@@ -42,7 +42,7 @@ export class SceneSetup {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(targetDPR);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.28; // 均衡曝光度，保持机身细节清晰且远景通透
+    this.renderer.toneMappingExposure = 1.38; // 均衡曝光度，明亮清晰，杜绝暗部死黑
     
     // 空间场景无地面投射，移动端关闭实时阴影以释放 30%+ 算力
     this.renderer.shadowMap.enabled = !this.isMobile;
@@ -72,9 +72,9 @@ export class SceneSetup {
 
     // 移动端采用 0.5x 降采样辉光分辨率（模糊运算提速 4 倍，且辉光更柔和细腻）
     const bloomScale = this.isMobile ? 0.5 : 1.0;
-    const bloomStrength = this.isMobile ? 0.72 : 0.88;
+    const bloomStrength = this.isMobile ? 0.78 : 0.92;
     const bloomRadius = this.isMobile ? 0.28 : 0.36;
-    const bloomThreshold = 0.65; // 高动态阈值：仅让激光、引擎和能量晶核产生绚丽泛光，杜绝白爆
+    const bloomThreshold = 0.58; // 动态阈值：让自发光晶核、激光和引擎产生绚丽泛光
 
     this.bloomPass = new UnrealBloomPass(
       new THREE.Vector2(Math.floor(w * bloomScale), Math.floor(h * bloomScale)),

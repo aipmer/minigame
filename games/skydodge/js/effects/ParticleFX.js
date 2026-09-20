@@ -49,11 +49,11 @@ export class ParticleFX {
     this.trailGeo.setAttribute('color', new THREE.BufferAttribute(this.trailColors, 3));
 
     const trailMat = new THREE.PointsMaterial({
-      size: 1.6,
+      size: 0.85, // 紧凑精致的高温离子羽流，不遮挡机体轮廓
       map: this.glowParticleTexture,
       vertexColors: true,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.88,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
@@ -63,11 +63,11 @@ export class ParticleFX {
     this.trailIndex = 0;
   }
 
-  // 双喷口发射等离子羽流 (自机尾 +1.7 向后喷涌)
+  // 双喷口发射等离子羽流 (自机尾 +1.65 向后喷涌)
   emitThruster(shipPos, isBoosting) {
-    const pX = [shipPos.x - 0.48, shipPos.x + 0.48];
-    const pY = shipPos.y + 0.02;
-    const pZ = shipPos.z + 1.75;
+    const pX = [shipPos.x - 0.46, shipPos.x + 0.46];
+    const pY = shipPos.y + 0.08;
+    const pZ = shipPos.z + 1.65;
 
     for (let k = 0; k < 2; k++) {
       const idx = this.trailIndex;

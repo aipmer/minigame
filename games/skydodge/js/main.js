@@ -409,6 +409,7 @@ function animate() {
       const combo = gameState.increaseCombo();
       cameraFX.triggerShake(0.35, 0.2);
       showComboUI(combo, result.earned);
+      return combo;
     });
 
     obstacleManager.update(delta, shipPos.z, gameState.currentSpeed, gameState.level);
@@ -461,6 +462,7 @@ function animate() {
 
   particles.update(delta);
   audio.updateEngine(gameState.currentSpeed, gameState.isBoosting, gameState.state === 'playing');
+  audio.updateShieldHum(gameState.hasShield, gameState.state === 'playing');
 
   sceneSetup.render();
 }

@@ -27,7 +27,11 @@ export class ModelLoader {
   }
 
   async loadAll() {
-    const promises = Object.entries(this.modelConfigs).map(async ([key, config]) => {
+    // 1. 战机与激光门加载优化 GLB
+    const gltfKeys = ['spaceship', 'laser_gate'];
+    const promises = gltfKeys.map(async (key) => {
+      const config = this.modelConfigs[key];
+      if (!config) return;
       try {
         const gltf = await this.loadGLTF(config.path);
         const normalized = this.normalizeModel(gltf.scene, config.targetSize, config.rotateY, key);
@@ -38,6 +42,11 @@ export class ModelLoader {
         this.models[key] = this.createFallbackModel(key);
       }
     });
+
+    // 2. 能量核心、护盾球与发光晶脉陨石：直接装配自发光高对比度次世代几何体 (用户选定方案1)
+    this.models.energy_core = this.createQuantumCore();
+    this.models.shield_orb = this.createPlasmaShieldOrb();
+    this.models.asteroid = this.createGlowingGeodeAsteroid();
 
     await Promise.all(promises);
     this.isLoaded = true;
@@ -74,20 +83,55 @@ export class ModelLoader {
         child.castShadow = true;
         child.receiveShadow = true;
 
-        // 战机专属材质提亮与漫反射调优 (解决纯黑死黑吸光，让机身细节清晰立体)
+        // 战机专属材质提亮与漫反射调优：高光银白钛合金涂装 + 自发光轮廓增强
         if (key === 'spaceship' && child.material) {
           const mat = child.material;
           if (mat.isMeshStandardMaterial) {
-            mat.metalness = Math.min(mat.metalness, 0.38);
-            mat.roughness = Math.max(0.32, Math.min(mat.roughness, 0.52));
+            mat.metalness = 0.35;
+            mat.roughness = 0.22;
             mat.envMapIntensity = 2.4;
             if (mat.color) {
-              mat.color.offsetHSL(0, 0.06, 0.18); // 柔和提亮机体底色
+              mat.color.setHex(0xe2e8f0); // 银白航空钛合金底色
             }
+            mat.emissive = new THREE.Color(0x1e3a5f); // 柔和深蓝底光，消除死黑
+            mat.emissiveIntensity = 0.35;
           }
         }
       }
     });
+
+    // 为战机附加机翼高亮自发光边缘光导条与喷口发光环
+    if (key === 'spaceship') {
+      const neonCyanMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
+
+      // 翼尖航行高光导光条
+      const wingBarGeo = new THREE.BoxGeometry(0.06, 0.05, 1.1);
+      const leftWingBar = new THREE.Mesh(wingBarGeo, neonCyanMat);
+      leftWingBar.position.set(1.42, 0.05, 0.1);
+      leftWingBar.rotation.y = 0.32;
+      wrapper.add(leftWingBar);
+
+      const rightWingBar = leftWingBar.clone();
+      rightWingBar.position.x = -1.42;
+      rightWingBar.rotation.y = -0.32;
+      wrapper.add(rightWingBar);
+
+      // 双推进器喷口发光内环 (精致紧凑光环，避免过爆遮挡机身)
+      const nozzleRingGeo = new THREE.RingGeometry(0.06, 0.16, 16);
+      const nozzleMat = new THREE.MeshBasicMaterial({
+        color: 0x00d2ff,
+        transparent: true,
+        opacity: 0.85,
+        side: THREE.DoubleSide
+      });
+      const leftNozzleGlow = new THREE.Mesh(nozzleRingGeo, nozzleMat);
+      leftNozzleGlow.position.set(0.46, 0.06, 1.48);
+      wrapper.add(leftNozzleGlow);
+
+      const rightNozzleGlow = leftNozzleGlow.clone();
+      rightNozzleGlow.position.x = -0.46;
+      wrapper.add(rightNozzleGlow);
+    }
 
     return wrapper;
   }
@@ -303,7 +347,7 @@ export class ModelLoader {
     return ship;
   }
 
-  // 2. 发光晶脉深空巨石 (Glowing Geode Asteroid)
+  // 2. 发光晶脉深空巨石 (Glowing Geode Asteroid - 高对比度晶脉与高亮晶簇)
   createGlowingGeodeAsteroid() {
     const group = new THREE.Group();
 
@@ -311,31 +355,53 @@ export class ModelLoader {
     const pos = geo.attributes.position;
     for (let i = 0; i < pos.count; i++) {
       const v = new THREE.Vector3().fromBufferAttribute(pos, i);
-      v.multiplyScalar(0.8 + Math.random() * 0.4);
+      v.multiplyScalar(0.78 + Math.random() * 0.44);
       pos.setXYZ(i, v.x, v.y, v.z);
     }
     geo.computeVertexNormals();
 
     const mat = new THREE.MeshStandardMaterial({
-      color: 0x272b38,
-      roughness: 0.85,
+      color: 0x475569, // 明亮玄武岩灰，拉开背景纯黑反差
+      roughness: 0.65,
       metalness: 0.25,
       flatShading: true,
+      emissive: new THREE.Color(0x0f172a),
+      emissiveIntensity: 0.2,
     });
     const rock = new THREE.Mesh(geo, mat);
     rock.castShadow = true;
     rock.receiveShadow = true;
     group.add(rock);
 
-    // 晶簇外嵌
-    const crystalGeo = new THREE.OctahedronGeometry(0.35, 0);
-    const crystalMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
+    // 内部微光晶体核心 (透过缝隙产生自发光晶脉感)
+    const innerCoreGeo = new THREE.DodecahedronGeometry(1.2, 1);
+    const innerCoreMat = new THREE.MeshBasicMaterial({
+      color: 0x00f2fe,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.35,
+      blending: THREE.AdditiveBlending,
+    });
+    const innerCore = new THREE.Mesh(innerCoreGeo, innerCoreMat);
+    group.add(innerCore);
 
-    for (let i = 0; i < 4; i++) {
-      const c = new THREE.Mesh(crystalGeo, crystalMat);
-      const angle = (i / 4) * Math.PI * 2;
-      c.position.set(Math.cos(angle) * 1.15, Math.sin(angle) * 1.15, (Math.random() - 0.5) * 1.0);
-      c.scale.set(0.8, 1.4, 0.8);
+    // 晶簇外嵌 (8 处高亮蓝晶与暖琥珀晶簇，超远距离一眼可辨)
+    const crystalGeo = new THREE.OctahedronGeometry(0.38, 0);
+    const crystalCyanMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
+    const crystalAmberMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+
+    for (let i = 0; i < 8; i++) {
+      const isCyan = i % 2 === 0;
+      const c = new THREE.Mesh(crystalGeo, isCyan ? crystalCyanMat : crystalAmberMat);
+      const theta = (i / 8) * Math.PI * 2;
+      const phi = (Math.random() - 0.5) * Math.PI * 0.8;
+      c.position.set(
+        Math.cos(theta) * Math.cos(phi) * 1.25,
+        Math.sin(phi) * 1.25,
+        Math.sin(theta) * Math.cos(phi) * 1.25
+      );
+      c.scale.set(0.7, 1.3, 0.7);
+      c.lookAt(0, 0, 0);
       group.add(c);
     }
 
@@ -395,22 +461,37 @@ export class ModelLoader {
     return gate;
   }
 
-  // 4. 双陀螺量子能量晶石 (Quantum Core)
+  // 4. 双陀螺量子能量晶石 (Quantum Core - 高透自发光多面晶石 + 双环流光)
   createQuantumCore() {
     const group = new THREE.Group();
 
-    const crystalGeo = new THREE.OctahedronGeometry(0.65, 0);
-    const crystalMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
+    // 内核：青翠高能等离子核
+    const innerGeo = new THREE.OctahedronGeometry(0.45, 0);
+    const innerMat = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
+    const inner = new THREE.Mesh(innerGeo, innerMat);
+    group.add(inner);
+
+    // 外晶：透明天蓝钻石晶格
+    const crystalGeo = new THREE.OctahedronGeometry(0.78, 0);
+    const crystalMat = new THREE.MeshStandardMaterial({
+      color: 0x00f2fe,
+      roughness: 0.1,
+      metalness: 0.9,
+      transparent: true,
+      opacity: 0.78,
+      blending: THREE.AdditiveBlending,
+    });
     const crystal = new THREE.Mesh(crystalGeo, crystalMat);
     group.add(crystal);
 
-    const ring1Geo = new THREE.TorusGeometry(1.0, 0.05, 8, 28);
+    // 双轴高亮自发光环
+    const ring1Geo = new THREE.TorusGeometry(1.05, 0.05, 8, 32);
     const ring1Mat = new THREE.MeshBasicMaterial({ color: 0x00ffcc });
     const ring1 = new THREE.Mesh(ring1Geo, ring1Mat);
     ring1.rotation.x = Math.PI / 3;
     group.add(ring1);
 
-    const ring2Geo = new THREE.TorusGeometry(1.2, 0.04, 8, 28);
+    const ring2Geo = new THREE.TorusGeometry(1.28, 0.04, 8, 32);
     const ring2Mat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
     const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
     ring2.rotation.y = Math.PI / 4;
@@ -419,20 +500,40 @@ export class ModelLoader {
     return group;
   }
 
-  // 5. 等离子超能护盾球 (Plasma Shield Orb)
+  // 5. 等离子超能护盾球 (Plasma Shield Orb - 金辉流光核 + 双层粒子光环)
   createPlasmaShieldOrb() {
     const group = new THREE.Group();
 
-    const orbGeo = new THREE.IcosahedronGeometry(0.75, 2);
-    const orbMat = new THREE.MeshBasicMaterial({ color: 0xffde59 });
-    const orb = new THREE.Mesh(orbGeo, orbMat);
-    group.add(orb);
+    // 核心耀金等离子发光体
+    const orbCoreGeo = new THREE.IcosahedronGeometry(0.55, 2);
+    const orbCoreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const orbCore = new THREE.Mesh(orbCoreGeo, orbCoreMat);
+    group.add(orbCore);
 
-    const haloGeo = new THREE.TorusGeometry(1.15, 0.06, 8, 28);
-    const haloMat = new THREE.MeshBasicMaterial({ color: 0xffa500 });
-    const halo = new THREE.Mesh(haloGeo, haloMat);
-    halo.rotation.x = Math.PI / 4;
-    group.add(halo);
+    // 外层金黄呼吸能量光罩
+    const orbShellGeo = new THREE.IcosahedronGeometry(0.82, 2);
+    const orbShellMat = new THREE.MeshBasicMaterial({
+      color: 0xffaa00,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+    });
+    const orbShell = new THREE.Mesh(orbShellGeo, orbShellMat);
+    group.add(orbShell);
+
+    // 专属双层陀螺仪轨道金环
+    const halo1Geo = new THREE.TorusGeometry(1.18, 0.06, 8, 32);
+    const halo1Mat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
+    const halo1 = new THREE.Mesh(halo1Geo, halo1Mat);
+    halo1.rotation.x = Math.PI / 4;
+    group.add(halo1);
+
+    const halo2Geo = new THREE.TorusGeometry(1.42, 0.04, 8, 32);
+    const halo2Mat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+    const halo2 = new THREE.Mesh(halo2Geo, halo2Mat);
+    halo2.rotation.y = Math.PI / 3;
+    group.add(halo2);
 
     return group;
   }

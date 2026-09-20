@@ -23,6 +23,7 @@
 | **3D 粘土 UI 弹窗** | 重塑立体奶白卡片弹窗、高对比度珊瑚红胶囊标签（`💥 撞到墙壁`）与 3D 玩具按钮 | `games/snake3d/css/style.css`<br>`games/snake3d/index.html` | ✅ 彻底解决白底白字隐形问题，UI 触感生动 |
 | **触控与互动音效** | 引入 360° 弹性虚拟摇杆 + 增补清脆苹果咬嚼音、卡通气泡转向音等 Q 版音效 | `games/snake3d/js/main.js`<br>`games/snake3d/js/audio/SoundManager.js` | ✅ 移动端触控丝滑，音效清脆可爱反馈明确 |
 | **太空战机升级** | Meshy.ai 3D 资产管线与 90%+ 拓扑压缩瘦身，激光主炮系统与飞行动力学侧倾 | `games/skydodge/` 全套源码与模型 | ✅ 自动化测试 0 报错，双拇指触控运作正常 |
+| **战机移动性能与采光** | 0.5x 降采样 Bloom、关 preserveDrawingBuffer、DPR 1.5 封顶；三点式跟随光、双色半球光与 PBR 增益 | `games/skydodge/js/` 渲染与光照管线 | ✅ 移动端 60fps 满帧无卡顿，战机形态清晰立体 |
 | **规范与事实源** | 建立项目最高事实源与体验调优避坑手册 | `AGENTS.md`<br>`docs/EXPERIENCE_AND_CHECKLIST.md` | ✅ 跨智能体协作基石与交付规范就绪 |
 
 ---

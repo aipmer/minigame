@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>🐍 3D 贪吃蛇</title>
+  <title>3D 贪吃蛇 (Snake 3D)</title>
   <link rel="stylesheet" href="css/style.css">
   <script type="importmap">
   {
@@ -19,7 +19,7 @@
   <div id="game-container"></div>
 
   <!-- 返回游戏大厅 -->
-  <a href="../../" class="back-home-btn" title="返回游戏大厅">🏠 游戏大厅</a>
+  <a href="../../" class="back-home-btn" title="返回游戏大厅"><img src="assets/icons/icon_home.png" alt="Home" class="ui-icon"> 游戏大厅</a>
 
   <!-- HUD：顶部状态栏 -->
   <div id="hud" class="hud-container hidden">
@@ -54,7 +54,7 @@
       <img src="assets/ui/snake3d_start_badge.png" alt="SNAKE 3D" class="modal-badge-img">
       <p class="subtitle">趣味 3D 清新乐园版</p>
       <div class="hint-pill">方向键 / WASD / 摇杆 控制转向</div>
-      <button id="start-btn" class="toy-btn toy-btn-primary">🚀 开始游戏 (空格 / 轻触)</button>
+      <button id="start-btn" class="toy-btn toy-btn-primary"><img src="assets/icons/icon_rocket.png" alt="Start" class="ui-icon-btn"> 开始游戏 (空格 / 轻触)</button>
     </div>
   </div>
 
@@ -63,14 +63,14 @@
     <div class="overlay-content toy-card">
       <img src="assets/ui/snake3d_gameover_badge.png" alt="GAME OVER" class="modal-badge-img">
       <div class="reason-pill">
-        <span class="reason-icon">💥</span>
+        <span class="reason-icon"><img src="assets/icons/icon_collision.png" alt="Boom" class="ui-icon"></span>
         <span id="gameover-reason" class="gameover-reason-text">撞到障碍物</span>
       </div>
       <div class="score-card">
         <div class="score-label">最终得分</div>
         <div class="score-number" id="gameover-score">0</div>
       </div>
-      <button id="restart-btn" class="toy-btn toy-btn-primary">🔄 重新开始 (R / 空格 / 轻触)</button>
+      <button id="restart-btn" class="toy-btn toy-btn-primary"><img src="assets/icons/icon_refresh.png" alt="Restart" class="ui-icon-btn"> 重新开始 (R / 空格 / 轻触)</button>
     </div>
   </div>
 

@@ -30,8 +30,24 @@ export class PlayerShip {
     this.shieldMesh = null;
     this.initShieldVisual();
 
-    // 引擎动态光源 (柔和光晕，不遮挡机身细节)
-    this.engineLight = new THREE.PointLight(0x00f2fe, 0.8, 8);
+    // 战机专属三点式电影级布光系统 (跟随战机姿态，精准照亮机身与机翼，不污染远景)
+    // 1. 机背主视线高光 (Dorsal Key Light): 从后上方直射机背与主翼
+    this.dorsalLight = new THREE.PointLight(0xffffff, 3.2, 10, 1.2);
+    this.dorsalLight.position.set(0, 3.2, 2.2);
+    this.mesh.add(this.dorsalLight);
+
+    // 2. 侧前翼缘轮廓光 (Wing Rim Light): 冰蓝色侧前锐利边缘光，勾勒钛金双翼
+    this.rimLight = new THREE.PointLight(0x38bdf8, 2.8, 8, 1.2);
+    this.rimLight.position.set(-3.5, 1.2, -1.5);
+    this.mesh.add(this.rimLight);
+
+    // 3. 侧下方暖光补光 (Fill Kicker): 展现机械接缝与立体凹凸感
+    this.fillLight = new THREE.PointLight(0xfde047, 1.8, 8, 1.2);
+    this.fillLight.position.set(3.0, -1.8, 0.8);
+    this.mesh.add(this.fillLight);
+
+    // 4. 引擎动态光源 (柔和尾焰光晕)
+    this.engineLight = new THREE.PointLight(0x00f2fe, 1.2, 6);
     this.engineLight.position.set(0, 0, -2.1);
     this.mesh.add(this.engineLight);
 
@@ -40,26 +56,25 @@ export class PlayerShip {
   }
 
   loadShipModel() {
-    // 移除旧机身 (如果有)
-    while (this.mesh.children.length > 0) {
-      const child = this.mesh.children[0];
-      if (child === this.shieldMesh || child === this.engineLight) {
-        break;
+    // 保护光源与护盾，只替换几何外观
+    const protectedNodes = [this.shieldMesh, this.engineLight, this.dorsalLight, this.rimLight, this.fillLight];
+    for (let i = this.mesh.children.length - 1; i >= 0; i--) {
+      const child = this.mesh.children[i];
+      if (!protectedNodes.includes(child)) {
+        this.mesh.remove(child);
       }
-      this.mesh.remove(child);
     }
 
     const shipVisual = this.modelLoader.getModel('spaceship');
     this.visual = shipVisual;
     this.mesh.add(shipVisual);
 
-    // 确保把护盾和光源挂载回体系
-    if (!this.mesh.children.includes(this.shieldMesh)) {
-      this.mesh.add(this.shieldMesh);
-    }
-    if (!this.mesh.children.includes(this.engineLight)) {
-      this.mesh.add(this.engineLight);
-    }
+    // 确保把护盾和光源完整挂载
+    protectedNodes.forEach(node => {
+      if (node && !this.mesh.children.includes(node)) {
+        this.mesh.add(node);
+      }
+    });
   }
 
   initShieldVisual() {

@@ -30,7 +30,7 @@ export class ModelLoader {
     const promises = Object.entries(this.modelConfigs).map(async ([key, config]) => {
       try {
         const gltf = await this.loadGLTF(config.path);
-        const normalized = this.normalizeModel(gltf.scene, config.targetSize, config.rotateY);
+        const normalized = this.normalizeModel(gltf.scene, config.targetSize, config.rotateY, key);
         this.models[key] = normalized;
         console.log(`[ModelLoader] 成功装载并优化 GLB 资产: ${key} (${config.path})`);
       } catch (err) {
@@ -44,7 +44,7 @@ export class ModelLoader {
     return this.models;
   }
 
-  normalizeModel(sceneObj, targetSize, rotateY = 0) {
+  normalizeModel(sceneObj, targetSize, rotateY = 0, key = '') {
     if (rotateY) {
       sceneObj.rotation.y = rotateY;
       sceneObj.updateMatrixWorld(true);
@@ -73,6 +73,19 @@ export class ModelLoader {
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
+
+        // 战机专属材质提亮与漫反射调优 (解决纯黑死黑吸光，让机身细节清晰立体)
+        if (key === 'spaceship' && child.material) {
+          const mat = child.material;
+          if (mat.isMeshStandardMaterial) {
+            mat.metalness = Math.min(mat.metalness, 0.38);
+            mat.roughness = Math.max(0.32, Math.min(mat.roughness, 0.52));
+            mat.envMapIntensity = 2.4;
+            if (mat.color) {
+              mat.color.offsetHSL(0, 0.06, 0.18); // 柔和提亮机体底色
+            }
+          }
+        }
       }
     });
 
@@ -119,18 +132,18 @@ export class ModelLoader {
   createHighEndStarfighter() {
     const ship = new THREE.Group();
 
-    // 材质配置：钛金外壳、哑光暗部与超炫发光霓虹
+    // 材质配置：航空钛合金外壳、哑光暗部装甲与超炫发光霓虹
     const hullMat = new THREE.MeshStandardMaterial({
-      color: 0x334e72,
-      metalness: 0.6,
-      roughness: 0.32,
+      color: 0x476a96,
+      metalness: 0.38,
+      roughness: 0.38,
       flatShading: true,
     });
 
     const hullDarkMat = new THREE.MeshStandardMaterial({
-      color: 0x111927,
-      metalness: 0.85,
-      roughness: 0.2,
+      color: 0x243348,
+      metalness: 0.42,
+      roughness: 0.40,
       flatShading: true,
     });
 

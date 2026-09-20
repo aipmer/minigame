@@ -120,8 +120,8 @@ if (ui.restartBtn) {
 // ── 移动端检测与文案自适应 ──
 const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 1024);
 if (isTouchDevice) {
-  if (ui.startBtn) ui.startBtn.textContent = '🚀 开始游戏 (轻触)';
-  if (ui.restartBtn) ui.restartBtn.textContent = '🔄 重新开始 (轻触)';
+  if (ui.startBtn) ui.startBtn.innerHTML = '<img src="assets/icons/icon_rocket.png" alt="Start" class="ui-icon-btn"> 开始游戏 (轻触)';
+  if (ui.restartBtn) ui.restartBtn.innerHTML = '<img src="assets/icons/icon_refresh.png" alt="Restart" class="ui-icon-btn"> 重新开始 (轻触)';
 }
 
 // ── 360° 弹性虚拟摇杆操控 ──

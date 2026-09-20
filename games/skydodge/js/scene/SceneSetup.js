@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════
-// 场景与渲染器基础配置 (带 UnrealBloomPass 辉光后处理)
+// 场景与渲染器基础配置 (移动端自适应分级管线 + 0.5x 降采样辉光)
 // ═══════════════════════════════════════════
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -11,37 +11,48 @@ export class SceneSetup {
   constructor(container) {
     this.container = container;
 
-    // 1. 场景与星空迷雾 (深邃赛博蓝黑色调)
+    // 检测移动设备
+    this.isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 900);
+
+    // 1. 场景与星空迷雾 (深邃蓝紫星云基底，降低雾浓度提升能见度)
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x030611);
-    this.scene.fog = new THREE.FogExp2(0x030611, 0.0055);
+    this.scene.background = new THREE.Color(0x060A1D);
+    this.scene.fog = new THREE.FogExp2(0x060A1D, 0.0032);
 
     // 2. 摄像机 (针对高速飞行优化的 FOV 与透视)
     this.camera = new THREE.PerspectiveCamera(
       60,
       window.innerWidth / window.innerHeight,
       0.1,
-      900
+      950
     );
     this.camera.position.set(0, 3.5, 9);
 
-    // 3. WebGL 渲染器
+    // 3. WebGL 渲染器 (关闭 preserveDrawingBuffer 消除每帧拷贝，移动端限 DPR 1.5)
+    const targetDPR = this.isMobile 
+      ? Math.min(window.devicePixelRatio, 1.5) 
+      : Math.min(window.devicePixelRatio, 2.0);
+
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       powerPreference: 'high-performance',
       alpha: false,
-      preserveDrawingBuffer: true,
+      preserveDrawingBuffer: false,
     });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(targetDPR);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.25;
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.toneMappingExposure = 1.28; // 均衡曝光度，保持机身细节清晰且远景通透
+    
+    // 空间场景无地面投射，移动端关闭实时阴影以释放 30%+ 算力
+    this.renderer.shadowMap.enabled = !this.isMobile;
+    if (this.renderer.shadowMap.enabled) {
+      this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    }
 
     this.container.appendChild(this.renderer.domElement);
 
-    // 4. UnrealBloomPass 赛博泛光后处理链
+    // 4. UnrealBloomPass 自适应辉光后处理链
     this.initPostProcessing();
 
     // 5. 监听视口缩放
@@ -59,12 +70,17 @@ export class SceneSetup {
     const renderPass = new RenderPass(this.scene, this.camera);
     this.composer.addPass(renderPass);
 
-    // Unreal 泛光通道：为激光、等离子尾焰与霓虹线条赋予次世代辉光
+    // 移动端采用 0.5x 降采样辉光分辨率（模糊运算提速 4 倍，且辉光更柔和细腻）
+    const bloomScale = this.isMobile ? 0.5 : 1.0;
+    const bloomStrength = this.isMobile ? 0.72 : 0.88;
+    const bloomRadius = this.isMobile ? 0.28 : 0.36;
+    const bloomThreshold = 0.65; // 高动态阈值：仅让激光、引擎和能量晶核产生绚丽泛光，杜绝白爆
+
     this.bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(w, h),
-      1.35, // 泛光强度 (Bloom Strength)
-      0.45, // 泛光半径 (Bloom Radius)
-      0.22  // 发光阈值 (Threshold: 发光材质自发光生效)
+      new THREE.Vector2(Math.floor(w * bloomScale), Math.floor(h * bloomScale)),
+      bloomStrength,
+      bloomRadius,
+      bloomThreshold
     );
     this.composer.addPass(this.bloomPass);
 
@@ -76,12 +92,23 @@ export class SceneSetup {
   onWindowResize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
+    this.isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (w <= 900);
+
+    const targetDPR = this.isMobile 
+      ? Math.min(window.devicePixelRatio, 1.5) 
+      : Math.min(window.devicePixelRatio, 2.0);
+
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(targetDPR);
     this.composer.setSize(w, h);
-    this.bloomPass.resolution.set(w, h);
+
+    const bloomScale = this.isMobile ? 0.5 : 1.0;
+    this.bloomPass.resolution.set(Math.floor(w * bloomScale), Math.floor(h * bloomScale));
+    this.bloomPass.strength = this.isMobile ? 0.72 : 0.88;
+    this.bloomPass.radius = this.isMobile ? 0.28 : 0.36;
+    this.bloomPass.threshold = 0.65;
   }
 
   render() {

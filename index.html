@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎮 MiniGame — 现代 Web 3D 小游戏矩阵</title>
+  <title>MiniGame — 现代 Web 3D 小游戏矩阵</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -85,8 +85,29 @@
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
     .card-icon {
-      font-size: 48px;
       margin-bottom: 16px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+    }
+    .card-img-icon {
+      width: 58px;
+      height: 58px;
+      object-fit: contain;
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.3));
+    }
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
+      vertical-align: -6px;
+      margin-right: 8px;
+    }
+    .btn-icon {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      vertical-align: middle;
     }
     .card-title {
       font-size: 22px;
@@ -157,7 +178,7 @@
 </head>
 <body>
   <header>
-    <h1 class="main-title">🎮 MiniGame</h1>
+    <h1 class="main-title"><img src="assets/icons/icon_gamepad.png" alt="MiniGame" class="brand-icon">MiniGame</h1>
     <p class="subtitle">轻量、纯粹、基于现代 Web 3D 技术的网页小游戏矩阵</p>
   </header>
 
@@ -165,7 +186,7 @@
     <!-- 游戏 1: 3D 贪吃蛇 -->
     <div class="game-card">
       <div class="card-badge badge-live">● 现已上线 · 全新升级</div>
-      <div class="card-icon">🐍</div>
+      <div class="card-icon"><img src="assets/icons/icon_snake.png" alt="Snake 3D" class="card-img-icon"></div>
       <h2 class="card-title">3D 贪吃蛇 (Snake 3D)</h2>
       <p class="card-desc">
         基于 Three.js 与 AI 3D 资产管线打造的次世代贪吃蛇。拥有蛇身吞咽流光波动 (Swallow Pulse)、无敌黄金冲刺撞碎岩石、动态视场角缩放、连击 Combo 计分、科幻毛玻璃 HUD 与 Web Audio 程序化合成音效。
@@ -177,13 +198,13 @@
         <span class="tag">碎石物理特效</span>
         <span class="tag">Web Audio API</span>
       </div>
-      <a href="./games/snake3d/" class="play-btn">立即进入游戏 🚀</a>
+      <a href="./games/snake3d/" class="play-btn">立即进入游戏 <img src="assets/icons/icon_rocket.png" alt="Play" class="btn-icon"></a>
     </div>
 
     <!-- 游戏 2: 3D 飞行躲避 -->
     <div class="game-card">
       <div class="card-badge badge-live">● 现已上线 · 重磅升级</div>
-      <div class="card-icon">🚀</div>
+      <div class="card-icon"><img src="assets/icons/icon_rocket.png" alt="Sky Dodge 3D" class="card-img-icon"></div>
       <h2 class="card-title">星空冲锋 (Sky Dodge 3D)</h2>
       <p class="card-desc">
         高燃深空 3D 飞行射击与躲避街机游戏。操控超音速战机极速穿梭于星际裂隙，配备机载等离子双激光主炮，击碎巨石群与穿越激光门。支持飞行机动侧倾滚转、脉冲过载冲刺、等离子护盾、双拇指触控操作与全套 Web Audio 爆鸣音效。
@@ -195,13 +216,13 @@
         <span class="tag">飞行动力学侧倾</span>
         <span class="tag">双拇指触控 HUD</span>
       </div>
-      <a href="./games/skydodge/" class="play-btn">立即起飞 🚀</a>
+      <a href="./games/skydodge/" class="play-btn">立即起飞 <img src="assets/icons/icon_rocket.png" alt="Fly" class="btn-icon"></a>
     </div>
 
     <!-- 预留位置: 更多小游戏 -->
     <div class="game-card">
       <div class="card-badge badge-upcoming">○ 即将推出</div>
-      <div class="card-icon">🎯</div>
+      <div class="card-icon"><img src="assets/icons/icon_target.png" alt="Upcoming" class="card-img-icon"></div>
       <h2 class="card-title">更多 3D 小游戏</h2>
       <p class="card-desc">
         更多基于 Web 3D 架构与 AI 生成模型的益智、敏捷与街机动作类小游戏正在开发构建中，支持即开即玩与全端适配。
@@ -211,7 +232,7 @@
         <span class="tag">Web 3D</span>
         <span class="tag">AIGC 3D Pipeline</span>
       </div>
-      <div class="play-btn btn-disabled">敬请期待 ⏳</div>
+      <div class="play-btn btn-disabled">敬请期待 <img src="assets/icons/icon_refresh.png" alt="Coming Soon" class="btn-icon" style="opacity: 0.5;"></div>
     </div>
   </main>
 

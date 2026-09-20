@@ -24,12 +24,15 @@ async function testMobile() {
   await page.goto('http://localhost:3000/games/skydodge/', { waitUntil: 'networkidle0' });
   await new Promise((r) => setTimeout(r, 1500));
 
+  // 截取开始界面
+  await page.screenshot({ path: '/Users/hunkwu/.gemini/antigravity/brain/3c70172b-4a8c-439c-88bf-b8067a345cff/skydodge_mobile_start.png' });
+
   // 点击开始起飞
   await page.click('#start-btn');
   await new Promise((r) => setTimeout(r, 1000));
 
   // 截取移动端运行画面
-  const screenshotPath = '/Users/hunkwu/.gemini/antigravity/brain/7933faa5-951d-4997-81be-da87775ddbb5/skydodge_mobile.png';
+  const screenshotPath = '/Users/hunkwu/.gemini/antigravity/brain/3c70172b-4a8c-439c-88bf-b8067a345cff/skydodge_mobile_gameplay.png';
   await page.screenshot({ path: screenshotPath });
   console.log(`[Test Mobile] 移动端快照已保存: ${screenshotPath}`);
 

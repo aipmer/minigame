@@ -23,7 +23,7 @@ async function testMobile() {
   await page.goto('http://localhost:3000/games/snake3d/', { waitUntil: 'networkidle0' });
 
   // 截图 1: 移动端开始界面
-  await page.screenshot({ path: '/Users/hunkwu/.gemini/antigravity/brain/7933faa5-951d-4997-81be-da87775ddbb5/snake3d_mobile_start.png' });
+  await page.screenshot({ path: '/Users/hunkwu/.gemini/antigravity/brain/3c70172b-4a8c-439c-88bf-b8067a345cff/snake3d_mobile_start.png' });
   console.log('[Mobile Test] 已保存开始界面截图');
 
   // 轻触屏幕开始
@@ -71,8 +71,14 @@ async function testMobile() {
   await new Promise(r => setTimeout(r, 1000));
 
   // 截图 2: 移动端运行态与 虚拟摇杆 渲染
-  await page.screenshot({ path: '/Users/hunkwu/.gemini/antigravity/brain/7933faa5-951d-4997-81be-da87775ddbb5/snake3d_mobile_gameplay.png' });
+  await page.screenshot({ path: '/Users/hunkwu/.gemini/antigravity/brain/3c70172b-4a8c-439c-88bf-b8067a345cff/snake3d_mobile_gameplay.png' });
   console.log('[Mobile Test] 已保存移动端运行截图');
+
+  // 模拟触碰边界触发 GameOver
+  console.log('[Mobile Test] 触碰边界等待 GameOver 弹窗...');
+  await new Promise(r => setTimeout(r, 4500));
+  await page.screenshot({ path: '/Users/hunkwu/.gemini/antigravity/brain/3c70172b-4a8c-439c-88bf-b8067a345cff/snake3d_mobile_gameover.png' });
+  console.log('[Mobile Test] 已保存 GameOver 截图');
 
   console.log('[Mobile Test] 页面错误数量:', errors.length);
   if (errors.length > 0) console.error('[Mobile Test] 错误详情:', errors);

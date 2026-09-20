@@ -7,13 +7,8 @@ export class SceneSetup {
     // 初始化场景
     this.scene = new THREE.Scene();
     
-    // 初始托底明媚天空蓝，并异步载入 3D 粘土全景天幕背景图
-    this.scene.background = new THREE.Color('#7ED8FC');
-    const textureLoader = new THREE.TextureLoader();
-    textureLoader.load('./assets/ui/snake3d_sky_bg.jpg', (tex) => {
-      tex.colorSpace = THREE.SRGBColorSpace;
-      this.scene.background = tex;
-    });
+    // 背景由 DOM 容器 CSS cover (保持等比防拉伸自适应) 驱动，Three.js 开启透明通道叠加
+    this.scene.background = null;
 
     // 初始化全景开阔机位
     const aspect = window.innerWidth / window.innerHeight;

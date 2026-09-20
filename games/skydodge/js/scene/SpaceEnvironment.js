@@ -19,27 +19,26 @@ export class SpaceEnvironment {
   }
 
   initLights() {
-    // 1. 全局深空环境光 (提高基础亮度，消除死黑)
-    const ambientLight = new THREE.AmbientLight(0x243b66, 2.0);
+    // 1. 全局深空双色半球漫射光 (天顶冷青 + 底部星际紫，全角度杜绝死黑)
+    const hemiLight = new THREE.HemisphereLight(0x38bdf8, 0x8b5cf6, 2.2);
+    this.scene.add(hemiLight);
+
+    // 2. 基础中性漫反射光 (提供白/灰/钛金原色反射率)
+    const ambientLight = new THREE.AmbientLight(0x64748b, 1.5);
     this.scene.add(ambientLight);
 
-    // 2. 主方向光 (深空恒星光源，侧前方照射)
+    // 3. 远方主恒星定向光 (冷天蓝，照亮陨石与空间构造)
     const dirLight = new THREE.DirectionalLight(0x00f2fe, 3.0);
-    dirLight.position.set(25, 45, 15);
+    dirLight.position.set(30, 50, 25);
     this.scene.add(dirLight);
 
-    // 3. 关键战机背光/轮廓光 (从摄像机上方后方打向战机，保证从背后看金属光泽璀璨)
-    this.cameraFollowLight = new THREE.DirectionalLight(0xffffff, 2.8);
-    this.cameraFollowLight.position.set(0, 18, 25);
-    this.scene.add(this.cameraFollowLight);
-
-    // 4. 下方赛博霓虹反光 (洋红/荧光紫补光)
-    const bounceLight = new THREE.DirectionalLight(0xff0088, 2.2);
-    bounceLight.position.set(-20, -25, -20);
-    this.scene.add(bounceLight);
+    // 4. 侧后方暖金副光源 (金红光束，与主星光形成丰富冷暖对比)
+    const subLight = new THREE.DirectionalLight(0xf59e0b, 1.8);
+    subLight.position.set(-35, -20, -30);
+    this.scene.add(subLight);
   }
 
-  // 生成软边缘圆形发光星辰纹理 (彻底告别刺眼方块)
+  // 生成软边缘圆形发光星辰纹理
   createSoftStarTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 64;
@@ -48,8 +47,8 @@ export class SpaceEnvironment {
 
     const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 26);
     grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    grad.addColorStop(0.25, 'rgba(140, 230, 255, 0.8)');
-    grad.addColorStop(0.65, 'rgba(0, 100, 255, 0.2)');
+    grad.addColorStop(0.25, 'rgba(140, 230, 255, 0.85)');
+    grad.addColorStop(0.65, 'rgba(0, 100, 255, 0.25)');
     grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
     ctx.fillStyle = grad;
@@ -65,21 +64,21 @@ export class SpaceEnvironment {
     const velocities = new Float32Array(this.starCount);
     const colors = new Float32Array(this.starCount * 3);
 
-    const cCyan = new THREE.Color(0x00ffff);
+    const cCyan = new THREE.Color(0x38bdf8);
     const cWhite = new THREE.Color(0xffffff);
-    const cPurple = new THREE.Color(0xd946ef);
-    const cAmber = new THREE.Color(0xfbbf24);
+    const cPurple = new THREE.Color(0xc084fc);
+    const cAmber = new THREE.Color(0xfde047);
 
     for (let i = 0; i < this.starCount; i++) {
       const i3 = i * 3;
-      positions[i3] = (Math.random() - 0.5) * 110;
-      positions[i3 + 1] = (Math.random() - 0.5) * 80;
+      positions[i3] = (Math.random() - 0.5) * 120;
+      positions[i3 + 1] = (Math.random() - 0.5) * 85;
       positions[i3 + 2] = -Math.random() * 500;
 
       velocities[i] = 1.0 + Math.random() * 2.0;
 
       const rnd = Math.random();
-      const col = rnd < 0.55 ? cWhite : rnd < 0.8 ? cCyan : rnd < 0.93 ? cPurple : cAmber;
+      const col = rnd < 0.5 ? cWhite : rnd < 0.75 ? cCyan : rnd < 0.9 ? cPurple : cAmber;
       colors[i3] = col.r;
       colors[i3 + 1] = col.g;
       colors[i3 + 2] = col.b;
@@ -90,11 +89,11 @@ export class SpaceEnvironment {
 
     const starTexture = this.createSoftStarTexture();
     const starMaterial = new THREE.PointsMaterial({
-      size: 0.9,
+      size: 0.35, // 精致微粒光点，杜绝贴近相机时变成巨大光球
       map: starTexture,
       vertexColors: true,
       transparent: true,
-      opacity: 0.95,
+      opacity: 0.88,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
@@ -106,18 +105,18 @@ export class SpaceEnvironment {
     this.starVelocities = velocities;
   }
 
-  // 赛博朋克深空流光光栅地峡 (Cyber Canyon Grid)
+  // 赛博朋克深空流光光轨地峡
   initCyberCanyon() {
     // 1. 底层高频流光网格地面 (地面位于 y = -7)
     const floorGeo = new THREE.PlaneGeometry(60, 480, 24, 80);
     floorGeo.rotateX(-Math.PI / 2);
 
     const floorMat = new THREE.MeshBasicMaterial({
-      color: 0x00f2fe,
+      color: 0x00d4ff,
       wireframe: true,
       transparent: true,
-      opacity: 0.22,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.28,
+      blending: THREE.NormalBlending,
     });
 
     this.canyonFloor = new THREE.Mesh(floorGeo, floorMat);
@@ -129,11 +128,11 @@ export class SpaceEnvironment {
     ceilingGeo.rotateX(Math.PI / 2);
 
     const ceilingMat = new THREE.MeshBasicMaterial({
-      color: 0x8b5cf6,
+      color: 0xa855f7,
       wireframe: true,
       transparent: true,
-      opacity: 0.15,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.22,
+      blending: THREE.NormalBlending,
     });
 
     this.canyonCeiling = new THREE.Mesh(ceilingGeo, ceilingMat);
@@ -141,24 +140,24 @@ export class SpaceEnvironment {
     this.scene.add(this.canyonCeiling);
   }
 
-  // 航道两侧霓虹信标立柱 (Space Energy Pillars)
+  // 航道两侧霓虹信标立柱
   initSpacePillars() {
     this.pillarGroup = new THREE.Group();
     this.pillars = [];
     this.pillarCount = 12;
     this.pillarSpacing = 45;
 
-    const pillarGeo = new THREE.CylinderGeometry(0.15, 0.15, 18, 8);
+    const pillarGeo = new THREE.CylinderGeometry(0.18, 0.18, 18, 8);
     const pillarMatLeft = new THREE.MeshBasicMaterial({
       color: 0x00f2fe,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.55,
       blending: THREE.AdditiveBlending,
     });
     const pillarMatRight = new THREE.MeshBasicMaterial({
       color: 0xff00aa,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.55,
       blending: THREE.AdditiveBlending,
     });
 
@@ -188,21 +187,22 @@ export class SpaceEnvironment {
       const i3 = i * 3;
       pos[i3 + 2] += speedFactor * this.starVelocities[i];
 
-      if (pos[i3 + 2] > playerZ + 20) {
+      // 当星辰接近战机前方时即刻回收重置，绝不穿越战机与相机之间的视锥空间
+      if (pos[i3 + 2] > playerZ - 2) {
         pos[i3 + 2] = playerZ - 450 - Math.random() * 60;
-        pos[i3] = (Math.random() - 0.5) * 110;
-        pos[i3 + 1] = (Math.random() - 0.5) * 80;
+        pos[i3] = (Math.random() - 0.5) * 120;
+        pos[i3 + 1] = (Math.random() - 0.5) * 85;
       }
     }
     this.starGeometry.attributes.position.needsUpdate = true;
 
-    // 2. 赛博网格地面与穹顶高速向后流动，呈现强烈的航速感
+    // 2. 赛博网格地面与穹顶高速向后流动
     const moveZ = currentSpeed * delta;
     this.canyonOffsetZ = ((this.canyonOffsetZ || 0) + moveZ) % 40;
     this.canyonFloor.position.z = -180 + this.canyonOffsetZ;
     this.canyonCeiling.position.z = this.canyonFloor.position.z;
 
-    // 3. 航道两侧霓虹信标迎面极速飞掠 (+Z)
+    // 3. 航道两侧霓虹信标迎面飞掠
     for (let i = 0; i < this.pillars.length; i++) {
       const p = this.pillars[i];
       p.z += moveZ;
@@ -211,11 +211,6 @@ export class SpaceEnvironment {
       }
       p.pLeft.position.z = p.z;
       p.pRight.position.z = p.z;
-    }
-
-    // 4. 保持摄像机背光灯紧贴玩家后上方，确保战机后背光辉耀眼
-    if (this.cameraFollowLight) {
-      this.cameraFollowLight.position.set(0, 14, 18);
     }
   }
 }

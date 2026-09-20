@@ -16,11 +16,40 @@ body {
   position: fixed;
   inset: 0;
   z-index: 0;
+  background-color: #7ED8FC;
+  background-image: url('../assets/ui/snake3d_sky_bg.jpg');
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
 }
 
 canvas { display: block; }
 
 .hidden { display: none !important; }
+
+/* ── 精致 3D UI 图标规范 ── */
+.ui-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  vertical-align: middle;
+  display: inline-block;
+  pointer-events: none;
+}
+
+.ui-icon-lg {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.ui-icon-btn {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
 
 /* ── 返回大厅按钮 ── */
 .back-home-btn {
@@ -32,7 +61,7 @@ canvas { display: block; }
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.9);
@@ -249,6 +278,10 @@ canvas { display: block; }
   width: 100%;
   max-width: 330px;
   padding: 14px 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   font-size: 17px;
   font-weight: 800;
   color: #FFFFFF;

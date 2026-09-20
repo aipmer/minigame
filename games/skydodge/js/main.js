@@ -139,10 +139,10 @@ function updateHUD() {
 
   // 护盾状态
   if (gameState.hasShield) {
-    ui.shield.textContent = 'ACTIVE';
+    ui.shield.textContent = '就绪';
     ui.shield.className = 'hud-badge shield-active';
   } else {
-    ui.shield.textContent = 'OFFLINE';
+    ui.shield.textContent = '离线';
     ui.shield.className = 'hud-badge shield-offline';
   }
 
@@ -158,8 +158,8 @@ function updateHUD() {
 // ── 连击效果提示 ──
 function showComboUI(combo, addedPoints) {
   if (combo < 2) return;
-  ui.comboText.textContent = `COMBO x${combo}!`;
-  ui.comboSub.textContent = `+${addedPoints} PTS`;
+  ui.comboText.textContent = `连击 x${combo}!`;
+  ui.comboSub.textContent = `+${addedPoints} 分`;
   ui.comboBanner.classList.remove('hidden');
 
   if (comboHideTimeout) clearTimeout(comboHideTimeout);

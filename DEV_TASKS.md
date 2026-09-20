@@ -16,6 +16,7 @@
 
 | 模块 / 领域 | 任务说明 | 交付产物 | 验收结果 |
 | :--- | :--- | :--- | :--- |
+| **大厅左上角与中文 HUD** | 统一全矩阵大厅入口至左上角，单行流线排布，顶部状态栏全面默认中文版本 | `games/snake3d/`<br>`games/skydodge/` | ✅ 左右平衡对齐无遮挡，中文信息流转自然 |
 | **移动端背景自适应** | 废除 Three.js 场景直赋纹理导致的拉伸，采用 CSS Cover + WebGL 透明穿透 | `games/snake3d/js/scene/SceneSetup.js`<br>`games/snake3d/css/style.css` | ✅ 竖屏/横屏等比自适应，山峦与白云构图完美，0 畸变 |
 | **原生 3D 图标库** | 原生生图生成 10 款专属 3D 游戏图标，Chrome Canvas 泛洪去底输出透明 PNG | `assets/icons/`<br>`scripts/process-icons.mjs` | ✅ 环形刷新图标双游戏复用，全项目原生 Emoji 彻底清零 |
 | **全场景 Emoji 替换** | 贪吃蛇、太空战机与游戏大厅全面接入 3D 图标（大厅、起飞、重开、碰撞、指南等） | `games/snake3d/`<br>`games/skydodge/`<br>`index.html` | ✅ 双端 UI 质感统一跃升，自动化测试 0 报错 |

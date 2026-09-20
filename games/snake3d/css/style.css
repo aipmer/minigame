@@ -51,11 +51,12 @@ canvas { display: block; }
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-/* ── 返回大厅按钮 ── */
+/* ── 返回大厅按钮 (统一固定左上角) ── */
 .back-home-btn {
   position: fixed;
   top: 16px;
-  right: 16px;
+  left: 16px;
+  right: auto;
   z-index: 100;
   display: inline-flex;
   align-items: center;
@@ -84,8 +85,8 @@ canvas { display: block; }
 .hud-container {
   position: fixed;
   top: 16px;
-  left: 20px;
-  right: 130px; /* 避开返回大厅按钮 */
+  left: 130px; /* 避开左侧返回大厅按钮 */
+  right: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -387,22 +388,38 @@ canvas { display: block; }
 @media (max-width: 600px) {
   .title-glow { font-size: 36px; }
   .gameover-title { font-size: 32px; }
-  .hud-container {
-    top: 56px; /* 避开右上角返回按钮 */
-    left: 14px;
-    right: 14px;
-    gap: 8px;
+  .back-home-btn {
+    top: 12px;
+    left: 12px;
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 16px;
   }
-  .hud-group {
+  .hud-container {
+    top: 12px;
+    left: 104px; /* 紧跟在左上角大厅按钮后方，同一水平线优雅排开 */
+    right: 12px;
     gap: 6px;
   }
+  .hud-group {
+    gap: 5px;
+  }
   .hud-item {
-    padding: 5px 8px;
+    padding: 3px 6px;
+    border-radius: 9px;
+  }
+  .hud-label {
+    font-size: 9px;
+    letter-spacing: 0.5px;
   }
   .hud-value {
-    font-size: 15px;
+    font-size: 14px;
   }
-  #combo { font-size: 24px; }
+  .hud-badge {
+    font-size: 11px;
+    padding: 1px 5px;
+  }
+  #combo { font-size: 24px; top: 52px; }
   .touch-controls {
     bottom: 20px;
     left: 20px;

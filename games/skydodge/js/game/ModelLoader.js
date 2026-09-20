@@ -17,7 +17,7 @@ export class ModelLoader {
       shield_orb: null,
     };
     this.modelConfigs = {
-      spaceship: { path: 'models/spaceship.glb', targetSize: 3.0, rotateY: Math.PI },
+      spaceship: { path: 'models/spaceship.glb', targetSize: 3.0, rotateY: -Math.PI / 2 },
       asteroid: { path: 'models/asteroid.glb', targetSize: 2.8, rotateY: 0 },
       laser_gate: { path: 'models/laser_gate.glb', targetSize: 6.0, rotateY: 0 },
       energy_core: { path: 'models/energy_core.glb', targetSize: 1.6, rotateY: 0 },

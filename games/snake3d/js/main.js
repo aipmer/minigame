@@ -366,7 +366,7 @@ function handleSnakeStep() {
         particles.spawnRockShatter(removed.pos || snake.head.position);
         cameraFX.shake(0.25, 0.35);
         gameState.addScore(50, true);
-        showFloatingScore(snake.head.position, `+50 SMASH!`, '#FFD700');
+        showFloatingScore(snake.head.position, `+50 撞碎障碍!`, '#FFD700');
         updateHUD();
       }
     } else {
@@ -430,7 +430,7 @@ function updateHUD() {
 }
 
 function showCombo(multiplier) {
-  ui.combo.textContent = `COMBO x${multiplier}!`;
+  ui.combo.textContent = `连击 x${multiplier}!`;
   ui.combo.classList.remove('hidden');
 }
 

@@ -46,7 +46,7 @@ async function testSkyDodge() {
   await page.keyboard.up('KeyD');
 
   // 截取运行态屏幕快照
-  const screenshotPath = '/Users/hunkwu/.gemini/antigravity/brain/7933faa5-951d-4997-81be-da87775ddbb5/skydodge_gameplay.png';
+  const screenshotPath = '/Users/hunkwu/.gemini/antigravity/brain/6e9932af-f962-4a6d-aafb-687a5aa2bdae/skydodge_gameplay.png';
   await page.screenshot({ path: screenshotPath });
   console.log(`[Test SkyDodge] 快照已保存: ${screenshotPath}`);
 

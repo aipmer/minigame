@@ -25,14 +25,14 @@ async function testMobile() {
   await new Promise((r) => setTimeout(r, 1500));
 
   // 截取开始界面
-  await page.screenshot({ path: '/Users/hunkwu/.gemini/antigravity/brain/3c70172b-4a8c-439c-88bf-b8067a345cff/skydodge_mobile_start.png' });
+  await page.screenshot({ path: '/Users/hunkwu/.gemini/antigravity/brain/6e9932af-f962-4a6d-aafb-687a5aa2bdae/skydodge_mobile_start.png' });
 
   // 点击开始起飞
   await page.click('#start-btn');
   await new Promise((r) => setTimeout(r, 1000));
 
   // 截取移动端运行画面
-  const screenshotPath = '/Users/hunkwu/.gemini/antigravity/brain/3c70172b-4a8c-439c-88bf-b8067a345cff/skydodge_mobile_gameplay.png';
+  const screenshotPath = '/Users/hunkwu/.gemini/antigravity/brain/6e9932af-f962-4a6d-aafb-687a5aa2bdae/skydodge_mobile_gameplay.png';
   await page.screenshot({ path: screenshotPath });
   console.log(`[Test Mobile] 移动端快照已保存: ${screenshotPath}`);
 

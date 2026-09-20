@@ -48,7 +48,7 @@ export class PlayerShip {
 
     // 4. 引擎动态光源 (柔和尾焰光晕)
     this.engineLight = new THREE.PointLight(0x00f2fe, 1.2, 6);
-    this.engineLight.position.set(0, 0, -2.1);
+    this.engineLight.position.set(0, 0.1, 1.8);
     this.mesh.add(this.engineLight);
 
     // 装载战机外观

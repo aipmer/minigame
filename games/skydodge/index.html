@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>星空冲锋 (Sky Dodge 3D)</title>
+  <title>太空战机</title>
   <link rel="stylesheet" href="css/style.css">
   <script type="importmap">
   {
@@ -23,18 +23,18 @@
 
   <!-- 顶部科幻 HUD 仪表盘 (中文版) -->
   <div id="hud" class="hud-container hidden">
-    <!-- 左侧状态：航程与航速 -->
+    <!-- 左侧状态：距离与航速 -->
     <div class="hud-group hud-left">
       <div class="hud-item">
-        <span class="hud-label">航程</span>
-        <span class="hud-value" id="hud-distance">0 <small>m</small></span>
+        <span class="hud-label">距离</span>
+        <span class="hud-value" id="hud-distance">0 <small>米</small></span>
       </div>
       <div class="hud-item">
         <span class="hud-label">航速</span>
         <span class="hud-value highlight" id="hud-speed">120 <small>km/h</small></span>
       </div>
       <div class="hud-item">
-        <span class="hud-label">扇区</span>
+        <span class="hud-label">星区</span>
         <span class="hud-value" id="hud-level">Lv.1</span>
       </div>
     </div>
@@ -73,9 +73,9 @@
   <!-- 任务准备 / 开始画面 -->
   <div id="start-screen" class="overlay">
     <div class="glass-panel">
-      <div class="mission-tag">MISSION BRIEFING</div>
-      <h1 class="glitch-title"><img src="assets/icons/icon_rocket.png" alt="Ship" class="ui-icon-md" style="vertical-align: -3px; margin-right: 4px;">星空冲锋</h1>
-      <h2 class="sub-title">SKY DODGE 3D</h2>
+      <div class="mission-tag">作战任务简报</div>
+      <h1 class="glitch-title"><img src="assets/icons/icon_rocket.png" alt="战机" class="ui-icon-md" style="vertical-align: -3px; margin-right: 4px;">太空战机</h1>
+      <h2 class="sub-title">SPACE FIGHTER 3D</h2>
       
       <div class="control-guides">
         <div class="guide-item">
@@ -104,7 +104,7 @@
   <!-- 任务终止 / 结算画面 -->
   <div id="gameover-screen" class="overlay hidden">
     <div class="glass-panel danger-theme">
-      <div class="mission-tag danger">MISSION FAILED · CRITICAL COLLISION</div>
+      <div class="mission-tag danger">任务失败 · 机体严重受损坠毁</div>
       <h1 class="gameover-title">战机坠毁</h1>
       
       <div class="score-summary">
@@ -118,7 +118,7 @@
         </div>
         <div class="stat-card">
           <span class="stat-label">航行距离</span>
-          <span class="stat-val" id="final-distance">0m</span>
+          <span class="stat-val" id="final-distance">0 米</span>
         </div>
         <div class="stat-card">
           <span class="stat-label">最高连击</span>
@@ -136,8 +136,14 @@
       <div class="stick-knob" id="stick-knob"></div>
     </div>
     <div class="touch-actions">
-      <button id="touch-fire-btn" class="touch-fire-btn" aria-label="主炮开火"><img src="assets/icons/icon_fire.png" alt="Fire" class="ui-icon-touch"> FIRE</button>
-      <button id="touch-boost-btn" class="touch-boost-btn" aria-label="推进冲刺"><img src="assets/icons/icon_boost.png" alt="Boost" class="ui-icon-touch"> BOOST</button>
+      <button id="touch-fire-btn" class="touch-fire-btn" aria-label="主炮开火">
+        <img src="assets/icons/icon_fire.png" alt="开火" class="ui-icon-touch">
+        <span class="btn-text">开火</span>
+      </button>
+      <button id="touch-boost-btn" class="touch-boost-btn" aria-label="推进冲刺">
+        <img src="assets/icons/icon_boost.png" alt="冲刺" class="ui-icon-touch">
+        <span class="btn-text">冲刺</span>
+      </button>
     </div>
   </div>
 

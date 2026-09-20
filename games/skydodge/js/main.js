@@ -62,7 +62,7 @@ const weaponSystem = new WeaponSystem(scene);
 
 // 异步加载模型并在就绪后无缝热挂载
 modelLoader.loadAll().then(() => {
-  console.log('[Sky Dodge 3D] 模型资源加载完毕，装配战机外观');
+  console.log('[太空战机] 模型资源加载完毕，装配战机外观');
   playerShip.loadShipModel();
 });
 
@@ -119,8 +119,8 @@ function triggerGameOver() {
   setTimeout(() => {
     ui.finalScore.textContent = gameState.score.toLocaleString();
     ui.finalHighScore.textContent = gameState.highScore.toLocaleString();
-    ui.finalDistance.textContent = `${Math.floor(gameState.distance)}m`;
-    ui.finalMaxCombo.textContent = `x${gameState.maxCombo}`;
+    ui.finalDistance.textContent = `${Math.floor(gameState.distance)} 米`;
+    ui.finalMaxCombo.textContent = `x${gameState.maxCombo} 连击`;
 
     ui.gameoverScreen.classList.remove('hidden');
     ui.hud.classList.add('hidden');
@@ -131,15 +131,15 @@ function triggerGameOver() {
 
 // ── 更新 HUD 显示 ──
 function updateHUD() {
-  ui.distance.innerHTML = `${Math.floor(gameState.distance)} <small>m</small>`;
+  ui.distance.innerHTML = `${Math.floor(gameState.distance)} <small>米</small>`;
   ui.speed.innerHTML = `${Math.floor(gameState.currentSpeed * 3.6)} <small>km/h</small>`;
-  ui.level.textContent = `Lv.${gameState.level}`;
+  ui.level.textContent = `第 ${gameState.level} 区`;
   ui.score.textContent = gameState.score.toLocaleString();
   ui.highScore.textContent = gameState.highScore.toLocaleString();
 
   // 护盾状态
   if (gameState.hasShield) {
-    ui.shield.textContent = '就绪';
+    ui.shield.textContent = '生效中';
     ui.shield.className = 'hud-badge shield-active';
   } else {
     ui.shield.textContent = '离线';

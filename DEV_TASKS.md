@@ -16,6 +16,9 @@
 
 | 模块 / 领域 | 任务说明 | 交付产物 | 验收结果 |
 | :--- | :--- | :--- | :--- |
+| **移动端背景自适应** | 废除 Three.js 场景直赋纹理导致的拉伸，采用 CSS Cover + WebGL 透明穿透 | `games/snake3d/js/scene/SceneSetup.js`<br>`games/snake3d/css/style.css` | ✅ 竖屏/横屏等比自适应，山峦与白云构图完美，0 畸变 |
+| **原生 3D 图标库** | 原生生图生成 10 款专属 3D 游戏图标，Chrome Canvas 泛洪去底输出透明 PNG | `assets/icons/`<br>`scripts/process-icons.mjs` | ✅ 环形刷新图标双游戏复用，全项目原生 Emoji 彻底清零 |
+| **全场景 Emoji 替换** | 贪吃蛇、太空战机与游戏大厅全面接入 3D 图标（大厅、起飞、重开、碰撞、指南等） | `games/snake3d/`<br>`games/skydodge/`<br>`index.html` | ✅ 双端 UI 质感统一跃升，自动化测试 0 报错 |
 | **原生生图资产** | 生成 3D 粘土全景天幕与 3D 泡泡字标头/Logo 徽章 | `assets/ui/snake3d_sky_bg.jpg`<br>`assets/ui/snake3d_gameover_badge.png`<br>`assets/ui/snake3d_start_badge.png` | ✅ 视觉通透，透明通道干净，沉浸感大幅增强 |
 | **动力学抗卡顿** | 废除顿挫的 `smoothstep`，重构为恒速线性插值 + 亚帧时间余量累加器 | `games/snake3d/js/game/Snake.js` | ✅ 彻底根除每秒 6 次的格末停顿，跨格滑行极其丝滑 |
 | **仿生蛇体形态** | 变径锥度收束（$1.15 \rightarrow 0.30$）+ 专属尾尖 + 脊椎切线旋转 + S 游动 + 弹性生长 | `games/snake3d/js/game/Snake.js` | ✅ 摆脱方块生硬感，转弯自然圆润，新尾节无突兀跳出 |

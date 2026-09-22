@@ -27,7 +27,9 @@ async function testPowerUps() {
   });
 
   const port = process.env.PORT || 3456;
-  await page.goto(`http://localhost:${port}/games/snake3d/`, { waitUntil: 'networkidle0' });
+  const targetUrl = process.env.TEST_URL || `http://localhost:${port}/games/snake3d/`;
+  console.log(`[Test] 访问测试地址: ${targetUrl}`);
+  await page.goto(targetUrl, { waitUntil: 'networkidle0' });
   await new Promise(r => setTimeout(r, 600));
 
   // 1. 验证开始界面与模式选择胶囊

@@ -119,6 +119,51 @@ export class SoundManager {
     });
   }
 
+  // 播放磁力吸附音效 (Electric Magnetic Chime)
+  playMagnet() {
+    if (!this.ctx) return;
+    this._createOscillator(320, 'sine', 0.18, 0.28, { endFreq: 760, decayType: 'exponential' });
+    setTimeout(() => {
+      this._createOscillator(640, 'triangle', 0.22, 0.22, { endFreq: 1280, decayType: 'exponential' });
+    }, 60);
+  }
+
+  // 播放冰霜减速冰晶音效 (Crystalline Frost Freeze)
+  playFrost() {
+    if (!this.ctx) return;
+    const frostNotes = [1046.5, 1318.5, 1567.98, 2093.0];
+    frostNotes.forEach((freq, i) => {
+      setTimeout(() => {
+        this._createOscillator(freq, 'sine', 0.12, 0.2, { endFreq: freq * 1.08, decayType: 'exponential' });
+      }, i * 35);
+    });
+  }
+
+  // 播放幽灵虚化飘逸滑音 (Ethereal Ghost Float)
+  playGhost() {
+    if (!this.ctx) return;
+    this._createOscillator(580, 'sine', 0.45, 0.22, {
+      endFreq: 340,
+      decayType: 'exponential',
+      amFreq: 12
+    });
+  }
+
+  // 播放爆裂清屏与金币暴击音效 (Mega Bomb Blast & Coin Cascade)
+  playBomb() {
+    if (!this.ctx) return;
+    // 重低音轰鸣
+    this._createOscillator(130, 'sawtooth', 0.45, 0.42, { endFreq: 25, decayType: 'exponential' });
+    this._createOscillator(85, 'square', 0.35, 0.35, { endFreq: 20, decayType: 'exponential' });
+    // 连续金币叮当声
+    const coinNotes = [987.77, 1318.51, 1567.98, 1975.53];
+    coinNotes.forEach((f, idx) => {
+      setTimeout(() => {
+        this._createOscillator(f, 'triangle', 0.12, 0.26, { decayType: 'exponential' });
+      }, 120 + idx * 45);
+    });
+  }
+
   // 播放背景音乐
   startBGM() {
     if (!this.ctx) return;

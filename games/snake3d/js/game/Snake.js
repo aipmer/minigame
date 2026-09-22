@@ -32,6 +32,8 @@ export class Snake {
     this.length = 0;
     this.isInvincible = false;
     this.invincibilityTimer = 0;
+    this.isGhost = false;
+    this.isFrost = false;
     this.isDead = false;
     
     // 生命感游动与吞咽波动
@@ -80,6 +82,17 @@ export class Snake {
       roughness: 0.15,
       emissive: 0xF59E0B,
       emissiveIntensity: 0.6
+    });
+
+    // 幽灵虚化荧光半透明材质
+    this.ghostMat = new THREE.MeshStandardMaterial({
+      color: 0xF8FAFC,
+      roughness: 0.15,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.52,
+      emissive: 0x38BDF8,
+      emissiveIntensity: 0.55
     });
 
     // 身体节段圆润蛋形几何体
@@ -164,6 +177,41 @@ export class Snake {
     // 优先采用高精度圆润手感
   }
 
+  // 幽灵虚化形态切换
+  setGhostMode(enabled) {
+    this.isGhost = enabled;
+    this.refreshBodyMaterials();
+  }
+
+  // 冰霜减速形态切换
+  setFrostMode(enabled) {
+    this.isFrost = enabled;
+  }
+
+  // 刷新全身体节材质（统一协调无敌金光、幽灵虚化与常态双色）
+  refreshBodyMaterials() {
+    let matHead = this.headMat;
+    if (this.isInvincible) {
+      matHead = this.goldMat;
+    } else if (this.isGhost) {
+      matHead = this.ghostMat;
+    }
+    if (this.skullMesh) {
+      this.skullMesh.material = matHead;
+    }
+
+    this.segments.forEach((seg, i) => {
+      let mat = (i % 2 === 0 ? this.bodyMat1 : this.bodyMat2);
+      if (this.isInvincible) {
+        mat = this.goldMat;
+      } else if (this.isGhost) {
+        mat = this.ghostMat;
+      }
+      if (seg.mainMesh) seg.mainMesh.material = mat;
+      if (seg.tailTip) seg.tailTip.material = mat;
+    });
+  }
+
   // 处理键盘/摇杆输入
   handleInput(key) {
     let newDir = null;
@@ -208,24 +256,22 @@ export class Snake {
       this.invincibilityTimer -= delta;
       if (this.invincibilityTimer <= 0) {
         this.isInvincible = false;
-        this.skullMesh.material = this.headMat;
-        this.segments.forEach((seg, i) => {
-          seg.mainMesh.material = i % 2 === 0 ? this.bodyMat1 : this.bodyMat2;
-        });
+        this.refreshBodyMaterials();
       } else {
         const glow = (Math.sin(this.slitherTime * 15) + 1) * 0.5;
-        this.skullMesh.material = glow > 0.4 ? this.goldMat : this.headMat;
+        this.skullMesh.material = glow > 0.4 ? this.goldMat : (this.isGhost ? this.ghostMat : this.headMat);
       }
     }
 
-    // ── 亚帧时间余量累加器（解决帧率不齐丢步与微顿挫） ──
+    // ── 亚帧时间余量累加器（支持冰霜减速时间缩放） ──
+    const effectiveInterval = this.isFrost ? this.currentInterval * 1.55 : this.currentInterval;
     this.moveTimer += delta;
     let stepResult = null;
-    if (this.moveTimer >= this.currentInterval) {
+    if (this.moveTimer >= effectiveInterval) {
       stepResult = this.step();
       // 保留余量，绝不直接归零丢帧
-      this.moveTimer -= this.currentInterval;
-      if (this.moveTimer >= this.currentInterval) {
+      this.moveTimer -= effectiveInterval;
+      if (this.moveTimer >= effectiveInterval) {
         this.moveTimer = 0; // 防御大卡顿瞬移
       }
 
@@ -236,7 +282,7 @@ export class Snake {
     }
 
     // ── 恒速平滑线性插值（告别 smoothstep 导致的格末零速停顿感） ──
-    const t = Math.min(1.0, this.moveTimer / this.currentInterval);
+    const t = Math.min(1.0, this.moveTimer / effectiveInterval);
 
     // 头部平稳移动
     this.head.position.lerpVectors(this.prevLogicalPos, this.logicalPos, t);
@@ -346,7 +392,7 @@ export class Snake {
     
     // 墙壁判定
     if (Math.abs(this.logicalPos.x) > 9.5 || Math.abs(this.logicalPos.z) > 9.5) {
-      if (this.isInvincible) {
+      if (this.isInvincible || this.isGhost) {
         if (this.logicalPos.x > 9.5) this.logicalPos.x = -9;
         else if (this.logicalPos.x < -9.5) this.logicalPos.x = 9;
         if (this.logicalPos.z > 9.5) this.logicalPos.z = -9;
@@ -354,7 +400,7 @@ export class Snake {
         this.prevLogicalPos.copy(this.logicalPos);
       } else {
         result.died = true;
-        result.dieReason = "Hit wall";
+        result.dieReason = "撞到墙壁";
         return result;
       }
     }
@@ -362,9 +408,9 @@ export class Snake {
     // 咬到自己判定
     for (let i = 0; i < this.segmentPositions.length; i++) {
       if (this.logicalPos.distanceToSquared(this.segmentPositions[i]) < 0.1) {
-        if (!this.isInvincible) {
+        if (!this.isInvincible && !this.isGhost) {
           result.died = true;
-          result.dieReason = "Hit self";
+          result.dieReason = "咬到自己";
           return result;
         }
       }
@@ -394,8 +440,11 @@ export class Snake {
   grow(position = null, isSpecial = false) {
     const segGroup = new THREE.Group();
 
-    // 主球形胶囊段
-    const mat = this.length % 2 === 0 ? this.bodyMat1 : this.bodyMat2;
+    // 主球形胶囊段（适配无敌金光与幽灵虚化）
+    let mat = this.length % 2 === 0 ? this.bodyMat1 : this.bodyMat2;
+    if (this.isInvincible) mat = this.goldMat;
+    else if (this.isGhost) mat = this.ghostMat;
+
     const mainMesh = new THREE.Mesh(this.segmentGeometry, mat);
     mainMesh.castShadow = true;
     mainMesh.receiveShadow = true;
@@ -447,6 +496,9 @@ export class Snake {
   }
   
   checkObstacleCollision(obstacles) {
+    // 幽灵虚化形态下免疫撞击障碍物（直接穿障而过）
+    if (this.isGhost) return false;
+
     for (let obsPos of obstacles) {
       if (this.logicalPos.distanceTo(obsPos) < 0.7) {
         if (!this.isInvincible) return true;
@@ -482,11 +534,12 @@ export class Snake {
     this.currentInterval = this.baseMoveInterval;
     this.moveTimer = 0;
     this.isInvincible = false;
+    this.invincibilityTimer = 0;
+    this.isGhost = false;
+    this.isFrost = false;
     this.isDead = false;
     
-    if (this.skullMesh) {
-      this.skullMesh.material = this.headMat;
-    }
+    this.refreshBodyMaterials();
   }
   
   startInvincibility(duration) {

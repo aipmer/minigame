@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>3D 贪吃蛇 (Snake 3D)</title>
+  <title>3D 贪吃蛇</title>
+  <link rel="icon" href="assets/icons/icon_snake.png">
   <link rel="stylesheet" href="css/style.css">
   <script type="importmap">
   {
@@ -48,6 +49,13 @@
     </div>
   </div>
 
+  <!-- 局内动态道具状态胶囊 (5秒倒计时纯中文反馈) -->
+  <div id="powerup-hud" class="powerup-pill hidden">
+    <img id="powerup-icon" src="assets/icons/icon_magnet.png" alt="道具" class="powerup-icon-img">
+    <span id="powerup-name" class="powerup-name-text">磁力吸附</span>
+    <span id="powerup-timer" class="powerup-timer-badge">5.0秒</span>
+  </div>
+
   <!-- Combo 显示：顶部居中 -->
   <div id="combo" class="hidden">连击 x2!</div>
 
@@ -56,7 +64,21 @@
     <div class="overlay-content toy-card">
       <img src="assets/ui/snake3d_start_badge.png" alt="3D贪吃蛇" class="modal-badge-img">
       <p class="subtitle">趣味 3D 清新乐园版</p>
-      <div class="hint-pill">方向键 / WASD / 摇杆 控制转向</div>
+      
+      <!-- 玩法模式选择器 -->
+      <div class="mode-select-wrap">
+        <div class="mode-pill-group">
+          <button id="mode-btn-classic" class="mode-tab-btn active" type="button">
+            <img src="assets/icons/icon_snake.png" alt="经典" class="ui-icon"> 经典模式
+          </button>
+          <button id="mode-btn-crazy" class="mode-tab-btn" type="button">
+            <img src="assets/icons/icon_boost.png" alt="疯狂" class="ui-icon"> 疯狂道具
+          </button>
+        </div>
+        <div id="mode-desc" class="mode-desc-text">经典纯粹规则 · 吃食物成长与避障</div>
+      </div>
+
+      <div class="hint-pill">方向键 / 虚拟摇杆 / 滑动 控制转向</div>
       <div class="start-btn-group">
         <button id="start-btn" class="toy-btn toy-btn-primary"><img src="assets/icons/icon_rocket.png" alt="开始" class="ui-icon-btn"> 开始游戏 (空格 / 轻触)</button>
         <button id="btn-start-leaderboard" class="toy-btn toy-btn-secondary"><img src="assets/icons/icon_trophy.png" alt="风云榜" class="ui-icon-btn"> 查看风云榜</button>

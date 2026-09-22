@@ -19,6 +19,9 @@ export class Food {
     this.specialLight = null;
     this.specialPosition = new THREE.Vector3();
     this.specialTime = 0;
+
+    // 爆破转换产生的奖励金币/黄金食物列表
+    this.bonusList = [];
   }
   
   // easeOutBack 缓动函数
@@ -148,6 +151,66 @@ export class Food {
     }
   }
 
+  // 在指定坐标原位生成黄金食物/金币
+  spawnSpecialAt(pos) {
+    this.spawnBonusAt(pos);
+  }
+
+  // 奖励金币/黄金食物生成
+  spawnBonusAt(pos) {
+    const group = new THREE.Group();
+    const geo = new THREE.SphereGeometry(0.38, 16, 16);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xFFD700,
+      emissive: 0xF59E0B,
+      emissiveIntensity: 0.8,
+      metalness: 0.85,
+      roughness: 0.15
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = true;
+    group.add(mesh);
+
+    const light = new THREE.PointLight(0xFFD700, 2.0, 5);
+    group.add(light);
+
+    group.position.copy(pos);
+    group.position.y = 0.5;
+    group.scale.set(0.01, 0.01, 0.01);
+    this.scene.add(group);
+
+    this.bonusList.push({
+      group,
+      mesh,
+      logicalPos: pos.clone(),
+      scaleProgress: 0,
+      time: Math.random() * 10
+    });
+  }
+
+  // 检测蛇头是否吃到了爆破产生的黄金食物/金币
+  checkBonusCollisions(headPos) {
+    if (!this.bonusList || this.bonusList.length === 0) return 0;
+    let eatenCount = 0;
+    for (let i = this.bonusList.length - 1; i >= 0; i--) {
+      const item = this.bonusList[i];
+      if (headPos.distanceTo(item.logicalPos) < 0.75) {
+        this.scene.remove(item.group);
+        this.bonusList.splice(i, 1);
+        eatenCount++;
+      }
+    }
+    return eatenCount;
+  }
+
+  // 清理全部奖励金币
+  clearAllBonus() {
+    if (this.bonusList && this.bonusList.length > 0) {
+      this.bonusList.forEach(item => this.scene.remove(item.group));
+      this.bonusList = [];
+    }
+  }
+
   // 获取当前普通食物位置
   getPosition() {
     return this.logicalPos;
@@ -159,7 +222,6 @@ export class Food {
     
     // 普通食物动画
     if (this.mesh) {
-      // 缓动生成动画
       if (this.spawnAnimationTimer < this.spawnDuration) {
         this.spawnAnimationTimer += delta;
         const progress = Math.min(1, this.spawnAnimationTimer / this.spawnDuration);
@@ -167,11 +229,9 @@ export class Food {
         this.mesh.scale.set(scale, scale, scale);
       }
       
-      // 浮动和旋转
       this.mesh.position.y = this.logicalPos.y + Math.sin(this.time * 3) * 0.15;
       this.mesh.rotation.y += delta;
       
-      // 光源脉冲
       if (this.light) {
         this.light.intensity = 2 + Math.sin(this.time * 5) * 0.5;
       }
@@ -181,7 +241,6 @@ export class Food {
     if (this.specialMesh) {
       this.specialTime += delta;
       
-      // 缓动生成动画
       if (this.spawnSpecialTimer < this.spawnDuration) {
         this.spawnSpecialTimer += delta;
         const progress = Math.min(1, this.spawnSpecialTimer / this.spawnDuration);
@@ -189,20 +248,33 @@ export class Food {
         this.specialMesh.scale.set(scale, scale, scale);
       }
       
-      // 快速浮动和旋转
       this.specialMesh.position.y = this.specialPosition.y + Math.sin(this.specialTime * 5) * 0.2;
       this.specialMesh.rotation.y += delta * 2;
       
-      // 光源脉冲
       if (this.specialLight) {
         this.specialLight.intensity = 3 + Math.sin(this.specialTime * 8);
       }
     }
+
+    // 奖励金币动画更新
+    if (this.bonusList && this.bonusList.length > 0) {
+      for (const item of this.bonusList) {
+        item.time += delta;
+        if (item.scaleProgress < 1.0) {
+          item.scaleProgress = Math.min(1.0, item.scaleProgress + delta * 4.0);
+          const s = this.easeOutBack(item.scaleProgress);
+          item.group.scale.set(s, s, s);
+        }
+        item.group.position.y = item.logicalPos.y + Math.sin(item.time * 4) * 0.15;
+        item.group.rotation.y += delta * 2.5;
+      }
+    }
   }
-  
+
   // 销毁所有
   dispose() {
     this.disposeCurrent();
     this.consumeSpecial();
+    this.clearAllBonus();
   }
 }

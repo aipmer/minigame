@@ -11,6 +11,7 @@ import { SoundManager } from './audio/SoundManager.js';
 import { ParticleSystem } from './effects/Particles.js';
 import { CameraFX } from './effects/CameraFX.js';
 import { ModelLoader } from './game/ModelLoader.js';
+import { PowerUpManager } from './game/PowerUpManager.js';
 import { SocialManager } from '/js/services/SocialManager.js';
 import { SocialUI } from '/js/services/SocialUI.js';
 
@@ -22,6 +23,13 @@ const ui = {
   length:        document.getElementById('hud-length'),
   level:         document.getElementById('hud-level'),
   combo:         document.getElementById('combo'),
+  powerupHud:    document.getElementById('powerup-hud'),
+  powerupIcon:   document.getElementById('powerup-icon'),
+  powerupName:   document.getElementById('powerup-name'),
+  powerupTimer:  document.getElementById('powerup-timer'),
+  modeBtnClassic:document.getElementById('mode-btn-classic'),
+  modeBtnCrazy:  document.getElementById('mode-btn-crazy'),
+  modeDesc:      document.getElementById('mode-desc'),
   startScreen:   document.getElementById('start-screen'),
   gameoverScreen:document.getElementById('gameover-screen'),
   gameoverReason:document.getElementById('gameover-reason'),
@@ -71,6 +79,8 @@ const gameState = new GameState();
 const sound     = new SoundManager();
 const particles = new ParticleSystem(scene);
 const cameraFX  = new CameraFX(camera);
+const powerUpManager = new PowerUpManager(scene, sound, particles, cameraFX);
+window._powerUpManager = powerUpManager;
 
 // ── 跟踪蛇上次逻辑位置用于检测 step 发生 ──
 let lastSnakePos = null;
@@ -152,6 +162,47 @@ bindSocialBtn(ui.startLeaderboardBtn, () => socialUI.openLeaderboard());
 bindSocialBtn(ui.gameoverLeaderboardBtn, () => socialUI.openLeaderboard());
 bindSocialBtn(ui.gameoverPosterBtn, () => socialUI.openPoster(gameState.score));
 bindSocialBtn(ui.gameoverChallengeBtn, () => socialUI.copyChallengeLink(gameState.score));
+
+// ── 模式状态管理与持久化 ──
+let currentMode = localStorage.getItem('snake3d_mode') || 'classic';
+
+const MODE_CONFIG = {
+  classic: {
+    desc: '经典纯粹规则 · 吃食物成长与避障'
+  },
+  crazy: {
+    desc: '疯狂空投4款专属3D超能道具 · 5秒畅爽爆发'
+  }
+};
+
+function setGameMode(mode) {
+  currentMode = mode;
+  localStorage.setItem('snake3d_mode', mode);
+
+  if (ui.modeBtnClassic && ui.modeBtnCrazy) {
+    ui.modeBtnClassic.classList.toggle('active', mode === 'classic');
+    ui.modeBtnCrazy.classList.toggle('active', mode === 'crazy');
+  }
+  if (ui.modeDesc && MODE_CONFIG[mode]) {
+    ui.modeDesc.textContent = MODE_CONFIG[mode].desc;
+  }
+}
+
+const bindModeBtn = (el, mode) => {
+  if (!el) return;
+  const cb = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sound.init();
+    setGameMode(mode);
+  };
+  el.addEventListener('click', cb);
+  el.addEventListener('touchend', cb);
+};
+
+bindModeBtn(ui.modeBtnClassic, 'classic');
+bindModeBtn(ui.modeBtnCrazy, 'crazy');
+setGameMode(currentMode);
 
 // ── 移动端检测与文案自适应 ──
 const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 1024);
@@ -275,6 +326,8 @@ document.addEventListener('touchstart', (e) => {
     e.target.closest('.top-nav-bar') ||
     e.target.closest('.social-modal-overlay') ||
     e.target.closest('.social-challenge-banner') ||
+    e.target.closest('.mode-select-wrap') ||
+    e.target.closest('.mode-tab-btn') ||
     e.target.closest('button') ||
     e.target.closest('a')
   ) return;
@@ -324,6 +377,7 @@ function startGame() {
   food.dispose();
   obstacles.clearAll();
   cameraFX.reset();
+  powerUpManager.reset();
 
   const occupied = snake.getOccupiedPositions();
   food.spawn(occupied, []);
@@ -333,6 +387,9 @@ function startGame() {
   specialFoodTimeout = 0;
 
   ui.hud.classList.remove('hidden');
+  if (ui.powerupHud) {
+    ui.powerupHud.classList.add('hidden');
+  }
   ui.startScreen.classList.add('hidden');
   ui.gameoverScreen.classList.add('hidden');
   ui.combo.classList.add('hidden');
@@ -405,6 +462,18 @@ function handleSnakeStep() {
     socialUI.checkScoreForChallenge(gameState.score);
   }
 
+  // 检测吃到了炸弹爆破产生的黄金食物/金币
+  const eatenBonus = food.checkBonusCollisions(headPos);
+  if (eatenBonus > 0) {
+    sound.playEatCombo(2);
+    const bonusScore = eatenBonus * 30;
+    gameState.addScore(bonusScore, true);
+    particles.spawnEatBurst(snake.head.position.clone(), 0xFFD700);
+    showFloatingScore(snake.head.position, `+${bonusScore} 金币奖励!`, '#FFD700');
+    updateHUD();
+    socialUI.checkScoreForChallenge(gameState.score);
+  }
+
   // 障碍物碰撞
   if (obstacles.count > 0 && snake.checkObstacleCollision(obstacles.getPositions())) {
     if (snake.isInvincible) {
@@ -426,6 +495,10 @@ function handleSnakeStep() {
 
 // ── 死亡处理 ──
 function handleDeath(reason) {
+  powerUpManager.clearSpawned();
+  if (ui.powerupHud) {
+    ui.powerupHud.classList.add('hidden');
+  }
   gameState.triggerGameOver(reason);
   sound.stopBGM();
   sound.playGameOver();
@@ -532,6 +605,26 @@ function gameLoop() {
   const adjustedDelta = cameraFX.update(delta);
 
   if (gameState.state === 'playing') {
+    // 局内疯狂道具逻辑与吸附/减速/清屏更新
+    powerUpManager.update(adjustedDelta, currentMode, snake, food, obstacles, gameState, {
+      showFloatingScore
+    });
+
+    // 动态同步冰霜减速效果给蛇体
+    snake.setFrostMode(powerUpManager.isFrostActive());
+
+    // 动态更新局内道具 HUD 状态条
+    const powerUpStatus = powerUpManager.getActiveStatus();
+    if (powerUpStatus && ui.powerupHud) {
+      ui.powerupHud.classList.remove('hidden');
+      if (ui.powerupIcon) ui.powerupIcon.src = powerUpStatus.icon;
+      if (ui.powerupName) ui.powerupName.textContent = powerUpStatus.name;
+      if (ui.powerupTimer) ui.powerupTimer.textContent = `${powerUpStatus.remainingTime.toFixed(1)}秒`;
+      ui.powerupHud.classList.toggle('warning', powerUpStatus.isWarning);
+    } else if (ui.powerupHud) {
+      ui.powerupHud.classList.add('hidden');
+    }
+
     const stepResult = snake.update(adjustedDelta);
 
     // 检测是否发生了 step（蛇逻辑位置变了）
@@ -539,7 +632,7 @@ function gameLoop() {
       // step 发生了
       if (stepResult && stepResult.died) {
         // step() 内部已检测到撞墙/自碰
-        handleDeath(stepResult.dieReason === 'Hit wall' ? '撞到墙壁' : '咬到自己');
+        handleDeath(stepResult.dieReason || '撞到墙壁');
       } else {
         handleSnakeStep();
       }

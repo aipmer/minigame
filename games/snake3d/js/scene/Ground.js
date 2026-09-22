@@ -3,7 +3,12 @@ import * as THREE from 'three';
 export class Ground {
   constructor(scene) {
     this.scene = scene;
+    this.gridSize = 20;
+    this.isWrapMode = false;
     
+    this.rootGroup = new THREE.Group();
+    this.scene.add(this.rootGroup);
+
     this.grassTexture = this.createGridTexture(false);
     this.snowTexture = this.createGridTexture(true);
 
@@ -19,11 +24,11 @@ export class Ground {
     const ctx = canvas.getContext('2d');
     
     const size = 1024;
-    const gridSize = 20;
-    const cellSize = size / gridSize;
+    const gridCount = 20;
+    const cellSize = size / gridCount;
     
-    for (let i = 0; i < gridSize; i++) {
-      for (let j = 0; j < gridSize; j++) {
+    for (let i = 0; i < gridCount; i++) {
+      for (let j = 0; j < gridCount; j++) {
         const isLight = (i + j) % 2 === 0;
         
         if (isSnow) {
@@ -77,14 +82,14 @@ export class Ground {
     
     this.groundMesh = new THREE.Mesh(geometry, material);
     this.groundMesh.rotation.x = -Math.PI / 2;
-    this.groundMesh.position.y = 0.02; // 抬升至 0.02 彻底消除与岛体顶面的深度竞争(z-fighting)
+    this.groundMesh.position.y = 0.02; // 抬升至 0.02 消除 z-fighting
     this.groundMesh.receiveShadow = true;
-    this.scene.add(this.groundMesh);
+    this.rootGroup.add(this.groundMesh);
   }
 
-  // ── 构建立体厚度浮空岛底座（彻底消除单薄漂浮感） ──
+  // ── 构建立体厚度浮空岛底座 ──
   initFloatingIslandBase() {
-    const islandGroup = new THREE.Group();
+    this.islandGroup = new THREE.Group();
 
     // 1. 草坪外沿立体厚边（绿色草皮层）
     const grassCrustGeo = new THREE.BoxGeometry(20.7, 0.4, 20.7);
@@ -94,9 +99,9 @@ export class Ground {
       metalness: 0.05,
     });
     this.grassCrust = new THREE.Mesh(grassCrustGeo, grassCrustMat);
-    this.grassCrust.position.y = -0.22; // 顶面位于 -0.02，与 ground(0.02) 保持安全间距
+    this.grassCrust.position.y = -0.22;
     this.grassCrust.receiveShadow = true;
-    islandGroup.add(this.grassCrust);
+    this.islandGroup.add(this.grassCrust);
 
     // 2. 中层泥土岩石层（温暖焦糖粘土断层）
     const rockTier1Geo = new THREE.BoxGeometry(20.3, 1.1, 20.3);
@@ -105,54 +110,66 @@ export class Ground {
       roughness: 0.7,
       metalness: 0.08,
     });
-    const rockTier1 = new THREE.Mesh(rockTier1Geo, rockMat1);
-    rockTier1.position.y = -0.9;
-    rockTier1.castShadow = true;
-    rockTier1.receiveShadow = true;
-    islandGroup.add(rockTier1);
+    this.rockTier1 = new THREE.Mesh(rockTier1Geo, rockMat1);
+    this.rockTier1.position.y = -0.9;
+    this.rockTier1.castShadow = true;
+    this.rockTier1.receiveShadow = true;
+    this.islandGroup.add(this.rockTier1);
 
-    // 3. 浮空岛下层收敛龙骨岩体（倒锥形立体渐变收束）
+    // 3. 浮空岛下层收敛龙骨岩体
     const rockTier2Geo = new THREE.BoxGeometry(18.2, 1.2, 18.2);
     const rockMat2 = new THREE.MeshStandardMaterial({
       color: 0x734830,
       roughness: 0.75,
       metalness: 0.08,
     });
-    const rockTier2 = new THREE.Mesh(rockTier2Geo, rockMat2);
-    rockTier2.position.y = -1.9;
-    rockTier2.castShadow = true;
-    islandGroup.add(rockTier2);
+    this.rockTier2 = new THREE.Mesh(rockTier2Geo, rockMat2);
+    this.rockTier2.position.y = -1.9;
+    this.rockTier2.castShadow = true;
+    this.islandGroup.add(this.rockTier2);
 
-    // 4. 浮空岛最底部悬空尖石块
+    // 4. 浮空岛最底部尖石
     const rockBottomGeo = new THREE.BoxGeometry(14.0, 1.0, 14.0);
-    const rockBottom = new THREE.Mesh(rockBottomGeo, rockMat2);
-    rockBottom.position.y = -2.8;
-    rockBottom.castShadow = true;
-    islandGroup.add(rockBottom);
+    this.rockBottom = new THREE.Mesh(rockBottomGeo, rockMat2);
+    this.rockBottom.position.y = -2.8;
+    this.rockBottom.castShadow = true;
+    this.islandGroup.add(this.rockBottom);
 
-    this.scene.add(islandGroup);
+    this.rootGroup.add(this.islandGroup);
   }
   
   // ── 构建立体玩具圆润围栏与四角灯塔立柱 ──
   initBorders() {
-    const wallHeight = 0.75;
+    if (this.borderGroup) {
+      this.rootGroup.remove(this.borderGroup);
+    }
+    this.borderGroup = new THREE.Group();
+
+    const wallHeight = this.isWrapMode ? 0.35 : 0.75;
     const wallThickness = 0.42;
     const wallLength = 20; 
     
-    // 暖黄奶油粘土积木护栏
+    // 护栏材质（穿墙模式下为柔光传送晶莹质感）
+    const wallColor = this.isWrapMode ? 0x38BDF8 : 0xF59E0B;
+    const capColor = this.isWrapMode ? 0x818CF8 : 0xFDE047;
+    const emissiveIntensity = this.isWrapMode ? 0.45 : 0.15;
+
     const wallMat = new THREE.MeshStandardMaterial({
-      color: 0xF59E0B,
-      metalness: 0.1,
+      color: wallColor,
+      emissive: this.isWrapMode ? 0x0284C7 : 0x000000,
+      emissiveIntensity: emissiveIntensity,
+      metalness: 0.15,
       roughness: 0.35,
+      transparent: this.isWrapMode,
+      opacity: this.isWrapMode ? 0.85 : 1.0
     });
     
-    // 护栏顶盖高光奶酪黄
     const capMat = new THREE.MeshStandardMaterial({
-      color: 0xFDE047,
-      emissive: 0xF59E0B,
-      emissiveIntensity: 0.15,
-      metalness: 0.15,
-      roughness: 0.28,
+      color: capColor,
+      emissive: capColor,
+      emissiveIntensity: emissiveIntensity * 1.2,
+      metalness: 0.2,
+      roughness: 0.25,
     });
 
     const createWall = (width, depth, x, z) => {
@@ -172,7 +189,7 @@ export class Ground {
       group.add(cap);
       
       group.position.set(x, 0, z);
-      this.scene.add(group);
+      this.borderGroup.add(group);
     };
     
     // 四面主要护栏
@@ -181,18 +198,15 @@ export class Ground {
     createWall(wallThickness, wallLength, -10 - wallThickness / 2, 0);
     createWall(wallThickness, wallLength, 10 + wallThickness / 2, 0);
 
-    // ── 四角立体圆柱塔楼与微光小灯球 ──
+    // 四角立柱
     const pillarGeo = new THREE.CylinderGeometry(0.55, 0.62, wallHeight + 0.4, 20);
-    const pillarMat = new THREE.MeshStandardMaterial({
-      color: 0xF59E0B,
-      roughness: 0.3,
-      metalness: 0.1,
-    });
     const beaconGeo = new THREE.SphereGeometry(0.35, 20, 20);
+    const beaconColor = this.isWrapMode ? 0x67E8F9 : 0xFEF08A;
+
     const beaconMat = new THREE.MeshStandardMaterial({
-      color: 0xFEF08A,
-      emissive: 0xFDE047,
-      emissiveIntensity: 0.45,
+      color: beaconColor,
+      emissive: beaconColor,
+      emissiveIntensity: this.isWrapMode ? 0.8 : 0.45,
       roughness: 0.2,
       metalness: 0.2,
     });
@@ -206,7 +220,7 @@ export class Ground {
 
     corners.forEach(([cx, cz]) => {
       const pGroup = new THREE.Group();
-      const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+      const pillar = new THREE.Mesh(pillarGeo, wallMat);
       pillar.position.y = (wallHeight + 0.4) / 2;
       pillar.castShadow = true;
       pillar.receiveShadow = true;
@@ -218,8 +232,23 @@ export class Ground {
       pGroup.add(beacon);
 
       pGroup.position.set(cx, 0, cz);
-      this.scene.add(pGroup);
+      this.borderGroup.add(pGroup);
     });
+
+    this.rootGroup.add(this.borderGroup);
+  }
+
+  // 玩法工坊网格尺寸与穿墙模式动态联动
+  setGridConfig(gridSize = 20, isWrapMode = false) {
+    this.gridSize = gridSize;
+    this.isWrapMode = !!isWrapMode;
+
+    const scale = gridSize / 20;
+    // 水平 X/Z 缩放对齐设定尺寸，Y 轴保持适度厚度
+    this.rootGroup.scale.set(scale, 1.0, scale);
+
+    // 重新配置边界围栏（更新穿墙柔光或阻隔形态）
+    this.initBorders();
   }
 
   setWeather(type) {
@@ -242,4 +271,3 @@ export class Ground {
     }
   }
 }
-

@@ -28,7 +28,9 @@ export class Snake {
     this.speedUpFactor = 0.003;
     this.moveTimer = 0;
     
-    // 状态
+    // 状态与工坊规则
+    this.boundLimit = 9.5;
+    this.isWrapMode = false;
     this.length = 0;
     this.isInvincible = false;
     this.invincibilityTimer = 0;
@@ -455,15 +457,18 @@ export class Snake {
     let result = { ate: false, died: false, dieReason: "", newHeadPos: this.logicalPos.clone() };
     
     // 墙壁判定
-    if (Math.abs(this.logicalPos.x) > 9.5 || Math.abs(this.logicalPos.z) > 9.5) {
-      if (this.isInvincible || this.isGhost) {
-        if (this.logicalPos.x > 9.5) this.logicalPos.x = -9;
-        else if (this.logicalPos.x < -9.5) this.logicalPos.x = 9;
-        if (this.logicalPos.z > 9.5) this.logicalPos.z = -9;
-        else if (this.logicalPos.z < -9.5) this.logicalPos.z = 9;
+    const limit = this.boundLimit || 9.5;
+    if (Math.abs(this.logicalPos.x) > limit || Math.abs(this.logicalPos.z) > limit) {
+      if (this.isInvincible || this.isGhost || this.isWrapMode) {
+        const maxCoord = Math.floor(limit);
+        if (this.logicalPos.x > limit) this.logicalPos.x = -maxCoord;
+        else if (this.logicalPos.x < -limit) this.logicalPos.x = maxCoord;
+        if (this.logicalPos.z > limit) this.logicalPos.z = -maxCoord;
+        else if (this.logicalPos.z < -limit) this.logicalPos.z = maxCoord;
         this.prevLogicalPos.copy(this.logicalPos);
         result.warped = true;
         result.isGhostWarp = this.isGhost;
+        result.isRuleWrap = this.isWrapMode;
       } else {
         result.died = true;
         result.dieReason = "撞到墙壁";
@@ -613,6 +618,22 @@ export class Snake {
     this.isBoosting = !!active;
   }
   
+  // 玩法工坊规则联动
+  setWrapMode(enabled) {
+    this.isWrapMode = !!enabled;
+  }
+
+  setBoundLimit(limit) {
+    this.boundLimit = Number(limit) || 9.5;
+  }
+
+  setBaseSpeed(interval) {
+    if (interval && interval > 0) {
+      this.baseMoveInterval = interval;
+      this.currentInterval = interval;
+    }
+  }
+
   startInvincibility(duration) {
     this.isInvincible = true;
     this.invincibilityTimer = duration;

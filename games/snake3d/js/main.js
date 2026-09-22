@@ -13,6 +13,7 @@ import { CameraFX } from './effects/CameraFX.js';
 import { ModelLoader } from './game/ModelLoader.js';
 import { PowerUpManager } from './game/PowerUpManager.js';
 import { WeatherSystem } from './scene/WeatherSystem.js';
+import { CustomRulesManager } from './game/CustomRulesManager.js';
 import { SocialManager } from '/js/services/SocialManager.js';
 import { SocialUI } from '/js/services/SocialUI.js';
 import { EconomyManager } from '/js/services/EconomyManager.js';
@@ -40,7 +41,15 @@ const ui = {
   weatherBannerText: document.getElementById('weather-banner-text'),
   modeBtnClassic:document.getElementById('mode-btn-classic'),
   modeBtnCrazy:  document.getElementById('mode-btn-crazy'),
+  modeBtnCustom: document.getElementById('mode-btn-custom'),
   modeDesc:      document.getElementById('mode-desc'),
+  customRuleSummaryRow: document.getElementById('custom-rule-summary-row'),
+  customRuleSummaryText: document.getElementById('custom-rule-summary-text'),
+  btnOpenCustomRules: document.getElementById('btn-open-custom-rules'),
+  hudCustomPill: document.getElementById('hud-custom-pill'),
+  hudCustomRuleText: document.getElementById('hud-custom-rule-text'),
+  customRulesModal: document.getElementById('custom-rules-modal'),
+  btnCloseCustomRules: document.getElementById('btn-close-custom-rules'),
   startScreen:   document.getElementById('start-screen'),
   gameoverScreen:document.getElementById('gameover-screen'),
   gameoverReason:document.getElementById('gameover-reason'),
@@ -140,6 +149,10 @@ const weatherSystem = new WeatherSystem({
   iconBasePath: 'assets/icons/'
 });
 window._weatherSystem = weatherSystem;
+
+// ── 3D 玩法工坊自定义规则中枢 ──
+const customRulesManager = new CustomRulesManager();
+window._customRulesManager = customRulesManager;
 
 let weatherBannerTimer = null;
 weatherSystem.onWeatherChange((weather, meta) => {
@@ -277,17 +290,92 @@ const MODE_CONFIG = {
   },
   crazy: {
     desc: '疯狂空投4款专属3D超能道具 · 5秒畅爽爆发'
+  },
+  custom: {
+    desc: '自由定制6大维度规则 · 支持盲盒随机'
   }
 };
+
+function updateCustomRuleSummary() {
+  if (ui.customRuleSummaryText && customRulesManager) {
+    ui.customRuleSummaryText.textContent = customRulesManager.getSummaryBadgeText();
+  }
+}
+
+function renderCustomRulesModal() {
+  const body = document.getElementById('custom-rules-body');
+  if (!body) return;
+  body.innerHTML = '';
+
+  const meta = customRulesManager.meta;
+  const currentRules = customRulesManager.getRules();
+
+  for (const [dimKey, dimConfig] of Object.entries(meta)) {
+    const block = document.createElement('div');
+    block.className = 'rule-dim-block';
+
+    const header = document.createElement('div');
+    header.className = 'rule-dim-header';
+    const activeOpt = dimConfig.options.find(o => o.key === currentRules[dimKey]);
+    header.innerHTML = `
+      <span class="rule-dim-title">${dimConfig.title}</span>
+      <span class="rule-dim-desc">${activeOpt ? (activeOpt.desc || activeOpt.name) : ''}</span>
+    `;
+    block.appendChild(header);
+
+    const optsRow = document.createElement('div');
+    optsRow.className = 'rule-dim-options';
+
+    dimConfig.options.forEach(opt => {
+      const pill = document.createElement('button');
+      pill.type = 'button';
+      const isActive = currentRules[dimKey] === opt.key;
+      pill.className = `rule-opt-pill ${isActive ? 'active' : ''}`;
+      pill.innerHTML = `
+        <img src="${opt.icon}" alt="${opt.name}" class="ui-icon">
+        <span>${opt.name}</span>
+      `;
+      pill.addEventListener('click', (e) => {
+        e.preventDefault();
+        sound.init();
+        sound.playTurn();
+        customRulesManager.setRule(dimKey, opt.key);
+        renderCustomRulesModal();
+        updateCustomRuleSummary();
+      });
+      optsRow.appendChild(pill);
+    });
+
+    block.appendChild(optsRow);
+    body.appendChild(block);
+  }
+}
+
+function openCustomRulesModal() {
+  renderCustomRulesModal();
+  if (ui.customRulesModal) ui.customRulesModal.classList.remove('hidden');
+}
+
+function closeCustomRulesModal() {
+  if (ui.customRulesModal) ui.customRulesModal.classList.add('hidden');
+}
 
 function setGameMode(mode) {
   currentMode = mode;
   localStorage.setItem('snake3d_mode', mode);
 
-  if (ui.modeBtnClassic && ui.modeBtnCrazy) {
-    ui.modeBtnClassic.classList.toggle('active', mode === 'classic');
-    ui.modeBtnCrazy.classList.toggle('active', mode === 'crazy');
+  if (ui.modeBtnClassic) ui.modeBtnClassic.classList.toggle('active', mode === 'classic');
+  if (ui.modeBtnCrazy) ui.modeBtnCrazy.classList.toggle('active', mode === 'crazy');
+  if (ui.modeBtnCustom) ui.modeBtnCustom.classList.toggle('active', mode === 'custom');
+
+  if (ui.customRuleSummaryRow) {
+    ui.customRuleSummaryRow.classList.toggle('hidden', mode !== 'custom');
   }
+
+  if (mode === 'custom') {
+    updateCustomRuleSummary();
+  }
+
   if (ui.modeDesc && MODE_CONFIG[mode]) {
     ui.modeDesc.textContent = MODE_CONFIG[mode].desc;
   }
@@ -307,6 +395,59 @@ const bindModeBtn = (el, mode) => {
 
 bindModeBtn(ui.modeBtnClassic, 'classic');
 bindModeBtn(ui.modeBtnCrazy, 'crazy');
+bindModeBtn(ui.modeBtnCustom, 'custom');
+
+if (ui.btnOpenCustomRules) {
+  bindSocialBtn(ui.btnOpenCustomRules, () => openCustomRulesModal());
+}
+if (ui.btnCloseCustomRules) {
+  bindSocialBtn(ui.btnCloseCustomRules, () => closeCustomRulesModal());
+}
+
+const customShuffleBtn = document.getElementById('btn-custom-shuffle');
+if (customShuffleBtn) {
+  bindSocialBtn(customShuffleBtn, () => {
+    sound.playEatCombo(3);
+    const diceIcon = customShuffleBtn.querySelector('.dice-icon-spin');
+    if (diceIcon) {
+      diceIcon.classList.remove('dice-shake-anim');
+      void diceIcon.offsetWidth;
+      diceIcon.classList.add('dice-shake-anim');
+    }
+    customRulesManager.shuffle();
+    renderCustomRulesModal();
+    updateCustomRuleSummary();
+  });
+}
+
+const customResetBtn = document.getElementById('btn-custom-reset');
+if (customResetBtn) {
+  bindSocialBtn(customResetBtn, () => {
+    sound.playTurn();
+    customRulesManager.reset();
+    renderCustomRulesModal();
+    updateCustomRuleSummary();
+  });
+}
+
+const customPlayBtn = document.getElementById('btn-custom-play');
+if (customPlayBtn) {
+  bindSocialBtn(customPlayBtn, () => {
+    closeCustomRulesModal();
+    setGameMode('custom');
+    startGame();
+  });
+}
+
+// 弹窗遮罩背景轻触关闭
+if (ui.customRulesModal) {
+  ui.customRulesModal.addEventListener('click', (e) => {
+    if (e.target === ui.customRulesModal) {
+      closeCustomRulesModal();
+    }
+  });
+}
+
 setGameMode(currentMode);
 
 // ── 移动端检测与文案自适应 ──
@@ -521,6 +662,53 @@ function startGame() {
   achievementManager.resetSession();
   achievementManager.recordEvent('score', 0);
 
+  // ── 模式与工坊规则应用 ──
+  if (currentMode === 'custom') {
+    const rules = customRulesManager.getRules();
+    const gridDim = customRulesManager.getGridDimension();
+    const isWrap = rules.wallRule === 'wrap';
+    const boundLimit = gridDim / 2 - 0.5;
+
+    ground.setGridConfig(gridDim, isWrap);
+    sceneSetup.setGridScale(gridDim);
+
+    snake.setBoundLimit(boundLimit);
+    snake.setWrapMode(isWrap);
+    snake.setBaseSpeed(customRulesManager.getSpeedInterval());
+
+    food.configureRules({
+      foodType: rules.foodType,
+      foodCount: rules.foodCount,
+      boundLimit: Math.floor(boundLimit)
+    });
+
+    if (rules.weather && rules.weather !== 'auto') {
+      weatherSystem.forceWeather(rules.weather);
+    }
+
+    if (ui.hudCustomPill) {
+      ui.hudCustomPill.classList.remove('hidden');
+      if (ui.hudCustomRuleText) {
+        ui.hudCustomRuleText.textContent = customRulesManager.getSummaryBadgeText();
+      }
+    }
+  } else {
+    // 经典/疯狂模式恢复标准 20x20
+    ground.setGridConfig(20, false);
+    sceneSetup.setGridScale(20);
+    snake.setBoundLimit(9.5);
+    snake.setWrapMode(false);
+    snake.setBaseSpeed(0.16);
+    food.configureRules({
+      foodType: 'apple',
+      foodCount: 1,
+      boundLimit: 9
+    });
+    if (ui.hudCustomPill) {
+      ui.hudCustomPill.classList.add('hidden');
+    }
+  }
+
   const occupied = snake.getOccupiedPositions();
   food.spawn(occupied, []);
 
@@ -555,8 +743,8 @@ function startGame() {
 function handleSnakeStep() {
   const headPos = snake.logicalPos;
 
-  // 检测食物碰撞
-  const ateNormal = snake.checkFoodCollision(food.getPosition());
+  // 检测食物碰撞 (兼容多果实同屏)
+  const ateNormal = food.checkFoodCollision(headPos, snake.getOccupiedPositions(), obstacles.getPositions()) || snake.checkFoodCollision(food.getPosition());
   const ateSpecial = food.hasSpecial && snake.checkFoodCollision(food.specialPosition);
 
   if (ateNormal || ateSpecial) {
@@ -602,8 +790,8 @@ function handleSnakeStep() {
       sound.playInvincible();
     }
 
-    // 普通食物重新生成
-    if (ateNormal) {
+    // 普通食物重新生成（补充维持目标数量）
+    if (ateNormal && (!food.foodList || food.foodList.length < food.targetFoodCount)) {
       food.spawn(snake.getOccupiedPositions(), obstacles.getPositions());
     }
 
@@ -668,6 +856,9 @@ function handleDeath(reason) {
   if (ui.weatherBanner) {
     ui.weatherBanner.classList.add('hidden');
   }
+  if (ui.hudCustomPill) {
+    ui.hudCustomPill.classList.add('hidden');
+  }
   gameState.triggerGameOver(reason);
   sound.stopBGM();
   sound.playGameOver();
@@ -686,7 +877,9 @@ function handleDeath(reason) {
     ui.gameoverCoinTotal.textContent = economyManager.getCoins();
   }
 
-  ui.gameoverReason.textContent = reason;
+  ui.gameoverReason.textContent = (currentMode === 'custom' && customRulesManager)
+    ? `${reason} (${customRulesManager.getSummaryBadgeText()})`
+    : reason;
   ui.gameoverScore.textContent = gameState.score;
   ui.gameoverScreen.classList.remove('hidden');
   if (ui.touchControls) {

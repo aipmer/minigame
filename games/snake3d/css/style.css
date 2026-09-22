@@ -428,6 +428,286 @@ canvas { display: block; }
   text-align: center;
 }
 
+/* ── 玩法工坊自定义规则摘要与定制按钮 ── */
+.custom-rule-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: #FEF3C7;
+  border: 1.5px solid #FDE68A;
+  border-radius: 20px;
+  padding: 5px 12px;
+  margin-top: 2px;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.custom-rule-summary-text {
+  font-size: 12px;
+  font-weight: 800;
+  color: #B45309;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-tune-rules {
+  background: #F59E0B;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 14px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 5px rgba(245, 158, 11, 0.35);
+  transition: transform 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-tune-rules:active {
+  transform: scale(0.95);
+  background: #D97706;
+}
+
+.btn-tune-rules .ui-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── 局内工坊规则胶囊 ── */
+.hud-custom-pill {
+  position: absolute;
+  top: 56px;
+  left: calc(14px + env(safe-area-inset-left, 0px));
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(254, 243, 199, 0.95);
+  border: 1.5px solid #FDE68A;
+  border-radius: 18px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #B45309;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+  z-index: 50;
+  white-space: nowrap;
+}
+
+.hud-custom-pill .ui-icon-xs {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── 玩法工坊规则定制弹窗 (3D 粘土自适应卡片) ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.custom-rules-card {
+  max-width: 480px;
+  max-height: 88vh;
+  padding: 22px 20px 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 900;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.ui-icon-title {
+  width: 22px;
+  height: 22px;
+}
+
+.modal-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #F1F5F9;
+  color: #64748B;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.modal-close-btn:hover {
+  background: #E2E8F0;
+  color: #0F172A;
+}
+
+.custom-rules-body {
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 52vh;
+  box-sizing: border-box;
+}
+
+/* 维度卡片 */
+.rule-dim-block {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 18px;
+  padding: 10px 12px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.rule-dim-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.rule-dim-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1E293B;
+}
+
+.rule-dim-desc {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94A3B8;
+}
+
+.rule-dim-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rule-opt-pill {
+  flex: 1 1 calc(50% - 6px);
+  min-width: 105px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 10px;
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.rule-opt-pill:hover {
+  border-color: #94A3B8;
+  color: #1E293B;
+}
+
+.rule-opt-pill.active {
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  border-color: #F59E0B;
+  color: #92400E;
+  box-shadow: 0 3px 8px rgba(245, 158, 11, 0.25);
+  transform: translateY(-1px);
+}
+
+.rule-opt-pill .ui-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* 弹窗底部操作区 */
+.custom-rules-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+  box-sizing: border-box;
+}
+
+.custom-rules-actions .toy-btn {
+  flex: 1;
+  font-size: 13px;
+  padding: 10px 8px;
+}
+
+.toy-btn-dice {
+  background: linear-gradient(180deg, #F43F5E 0%, #E11D48 100%);
+  color: #FFFFFF;
+  border: 3px solid #FFFFFF;
+  box-shadow: 
+    0 6px 0 #9F1239,
+    0 10px 18px rgba(225, 29, 72, 0.35);
+  flex: 1.1 !important;
+}
+
+.toy-btn-dice:active {
+  box-shadow: 0 2px 0 #9F1239;
+  transform: translateY(4px);
+}
+
+.dice-icon-spin {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dice-shake-anim {
+  animation: diceShake 0.42s ease-in-out;
+}
+
+@keyframes diceShake {
+  0% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-28deg) scale(1.25); }
+  50% { transform: rotate(28deg) scale(1.25); }
+  75% { transform: rotate(-12deg) scale(1.1); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
 .hint-pill {
   font-size: 13px;
   font-weight: 700;
@@ -968,6 +1248,36 @@ canvas { display: block; }
   }
   .hint-pill {
     display: none;
+  }
+
+  .custom-rules-card {
+    max-width: 540px;
+    max-height: 92vh;
+    padding: 12px 18px 14px;
+  }
+  .custom-rules-body {
+    max-height: 48vh;
+    gap: 8px;
+  }
+  .rule-dim-block {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+  .rule-opt-pill {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+  .custom-rules-actions {
+    margin-top: 8px;
+  }
+  .custom-rules-actions .toy-btn {
+    padding: 7px 6px;
+    font-size: 12px;
+  }
+  .hud-custom-pill {
+    top: 36px;
+    padding: 2px 8px;
+    font-size: 10px;
   }
 }
 

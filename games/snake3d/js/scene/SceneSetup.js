@@ -54,22 +54,30 @@ export class SceneSetup {
     this.camera.updateProjectionMatrix();
   }
 
+  // 设置地台尺寸联动相机缩放
+  setGridScale(gridSize = 20) {
+    this.gridScale = Math.max(0.5, Number(gridSize) / 20);
+    const aspect = window.innerWidth / window.innerHeight;
+    this.updateCameraProjection(aspect);
+  }
+
   // 计算视锥自适应基准机位
   getAdaptiveCameraBase(aspect = window.innerWidth / window.innerHeight) {
+    const scaleFactor = Math.pow(this.gridScale || 1.0, 0.65);
     if (aspect < 1.0) {
       // 竖屏上下功能分区：机位后移微仰 (lookZ = 4.8)
       // 地台稳定投影在屏幕中上部 (35%~56%高度)，下半区腾出 44% 纯净空间留给虚拟摇杆与触控手势
       return {
-        y: 41.0,
-        z: 33.0,
-        lookZ: 4.8
+        y: 41.0 * scaleFactor,
+        z: 33.0 * scaleFactor,
+        lookZ: 4.8 * scaleFactor
       };
     } else {
       // 横屏双拇指掌机模式：机位适度拉近放大近 30%，地台饱满生动，两端留出双拇指操控区
       return {
-        y: 21.0,
-        z: 14.5,
-        lookZ: 0.2
+        y: 21.0 * scaleFactor,
+        z: 14.5 * scaleFactor,
+        lookZ: 0.2 * scaleFactor
       };
     }
   }

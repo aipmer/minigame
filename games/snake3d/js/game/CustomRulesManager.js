@@ -47,9 +47,9 @@ export class CustomRulesManager {
       mapSize: {
         title: '地台尺寸',
         options: [
-          { key: 'mini', name: '袖珍迷你 (12×12)', icon: 'assets/icons/icon_target.png', dimension: 12, desc: '紧凑空间，毫厘腾挪' },
-          { key: 'standard', name: '标准浮空 (20×20)', icon: 'assets/icons/icon_home.png', dimension: 20, desc: '经典开阔平衡尺寸' },
-          { key: 'large', name: '辽阔庄园 (28×28)', icon: 'assets/icons/icon_crystal.png', dimension: 28, desc: '超大面积，巨蟒巡游' }
+          { key: 'mini', name: '袖珍迷你 (16×16)', icon: 'assets/icons/icon_target.png', dimension: 16, desc: '紧凑空间，毫厘腾挪' },
+          { key: 'standard', name: '开阔群岛 (32×32)', icon: 'assets/icons/icon_home.png', dimension: 32, desc: '辽阔生态，沉浸巡游' },
+          { key: 'large', name: '无垠庄园 (40×40)', icon: 'assets/icons/icon_crystal.png', dimension: 40, desc: '超大面积，巨蟒驰骋' }
         ]
       },
       weather: {
@@ -136,10 +136,10 @@ export class CustomRulesManager {
     return opt ? opt.interval : 0.16;
   }
 
-  // 计算当前网格跨度 (12, 20, 28)
+  // 计算当前网格跨度 (16, 32, 40)
   getGridDimension() {
     const opt = this.meta.mapSize.options.find(o => o.key === this.rules.mapSize);
-    return opt ? opt.dimension : 20;
+    return opt ? opt.dimension : 32;
   }
 
   // 获取精炼的中文标签文本（用于局内 HUD 胶囊与战报印章）

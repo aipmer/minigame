@@ -1081,7 +1081,7 @@ canvas { display: block; }
   }
   .hud-container {
     top: max(10px, env(safe-area-inset-top));
-    left: 86px; /* 紧跟在左上角两个图标按钮 (34px*2+6px=74px) 后方 */
+    left: 132px; /* 避开左上角三个图标按钮 (34px*3+12px=114px + 10px) */
     right: max(10px, env(safe-area-inset-right));
     gap: 6px;
   }
@@ -1280,4 +1280,124 @@ canvas { display: block; }
     font-size: 10px;
   }
 }
+
+/* ── 顶部导航栏视角切换按钮 ── */
+.btn-camera-toggle {
+  background: linear-gradient(180deg, #F0FDF4 0%, #DCFCE7 100%);
+  border-color: #86EFAC;
+}
+.btn-camera-toggle.active-overview {
+  background: linear-gradient(180deg, #FEF3C7 0%, #FDE68A 100%);
+  border-color: #FBBF24;
+}
+
+/* ── 微型生态岛雷达罗盘 ── */
+.radar-minimap {
+  position: absolute;
+  top: max(56px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  z-index: 25;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+@media (max-width: 600px) {
+  .radar-minimap {
+    top: max(96px, calc(env(safe-area-inset-top) + 88px));
+    right: max(10px, env(safe-area-inset-right));
+  }
+}
+.radar-minimap.hidden {
+  opacity: 0;
+  transform: scale(0.85);
+  pointer-events: none;
+}
+.radar-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 6px 5px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 2px solid rgba(134, 239, 172, 0.7);
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+.radar-header {
+  margin-bottom: 2px;
+}
+.radar-title {
+  font-size: 9px;
+  font-weight: 800;
+  color: #15803D;
+  letter-spacing: 0.5px;
+}
+.radar-canvas-box {
+  width: 72px;
+  height: 72px;
+  border-radius: 9px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#radar-canvas {
+  width: 72px;
+  height: 72px;
+  display: block;
+}
+
+/* ── 离屏稀有道具边缘引导指示器 ── */
+.offscreen-indicators {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+}
+.offscreen-arrow-badge {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1.5px solid #F59E0B;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: pulseIndicator 1.8s infinite ease-in-out;
+}
+@keyframes pulseIndicator {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.08); }
+}
+.arrow-pointer {
+  font-size: 9px;
+  color: #F59E0B;
+  line-height: 1;
+}
+.arrow-icon {
+  width: 13px;
+  height: 13px;
+  object-fit: contain;
+}
+.arrow-name {
+  font-size: 9px;
+  font-weight: 800;
+  color: #B45309;
+  white-space: nowrap;
+}
+
+/* ── 随心智能浮动摇杆 ── */
+.virtual-stick.floating {
+  position: fixed;
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+.virtual-stick.floating.faded-out {
+  opacity: 0;
+  transform: scale(0.65);
+  pointer-events: none;
+}
+
 

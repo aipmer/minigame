@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════
 // 3D 贪吃蛇 — 主入口
 // ═══════════════════════════════════════════
+import * as THREE from 'three';
 import { SceneSetup } from './scene/SceneSetup.js';
 import { Ground } from './scene/Ground.js';
 import { Snake } from './game/Snake.js';
@@ -14,6 +15,7 @@ import { ModelLoader } from './game/ModelLoader.js';
 import { PowerUpManager } from './game/PowerUpManager.js';
 import { WeatherSystem } from './scene/WeatherSystem.js';
 import { CustomRulesManager } from './game/CustomRulesManager.js';
+import { RadarMinimap } from './game/RadarMinimap.js';
 import { SocialManager } from '/js/services/SocialManager.js';
 import { SocialUI } from '/js/services/SocialUI.js';
 import { EconomyManager } from '/js/services/EconomyManager.js';
@@ -23,6 +25,8 @@ import { ShopModalUI } from '/js/services/ShopModalUI.js';
 
 // ── UI 元素 ──
 const ui = {
+  cameraToggleBtn: document.getElementById('btn-camera-toggle'),
+  cameraToggleText: document.getElementById('camera-toggle-text'),
   hud:           document.getElementById('hud'),
   score:         document.getElementById('hud-score'),
   highScore:     document.getElementById('hud-highscore'),
@@ -115,17 +119,23 @@ modelLoader.loadAll().then(() => {
   snake.applyModels();
 });
 
+window._sceneSetup = sceneSetup;
 const ground    = new Ground(scene);
+window._ground  = ground;
 const snake     = new Snake(scene, modelLoader);
 window._snake   = snake;
 const food      = new Food(scene, modelLoader);
+window._food    = food;
 const obstacles = new ObstacleManager(scene, modelLoader);
 const gameState = new GameState();
+window._gameState = gameState;
 const sound     = new SoundManager();
 const particles = new ParticleSystem(scene);
 const cameraFX  = new CameraFX(camera);
 const powerUpManager = new PowerUpManager(scene, sound, particles, cameraFX);
 window._powerUpManager = powerUpManager;
+const radarMinimap = new RadarMinimap(container, { gridSize: 32 });
+window._radarMinimap = radarMinimap;
 
 // ── 3D 装扮商城与荣誉成就弹窗 ──
 const shopUI = new ShopModalUI({
@@ -187,32 +197,95 @@ skinManager.subscribe((skinDef, trailDef) => {
 // ── 跟踪蛇上次逻辑位置用于检测 step 发生 ──
 let lastSnakePos = null;
 
-// ── 开阔全景自适应平稳视角（自适应竖屏呼吸边距与横屏全景） ──
+// ── 镜头跟随与视角控制中枢（支持沉浸跟随与全局鸟瞰） ──
+let currentLookAtTarget = new THREE.Vector3(0, 0, 4.8);
+
 function updateCamera(delta) {
   if (!snake.head) return;
   const headPos = snake.head.position;
   const aspect = window.innerWidth / window.innerHeight;
-  const base = sceneSetup.getAdaptiveCameraBase(aspect);
 
-  // 对蛇头仅做极微量有机呼吸微动（0.08 系数），彻底消除剧烈晃动与抖动
-  const targetX = headPos.x * 0.08;
-  const targetY = base.y;
-  const targetZ = base.z + headPos.z * 0.06;
+  if (gameState.state === 'playing' && sceneSetup.cameraMode === 'follow') {
+    // 沉浸平滑跟随模式（Slither 风格）：
+    const base = sceneSetup.getFollowCameraBase(aspect, snake.length, snake.isBoosting);
 
-  const smooth = 1 - Math.pow(0.02, delta);
-  camera.position.x += (targetX - camera.position.x) * smooth;
-  camera.position.y += (targetY - camera.position.y) * smooth;
-  camera.position.z += (targetZ - camera.position.z) * smooth;
+    // 前瞻预判 Look-ahead 偏移
+    const dir = snake.direction || new THREE.Vector3(0, 0, 1);
+    const leadDist = base.lookAheadZ || 2.0;
+    const lookAheadX = dir.x * leadDist;
+    const lookAheadZ = dir.z * leadDist;
 
-  const lookX = headPos.x * 0.05;
-  const lookZ = base.lookZ + headPos.z * 0.05;
-  camera.lookAt(lookX, 0, lookZ);
+    // 目标机位：平移锁定在蛇头上方与后方，倾角维持 45°~52°
+    const targetX = headPos.x + lookAheadX * 0.35;
+    const targetY = base.y;
+    const targetZ = headPos.z + base.z + lookAheadZ * 0.35;
+
+    // 目标注视点
+    const targetLookX = headPos.x + lookAheadX * 0.8;
+    const targetLookY = 0.5;
+    const targetLookZ = headPos.z + lookAheadZ * 0.8;
+
+    // 高响应临界阻尼平滑插值（杜绝急转眩晕与卡顿）
+    const smooth = 1 - Math.pow(0.003, delta);
+    camera.position.x += (targetX - camera.position.x) * smooth;
+    camera.position.y += (targetY - camera.position.y) * smooth;
+    camera.position.z += (targetZ - camera.position.z) * smooth;
+
+    currentLookAtTarget.x += (targetLookX - currentLookAtTarget.x) * smooth;
+    currentLookAtTarget.y += (targetLookY - currentLookAtTarget.y) * smooth;
+    currentLookAtTarget.z += (targetLookZ - currentLookAtTarget.z) * smooth;
+    camera.lookAt(currentLookAtTarget.x, currentLookAtTarget.y, currentLookAtTarget.z);
+  } else {
+    // 全局鸟瞰模式或未开始/结算界面：平滑过渡至全岛开阔机位
+    const base = sceneSetup.getAdaptiveCameraBase(aspect);
+    const isPlaying = gameState.state === 'playing';
+    const targetX = isPlaying ? headPos.x * 0.12 : 0;
+    const targetY = base.y;
+    const targetZ = base.z + (isPlaying ? headPos.z * 0.08 : 0);
+
+    const targetLookX = isPlaying ? headPos.x * 0.08 : 0;
+    const targetLookY = 0;
+    const targetLookZ = base.lookZ + (isPlaying ? headPos.z * 0.08 : 0);
+
+    const smooth = 1 - Math.pow(0.015, delta);
+    camera.position.x += (targetX - camera.position.x) * smooth;
+    camera.position.y += (targetY - camera.position.y) * smooth;
+    camera.position.z += (targetZ - camera.position.z) * smooth;
+
+    currentLookAtTarget.x += (targetLookX - currentLookAtTarget.x) * smooth;
+    currentLookAtTarget.y += (targetLookY - currentLookAtTarget.y) * smooth;
+    currentLookAtTarget.z += (targetLookZ - currentLookAtTarget.z) * smooth;
+    camera.lookAt(currentLookAtTarget.x, currentLookAtTarget.y, currentLookAtTarget.z);
+  }
+}
+
+function updateCameraToggleUI() {
+  if (!ui.cameraToggleBtn || !ui.cameraToggleText) return;
+  const isFollow = sceneSetup.cameraMode === 'follow';
+  ui.cameraToggleText.textContent = isFollow ? '跟随' : '鸟瞰';
+  ui.cameraToggleBtn.classList.toggle('active-overview', !isFollow);
+  ui.cameraToggleBtn.title = isFollow ? '当前为沉浸跟随视角（点击切换鸟瞰）' : '当前为全局鸟瞰视角（点击切换跟随）';
+}
+
+if (ui.cameraToggleBtn) {
+  ui.cameraToggleBtn.addEventListener('click', () => {
+    sound.playTurn();
+    sceneSetup.toggleCameraMode();
+    updateCameraToggleUI();
+  });
 }
 
 // ── 输入处理 ──
 document.addEventListener('keydown', (e) => {
   const key = e.key;
   sound.init();
+
+  if (key === 'v' || key === 'V') {
+    sound.playTurn();
+    sceneSetup.toggleCameraMode();
+    updateCameraToggleUI();
+    return;
+  }
 
   if (gameState.state === 'start') {
     if (key === ' ') { e.preventDefault(); startGame(); }
@@ -457,12 +530,12 @@ if (isTouchDevice) {
   if (ui.restartBtn) ui.restartBtn.innerHTML = '<img src="assets/icons/icon_refresh.png" alt="重玩" class="ui-icon-btn"> 重新开始 (轻触)';
 }
 
-// ── 360° 弹性虚拟摇杆操控 ──
+// ── 360° 弹性虚拟摇杆操控（支持智能随心浮动定位） ──
 let stickActive = false;
 let stickCenterX = 0;
 let stickCenterY = 0;
 const STICK_MAX_RADIUS = 38; // 最大视觉拨动半径 (px)
-const STICK_DEAD_ZONE = 10;  // 死区阈值 (px)
+const STICK_DEAD_ZONE = 8;   // 死区阈值 (px)
 
 function updateStickKnob(dx, dy) {
   if (!ui.stickKnob) return;
@@ -473,6 +546,9 @@ function resetStick() {
   stickActive = false;
   if (ui.stickKnob) {
     ui.stickKnob.style.transform = 'translate(-50%, -50%)';
+  }
+  if (ui.virtualStick && ui.virtualStick.classList.contains('floating')) {
+    ui.virtualStick.classList.add('faded-out');
   }
 }
 
@@ -488,10 +564,6 @@ function handleStickVector(dx, dy) {
   updateStickKnob(knobX, knobY);
 
   // 360° 映射至 4 扇区：
-  // 右: [-PI/4, PI/4]
-  // 下: [PI/4, 3PI/4]
-  // 上: [-3PI/4, -PI/4]
-  // 左: > 3PI/4 或 < -3PI/4
   let dir = null;
   if (angle >= -Math.PI / 4 && angle <= Math.PI / 4) {
     dir = 'ArrowRight';
@@ -506,6 +578,21 @@ function handleStickVector(dx, dy) {
   if (dir && gameState.state === 'playing') {
     snake.handleInput(dir);
   }
+}
+
+function activateFloatingStick(clientX, clientY) {
+  if (!ui.virtualStick) return;
+  ui.virtualStick.classList.add('floating');
+  ui.virtualStick.classList.remove('faded-out');
+  ui.virtualStick.style.left = `${clientX}px`;
+  ui.virtualStick.style.top = `${clientY}px`;
+  ui.virtualStick.style.bottom = 'auto';
+  ui.virtualStick.style.transform = 'translate(-50%, -50%)';
+
+  stickCenterX = clientX;
+  stickCenterY = clientY;
+  stickActive = true;
+  updateStickKnob(0, 0);
 }
 
 if (ui.virtualStick) {
@@ -549,12 +636,46 @@ if (ui.virtualStick) {
   ui.virtualStick.addEventListener('touchend', onStickEnd, { passive: false });
   ui.virtualStick.addEventListener('touchcancel', onStickEnd, { passive: false });
 
-  // 鼠标拖拽支持（便于桌面调试）
+  // 鼠标拖拽支持（便于桌面调试与自动化测试）
   ui.virtualStick.addEventListener('mousedown', onStickStart);
   window.addEventListener('mousemove', (e) => {
     if (stickActive) onStickMove(e);
   });
   window.addEventListener('mouseup', () => {
+    if (stickActive) resetStick();
+  });
+
+  // 全局左半屏触摸支持智能随心浮动摇杆
+  window.addEventListener('touchstart', (e) => {
+    if (gameState.state !== 'playing') return;
+    const touch = e.touches ? e.touches[0] : null;
+    if (!touch) return;
+
+    // 避让所有顶层按钮、弹窗和右侧冲刺区
+    const target = e.target;
+    if (target && (target.closest('button') || target.closest('a') || target.closest('.modal-overlay') || target.closest('.top-nav-bar') || target.closest('#touch-boost-btn'))) {
+      return;
+    }
+
+    // 左半屏（< 58% 宽度）任意位置触发随心浮动定位
+    if (touch.clientX < window.innerWidth * 0.58 && touch.clientY > 70) {
+      e.preventDefault();
+      activateFloatingStick(touch.clientX, touch.clientY);
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchmove', (e) => {
+    if (!stickActive) return;
+    const touch = e.touches ? e.touches[0] : null;
+    if (touch) {
+      handleStickVector(touch.clientX - stickCenterX, touch.clientY - stickCenterY);
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchend', () => {
+    if (stickActive) resetStick();
+  });
+  window.addEventListener('touchcancel', () => {
     if (stickActive) resetStick();
   });
 }
@@ -671,6 +792,7 @@ function startGame() {
 
     ground.setGridConfig(gridDim, isWrap);
     sceneSetup.setGridScale(gridDim);
+    radarMinimap.setGridSize(gridDim);
 
     snake.setBoundLimit(boundLimit);
     snake.setWrapMode(isWrap);
@@ -693,21 +815,25 @@ function startGame() {
       }
     }
   } else {
-    // 经典/疯狂模式恢复标准 20x20
-    ground.setGridConfig(20, false);
-    sceneSetup.setGridScale(20);
-    snake.setBoundLimit(9.5);
+    // 经典/疯狂模式升级为 32x32 开阔生态群岛
+    ground.setGridConfig(32, false);
+    sceneSetup.setGridScale(32);
+    radarMinimap.setGridSize(32);
+    snake.setBoundLimit(15.5);
     snake.setWrapMode(false);
     snake.setBaseSpeed(0.16);
     food.configureRules({
       foodType: 'apple',
-      foodCount: 1,
-      boundLimit: 9
+      foodCount: 3, // 开阔大岛默认常驻 3 颗果实
+      boundLimit: 15
     });
     if (ui.hudCustomPill) {
       ui.hudCustomPill.classList.add('hidden');
     }
   }
+
+  radarMinimap.show();
+  updateCameraToggleUI();
 
   const occupied = snake.getOccupiedPositions();
   food.spawn(occupied, []);
@@ -859,6 +985,7 @@ function handleDeath(reason) {
   if (ui.hudCustomPill) {
     ui.hudCustomPill.classList.add('hidden');
   }
+  radarMinimap.hide();
   gameState.triggerGameOver(reason);
   sound.stopBGM();
   sound.playGameOver();
@@ -1043,6 +1170,8 @@ function gameLoop() {
   obstacles.update(delta);
   particles.update(delta);
   weatherSystem.update(delta);
+  ground.updateBorderWarning(snake.head ? snake.head.position : null, snake.boundLimit || 15.5);
+  radarMinimap.update(snake, food, powerUpManager, camera);
   updateCamera(delta);
 
   sceneSetup.render();

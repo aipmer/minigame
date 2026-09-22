@@ -154,7 +154,7 @@ export class Ground {
     const capColor = this.isWrapMode ? 0x818CF8 : 0xFDE047;
     const emissiveIntensity = this.isWrapMode ? 0.45 : 0.15;
 
-    const wallMat = new THREE.MeshStandardMaterial({
+    this.wallMat = new THREE.MeshStandardMaterial({
       color: wallColor,
       emissive: this.isWrapMode ? 0x0284C7 : 0x000000,
       emissiveIntensity: emissiveIntensity,
@@ -164,7 +164,7 @@ export class Ground {
       opacity: this.isWrapMode ? 0.85 : 1.0
     });
     
-    const capMat = new THREE.MeshStandardMaterial({
+    this.capMat = new THREE.MeshStandardMaterial({
       color: capColor,
       emissive: capColor,
       emissiveIntensity: emissiveIntensity * 1.2,
@@ -176,14 +176,14 @@ export class Ground {
       const group = new THREE.Group();
 
       const baseGeo = new THREE.BoxGeometry(width, wallHeight, depth);
-      const wallBase = new THREE.Mesh(baseGeo, wallMat);
+      const wallBase = new THREE.Mesh(baseGeo, this.wallMat);
       wallBase.position.set(0, wallHeight / 2, 0);
       wallBase.castShadow = true;
       wallBase.receiveShadow = true;
       group.add(wallBase);
       
       const capGeo = new THREE.BoxGeometry(width * 1.01, 0.15, depth * 1.1);
-      const cap = new THREE.Mesh(capGeo, capMat);
+      const cap = new THREE.Mesh(capGeo, this.capMat);
       cap.position.set(0, wallHeight + 0.075, 0);
       cap.castShadow = true;
       group.add(cap);
@@ -220,7 +220,7 @@ export class Ground {
 
     corners.forEach(([cx, cz]) => {
       const pGroup = new THREE.Group();
-      const pillar = new THREE.Mesh(pillarGeo, wallMat);
+      const pillar = new THREE.Mesh(pillarGeo, this.wallMat);
       pillar.position.y = (wallHeight + 0.4) / 2;
       pillar.castShadow = true;
       pillar.receiveShadow = true;
@@ -238,8 +238,30 @@ export class Ground {
     this.rootGroup.add(this.borderGroup);
   }
 
+  // 边界柔光呼吸预警机制（非穿墙模式下，蛇靠近边缘 3 格内时触发温和呼吸警示）
+  updateBorderWarning(snakePos, boundLimit = 15.5) {
+    if (!snakePos || this.isWrapMode || !this.wallMat || !this.capMat) return;
+    const distToEdgeX = boundLimit - Math.abs(snakePos.x);
+    const distToEdgeZ = boundLimit - Math.abs(snakePos.z);
+    const minDist = Math.min(distToEdgeX, distToEdgeZ);
+
+    if (minDist <= 3.0) {
+      const factor = (3.0 - Math.max(0, minDist)) / 3.0;
+      const pulse = 0.5 + 0.5 * Math.sin(Date.now() * 0.01);
+      this.wallMat.emissive.setHex(0xEF4444); // 警示绯红
+      this.wallMat.emissiveIntensity = 0.25 + factor * 0.55 * pulse;
+      this.capMat.emissive.setHex(0xFCA5A5);
+      this.capMat.emissiveIntensity = 0.35 + factor * 0.65 * pulse;
+    } else {
+      this.wallMat.emissive.setHex(0x000000);
+      this.wallMat.emissiveIntensity = 0.15;
+      this.capMat.emissive.setHex(0xFDE047);
+      this.capMat.emissiveIntensity = 0.2;
+    }
+  }
+
   // 玩法工坊网格尺寸与穿墙模式动态联动
-  setGridConfig(gridSize = 20, isWrapMode = false) {
+  setGridConfig(gridSize = 32, isWrapMode = false) {
     this.gridSize = gridSize;
     this.isWrapMode = !!isWrapMode;
 

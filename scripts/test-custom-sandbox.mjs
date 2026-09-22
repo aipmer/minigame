@@ -148,11 +148,12 @@ async function runTest() {
     }
 
     // 验证穿墙机制（移动至边界外不会死亡，而是传送回对侧）
-    console.log('测试蛇体触碰迷你岛边界 (x = 6.0) 穿墙传送...');
+    console.log('测试蛇体触碰边界穿墙传送...');
     const warpResult = await page.evaluate(() => {
       const snake = window._snake;
-      // 将蛇头置于边界外
-      snake.logicalPos.set(6.0, 0.5, 0);
+      // 将蛇头置于当前边界边缘并向边界外推进
+      snake.logicalPos.set(snake.boundLimit, 0.5, 0);
+      snake.nextDirection.set(1, 0, 0);
       const stepRes = snake.step();
       return {
         stepRes,

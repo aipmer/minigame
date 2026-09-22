@@ -10,6 +10,9 @@ export class SceneSetup {
     // 背景由 DOM 容器 CSS cover (保持等比防拉伸自适应) 驱动，Three.js 开启透明通道叠加
     this.scene.background = null;
 
+    // 相机模式：'follow' (沉浸跟随，默认) | 'overview' (全局鸟瞰)
+    this.cameraMode = 'follow';
+
     // 初始化全景开阔自适应机位
     const aspect = window.innerWidth / window.innerHeight;
     this.camera = new THREE.PerspectiveCamera(46, aspect, 0.1, 250);
@@ -34,51 +37,96 @@ export class SceneSetup {
     window.addEventListener('orientationchange', this.onWindowResize.bind(this), false);
   }
 
-  // 视锥与机位自适应调整（彻底消除竖屏两端过窄与上下遮挡）
-  updateCameraProjection(aspect = window.innerWidth / window.innerHeight) {
+  // 视锥与机位自适应调整（支持沉浸跟随与全景鸟瞰双模）
+  updateCameraProjection(aspect = window.innerWidth / window.innerHeight, isFollowing = false) {
     this.camera.aspect = aspect;
 
-    if (aspect < 1.0) {
-      // 竖屏长窄屏模式：执行「上下功能分区法」
-      // 水平 FOV 锁定在约 36.5°，使 20x20 地台左右留出 18%~22% 舒适呼吸边距
-      const targetHFOV = 36.5 * Math.PI / 180;
-      this.camera.fov = (2 * Math.atan(Math.tan(targetHFOV / 2) / aspect)) * 180 / Math.PI;
+    if (isFollowing && this.cameraMode === 'follow') {
+      // 沉浸跟随模式：透视视场角
+      this.camera.fov = aspect < 1.0 ? 48 : 46;
     } else {
-      // 横屏近景舞台模式：拉近饱满视野，充满中央主舞台
-      this.camera.fov = 48;
+      // 全景鸟瞰模式：长窄屏锁定水平 FOV 36.5°，确保呼吸边距严格达标
+      if (aspect < 1.0) {
+        const targetHFOV = 36.5 * Math.PI / 180;
+        this.camera.fov = (2 * Math.atan(Math.tan(targetHFOV / 2) / aspect)) * 180 / Math.PI;
+      } else {
+        this.camera.fov = 48;
+      }
     }
 
-    const camBase = this.getAdaptiveCameraBase(aspect);
-    this.camera.position.set(0, camBase.y, camBase.z);
-    this.camera.lookAt(0, 0, camBase.lookZ);
+    if (!isFollowing || this.cameraMode === 'overview') {
+      const camBase = this.getAdaptiveCameraBase(aspect);
+      this.camera.position.set(0, camBase.y, camBase.z);
+      this.camera.lookAt(0, 0, camBase.lookZ);
+    }
     this.camera.updateProjectionMatrix();
   }
 
-  // 设置地台尺寸联动相机缩放
+  // 设置地台尺寸联动相机缩放（鸟瞰模式下有效）
   setGridScale(gridSize = 20) {
     this.gridScale = Math.max(0.5, Number(gridSize) / 20);
     const aspect = window.innerWidth / window.innerHeight;
-    this.updateCameraProjection(aspect);
+    this.updateCameraProjection(aspect, false);
   }
 
-  // 计算视锥自适应基准机位
+  // 计算视锥自适应基准机位（全局鸟瞰模式，长窄屏上下功能分区）
   getAdaptiveCameraBase(aspect = window.innerWidth / window.innerHeight) {
     const scaleFactor = Math.pow(this.gridScale || 1.0, 0.65);
     if (aspect < 1.0) {
-      // 竖屏上下功能分区：机位后移微仰 (lookZ = 4.8)
-      // 地台稳定投影在屏幕中上部 (35%~56%高度)，下半区腾出 44% 纯净空间留给虚拟摇杆与触控手势
+      // 竖屏上下功能分区：地台稳定居中投影在上半区 (35%~56%高度)
       return {
         y: 41.0 * scaleFactor,
         z: 33.0 * scaleFactor,
         lookZ: 4.8 * scaleFactor
       };
     } else {
-      // 横屏双拇指掌机模式：机位适度拉近放大近 30%，地台饱满生动，两端留出双拇指操控区
+      // 横屏双拇指掌机模式：机位适度拉近放大
       return {
         y: 21.0 * scaleFactor,
         z: 14.5 * scaleFactor,
         lookZ: 0.2 * scaleFactor
       };
+    }
+  }
+
+  // 计算第三人称平移平滑跟随基准机位（沉浸跟随模式，随长度与冲刺动态成长变焦）
+  getFollowCameraBase(aspect = window.innerWidth / window.innerHeight, snakeLength = 5, isBoosting = false) {
+    // 动态变焦系数：初始 1.0，随蛇身变长与冲刺平滑拉远
+    const lengthExcess = Math.max(0, Number(snakeLength || 5) - 5);
+    const growthZoom = 1.0 + Math.min(0.40, lengthExcess * 0.007) + (isBoosting ? 0.08 : 0);
+
+    if (aspect < 1.0) {
+      // 竖屏移动端：特写高度，略向前微倾俯视
+      return {
+        y: 17.5 * growthZoom,
+        z: 12.8 * growthZoom,
+        lookAheadZ: 2.2 * growthZoom,
+        fov: 48
+      };
+    } else {
+      // 横屏掌机/桌面端：更开阔平缓视野
+      return {
+        y: 13.8 * growthZoom,
+        z: 9.8 * growthZoom,
+        lookAheadZ: 1.6 * growthZoom,
+        fov: 46
+      };
+    }
+  }
+
+  // 切换相机模式：'follow' <-> 'overview'
+  toggleCameraMode() {
+    this.cameraMode = (this.cameraMode === 'follow') ? 'overview' : 'follow';
+    const aspect = window.innerWidth / window.innerHeight;
+    this.updateCameraProjection(aspect);
+    return this.cameraMode;
+  }
+
+  setCameraMode(mode) {
+    if (mode === 'follow' || mode === 'overview') {
+      this.cameraMode = mode;
+      const aspect = window.innerWidth / window.innerHeight;
+      this.updateCameraProjection(aspect);
     }
   }
   

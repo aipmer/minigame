@@ -171,17 +171,13 @@ async function runTest() {
     // ══════════════════════════════════════════════
     console.log('\n--- 3. 验证移动端横屏 (844×390) 双拇指掌机布局与冲刺按键 ---');
     await page.setViewport({ width: 844, height: 390, isMobile: true, hasTouch: true });
-    await new Promise(r => setTimeout(r, 500));
-
-    // 重新开启一局以确保处于活跃的 playing 状态
     await page.evaluate(() => {
-      if (document.getElementById('gameover-screen').classList.contains('hidden') === false) {
-        document.getElementById('restart-btn').click();
-      } else if (document.getElementById('start-screen').classList.contains('hidden') === false) {
-        document.getElementById('start-btn').click();
-      }
+      const rBtn = document.getElementById('restart-btn');
+      const sBtn = document.getElementById('start-btn');
+      if (rBtn) rBtn.click();
+      if (sBtn) sBtn.click();
     });
-    await new Promise(r => setTimeout(r, 600));
+    await new Promise(r => setTimeout(r, 300));
 
     const landscapeStatus = await page.evaluate(() => {
       const w = window.innerWidth;

@@ -7,8 +7,8 @@ export class Food {
 
     // 规则配置
     this.foodType = 'apple'; // 'apple' | 'strawberry' | 'donut' | 'star'
-    this.targetFoodCount = 1; // 1 | 3 | 5
-    this.boundLimit = 9; // 5 for 12x12, 9 for 20x20, 13 for 28x28
+    this.targetFoodCount = 3; // 1 | 3 | 5 (开阔大岛默认常驻 3 颗美味鲜果)
+    this.boundLimit = 15; // 7 for 16x16, 15 for 32x32, 19 for 40x40
 
     // 活跃食物列表（支持 1/3/5 颗同屏）
     this.foodList = [];

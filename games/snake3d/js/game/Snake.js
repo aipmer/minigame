@@ -29,7 +29,7 @@ export class Snake {
     this.moveTimer = 0;
     
     // 状态与工坊规则
-    this.boundLimit = 9.5;
+    this.boundLimit = 15.5;
     this.isWrapMode = false;
     this.length = 0;
     this.isInvincible = false;
@@ -457,7 +457,7 @@ export class Snake {
     let result = { ate: false, died: false, dieReason: "", newHeadPos: this.logicalPos.clone() };
     
     // 墙壁判定
-    const limit = this.boundLimit || 9.5;
+    const limit = this.boundLimit || 15.5;
     if (Math.abs(this.logicalPos.x) > limit || Math.abs(this.logicalPos.z) > limit) {
       if (this.isInvincible || this.isGhost || this.isWrapMode) {
         const maxCoord = Math.floor(limit);
@@ -624,7 +624,7 @@ export class Snake {
   }
 
   setBoundLimit(limit) {
-    this.boundLimit = Number(limit) || 9.5;
+    this.boundLimit = Number(limit) || 15.5;
   }
 
   setBaseSpeed(interval) {

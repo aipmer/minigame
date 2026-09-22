@@ -4,13 +4,15 @@ export class Ground {
   constructor(scene) {
     this.scene = scene;
     
+    this.grassTexture = this.createGridTexture(false);
+    this.snowTexture = this.createGridTexture(true);
+
     this.initGround();
     this.initFloatingIslandBase();
     this.initBorders();
   }
-  
-  initGround() {
-    // 创建高精度玩具棋盘格草坪纹理
+
+  createGridTexture(isSnow = false) {
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 1024;
@@ -24,21 +26,34 @@ export class Ground {
       for (let j = 0; j < gridSize; j++) {
         const isLight = (i + j) % 2 === 0;
         
-        // 饱满马力欧/动森风草坪双色
-        ctx.fillStyle = isLight ? '#72C73B' : '#88D64C';
-        ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
-        
-        // 玩具感内嵌倒角高光与微阴影
-        ctx.strokeStyle = isLight ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.15)';
-        ctx.lineWidth = 2.5;
-        ctx.strokeRect(i * cellSize + 1.5, j * cellSize + 1.5, cellSize - 3, cellSize - 3);
+        if (isSnow) {
+          // 纯净冬日雪境双色
+          ctx.fillStyle = isLight ? '#F8FAFC' : '#E2E8F0';
+          ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+          ctx.strokeStyle = isLight ? 'rgba(255, 255, 255, 0.85)' : 'rgba(203, 213, 225, 0.6)';
+          ctx.lineWidth = 2.5;
+          ctx.strokeRect(i * cellSize + 1.5, j * cellSize + 1.5, cellSize - 3, cellSize - 3);
 
-        // 柔和微点纹理提升粘土触感
-        if ((i * 3 + j * 7) % 5 === 0) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
-          ctx.beginPath();
-          ctx.arc(i * cellSize + cellSize * 0.5, j * cellSize + cellSize * 0.5, 3.5, 0, Math.PI * 2);
-          ctx.fill();
+          if ((i * 3 + j * 7) % 5 === 0) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.beginPath();
+            ctx.arc(i * cellSize + cellSize * 0.5, j * cellSize + cellSize * 0.5, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        } else {
+          // 饱满马力欧/动森风草坪双色
+          ctx.fillStyle = isLight ? '#72C73B' : '#88D64C';
+          ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+          ctx.strokeStyle = isLight ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.15)';
+          ctx.lineWidth = 2.5;
+          ctx.strokeRect(i * cellSize + 1.5, j * cellSize + 1.5, cellSize - 3, cellSize - 3);
+
+          if ((i * 3 + j * 7) % 5 === 0) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+            ctx.beginPath();
+            ctx.arc(i * cellSize + cellSize * 0.5, j * cellSize + cellSize * 0.5, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
       }
     }
@@ -49,19 +64,22 @@ export class Ground {
     texture.minFilter = THREE.LinearFilter;
     texture.magFilter = THREE.LinearFilter;
     texture.generateMipmaps = false;
-    
+    return texture;
+  }
+  
+  initGround() {
     const geometry = new THREE.PlaneGeometry(20, 20);
     const material = new THREE.MeshStandardMaterial({
-      map: texture,
+      map: this.grassTexture,
       roughness: 0.55,
       metalness: 0.05
     });
     
-    const ground = new THREE.Mesh(geometry, material);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = 0.02; // 抬升至 0.02 彻底消除与岛体顶面的深度竞争(z-fighting)
-    ground.receiveShadow = true;
-    this.scene.add(ground);
+    this.groundMesh = new THREE.Mesh(geometry, material);
+    this.groundMesh.rotation.x = -Math.PI / 2;
+    this.groundMesh.position.y = 0.02; // 抬升至 0.02 彻底消除与岛体顶面的深度竞争(z-fighting)
+    this.groundMesh.receiveShadow = true;
+    this.scene.add(this.groundMesh);
   }
 
   // ── 构建立体厚度浮空岛底座（彻底消除单薄漂浮感） ──
@@ -75,10 +93,10 @@ export class Ground {
       roughness: 0.5,
       metalness: 0.05,
     });
-    const grassCrust = new THREE.Mesh(grassCrustGeo, grassCrustMat);
-    grassCrust.position.y = -0.22; // 顶面位于 -0.02，与 ground(0.02) 保持安全间距
-    grassCrust.receiveShadow = true;
-    islandGroup.add(grassCrust);
+    this.grassCrust = new THREE.Mesh(grassCrustGeo, grassCrustMat);
+    this.grassCrust.position.y = -0.22; // 顶面位于 -0.02，与 ground(0.02) 保持安全间距
+    this.grassCrust.receiveShadow = true;
+    islandGroup.add(this.grassCrust);
 
     // 2. 中层泥土岩石层（温暖焦糖粘土断层）
     const rockTier1Geo = new THREE.BoxGeometry(20.3, 1.1, 20.3);
@@ -203,4 +221,25 @@ export class Ground {
       this.scene.add(pGroup);
     });
   }
+
+  setWeather(type) {
+    if (type === 'snow') {
+      if (this.groundMesh) {
+        this.groundMesh.material.map = this.snowTexture;
+        this.groundMesh.material.needsUpdate = true;
+      }
+      if (this.grassCrust) {
+        this.grassCrust.material.color.setHex(0xCBD5E1); // 冰雪白霜层
+      }
+    } else {
+      if (this.groundMesh) {
+        this.groundMesh.material.map = this.grassTexture;
+        this.groundMesh.material.needsUpdate = true;
+      }
+      if (this.grassCrust) {
+        this.grassCrust.material.color.setHex(0x5EA82E); // 翠绿草皮
+      }
+    }
+  }
 }
+

@@ -202,4 +202,48 @@ export class SoundManager {
       this.bgmSource = null;
     }
   }
+
+  // 播放暴雨低频滚雷声 (Rumbling Thunder)
+  playThunder() {
+    if (!this.ctx) return;
+    this._createOscillator(90, 'sawtooth', 0.85, 0.28, {
+      endFreq: 24,
+      decayType: 'exponential',
+      amFreq: 7
+    });
+    setTimeout(() => {
+      this._createOscillator(60, 'triangle', 0.65, 0.22, {
+        endFreq: 20,
+        decayType: 'exponential'
+      });
+    }, 120);
+  }
+
+  // 播放惊雷劈击脆响与爆鸣 (Lightning Strike Crack & Blast)
+  playLightningStrike() {
+    if (!this.ctx) return;
+    // 高频闪电破空撕裂声
+    this._createOscillator(520, 'sawtooth', 0.12, 0.45, {
+      endFreq: 45,
+      decayType: 'exponential'
+    });
+    // 紧跟爆裂冲击波
+    setTimeout(() => {
+      this._createOscillator(160, 'square', 0.35, 0.38, {
+        endFreq: 28,
+        decayType: 'exponential'
+      });
+    }, 35);
+  }
+
+  // 播放雪境清风微吟空灵声 (Gentle Winter Breeze)
+  playSnowBreeze() {
+    if (!this.ctx) return;
+    this._createOscillator(880, 'sine', 1.1, 0.08, {
+      endFreq: 660,
+      decayType: 'exponential',
+      amFreq: 4
+    });
+  }
 }
+

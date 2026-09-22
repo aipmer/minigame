@@ -12,6 +12,7 @@ import { ParticleSystem } from './effects/Particles.js';
 import { CameraFX } from './effects/CameraFX.js';
 import { ModelLoader } from './game/ModelLoader.js';
 import { PowerUpManager } from './game/PowerUpManager.js';
+import { WeatherSystem } from './scene/WeatherSystem.js';
 import { SocialManager } from '/js/services/SocialManager.js';
 import { SocialUI } from '/js/services/SocialUI.js';
 import { EconomyManager } from '/js/services/EconomyManager.js';
@@ -31,6 +32,12 @@ const ui = {
   powerupIcon:   document.getElementById('powerup-icon'),
   powerupName:   document.getElementById('powerup-name'),
   powerupTimer:  document.getElementById('powerup-timer'),
+  weatherHud:    document.getElementById('weather-hud'),
+  weatherIcon:   document.getElementById('weather-icon'),
+  weatherName:   document.getElementById('weather-name'),
+  weatherBanner: document.getElementById('weather-banner'),
+  weatherBannerIcon: document.getElementById('weather-banner-icon'),
+  weatherBannerText: document.getElementById('weather-banner-text'),
   modeBtnClassic:document.getElementById('mode-btn-classic'),
   modeBtnCrazy:  document.getElementById('mode-btn-crazy'),
   modeDesc:      document.getElementById('mode-desc'),
@@ -119,6 +126,40 @@ const shopUI = new ShopModalUI({
 });
 window._shopUI = shopUI;
 
+// ── 悬空地台动态天气系统 ──
+const weatherSystem = new WeatherSystem({
+  scene,
+  sceneSetup,
+  soundManager: sound,
+  ground,
+  obstacleManager: obstacles,
+  food,
+  achievementManager,
+  iconBasePath: 'assets/icons/'
+});
+window._weatherSystem = weatherSystem;
+
+let weatherBannerTimer = null;
+weatherSystem.onWeatherChange((weather, meta) => {
+  if (ui.weatherIcon) ui.weatherIcon.src = meta.icon;
+  if (ui.weatherName) ui.weatherName.textContent = meta.name;
+
+  if (ui.weatherBanner && ui.weatherBannerIcon && ui.weatherBannerText) {
+    ui.weatherBannerIcon.src = meta.icon;
+    ui.weatherBannerText.textContent = `天气变幻：${meta.name}！`;
+    ui.weatherBanner.classList.remove('hidden');
+    ui.weatherBanner.style.opacity = '1';
+
+    if (weatherBannerTimer) clearTimeout(weatherBannerTimer);
+    weatherBannerTimer = setTimeout(() => {
+      ui.weatherBanner.style.opacity = '0';
+      setTimeout(() => {
+        ui.weatherBanner.classList.add('hidden');
+      }, 400);
+    }, 3200);
+  }
+});
+
 let currentTrailDef = skinManager.getActiveTrailDef();
 let trailTimer = 0;
 
@@ -131,24 +172,25 @@ skinManager.subscribe((skinDef, trailDef) => {
 // ── 跟踪蛇上次逻辑位置用于检测 step 发生 ──
 let lastSnakePos = null;
 
-// ── 开阔全景平稳视角 ──
+// ── 开阔全景自适应平稳视角（自适应竖屏呼吸边距与横屏全景） ──
 function updateCamera(delta) {
   if (!snake.head) return;
   const headPos = snake.head.position;
+  const aspect = window.innerWidth / window.innerHeight;
+  const base = sceneSetup.getAdaptiveCameraBase(aspect);
 
-  // 开阔稳定全景基准：高度 28.5，纵深 19.5
-  // 对蛇头仅做极微量有机呼吸微动（0.12 系数），彻底消除剧烈晃动与抖动
-  const targetX = headPos.x * 0.12;
-  const targetY = 28.5;
-  const targetZ = 19.5 + headPos.z * 0.08;
+  // 对蛇头仅做极微量有机呼吸微动（0.08 系数），彻底消除剧烈晃动与抖动
+  const targetX = headPos.x * 0.08;
+  const targetY = base.y;
+  const targetZ = base.z + headPos.z * 0.06;
 
   const smooth = 1 - Math.pow(0.02, delta);
   camera.position.x += (targetX - camera.position.x) * smooth;
   camera.position.y += (targetY - camera.position.y) * smooth;
   camera.position.z += (targetZ - camera.position.z) * smooth;
 
-  const lookX = headPos.x * 0.08;
-  const lookZ = headPos.z * 0.08;
+  const lookX = headPos.x * 0.05;
+  const lookZ = base.lookZ + headPos.z * 0.05;
   camera.lookAt(lookX, 0, lookZ);
 }
 
@@ -443,6 +485,14 @@ function startGame() {
   specialFoodTimeout = 0;
 
   ui.hud.classList.remove('hidden');
+  if (ui.weatherHud) {
+    ui.weatherHud.classList.remove('hidden');
+    const curMeta = weatherSystem.weatherMeta[weatherSystem.currentWeather];
+    if (curMeta) {
+      if (ui.weatherIcon) ui.weatherIcon.src = curMeta.icon;
+      if (ui.weatherName) ui.weatherName.textContent = curMeta.name;
+    }
+  }
   if (ui.powerupHud) {
     ui.powerupHud.classList.add('hidden');
   }
@@ -563,6 +613,12 @@ function handleDeath(reason) {
   powerUpManager.clearSpawned();
   if (ui.powerupHud) {
     ui.powerupHud.classList.add('hidden');
+  }
+  if (ui.weatherHud) {
+    ui.weatherHud.classList.add('hidden');
+  }
+  if (ui.weatherBanner) {
+    ui.weatherBanner.classList.add('hidden');
   }
   gameState.triggerGameOver(reason);
   sound.stopBGM();
@@ -745,6 +801,7 @@ function gameLoop() {
   food.update(delta);
   obstacles.update(delta);
   particles.update(delta);
+  weatherSystem.update(delta);
   updateCamera(delta);
 
   sceneSetup.render();

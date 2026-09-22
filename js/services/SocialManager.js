@@ -223,8 +223,8 @@ export class SocialManager {
     return { hasChallenge: false, targetScore: 0, challenger: '' };
   }
 
-  // 绘制 9:16 高清战报海报 (纯中文、零原生 Emoji、3D 质感)
-  async generatePoster({ gameTitle, score, rank, percentile, iconPath = 'assets/icons/icon_trophy.png' }) {
+  // 绘制 9:16 高清战报海报 (纯中文·零Emoji·3D质感·主题化)
+  async generatePoster({ gameTitle, score, rank, percentile, iconPath = 'assets/icons/icon_trophy.png', theme = 'clay' }) {
     const width = 720;
     const height = 1280;
     const canvas = document.createElement('canvas');
@@ -232,33 +232,43 @@ export class SocialManager {
     canvas.height = height;
     const ctx = canvas.getContext('2d');
 
-    // 1. 梦幻渐变大背景 (暖金与深邃双色)
+    const isClay = (theme === 'clay');
+
+    // 1. 渐变大背景
     const bgGrad = ctx.createLinearGradient(0, 0, width, height);
-    bgGrad.addColorStop(0, '#13192B');
-    bgGrad.addColorStop(0.4, '#1E2945');
-    bgGrad.addColorStop(1, '#0B0F1A');
+    if (isClay) {
+      // 动森/清新粘土晴空暖阳渐变
+      bgGrad.addColorStop(0, '#60A5FA');
+      bgGrad.addColorStop(0.42, '#93C5FD');
+      bgGrad.addColorStop(1, '#FEF3C7');
+    } else {
+      // 次世代深空街机
+      bgGrad.addColorStop(0, '#13192B');
+      bgGrad.addColorStop(0.4, '#1E2945');
+      bgGrad.addColorStop(1, '#0B0F1A');
+    }
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, width, height);
 
-    // 2. 装饰星光粒子
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    // 2. 装饰浮动微粒
+    ctx.fillStyle = isClay ? 'rgba(255, 255, 255, 0.45)' : 'rgba(255, 255, 255, 0.15)';
     for (let i = 0; i < 40; i++) {
       const rx = (i * 12347) % width;
       const ry = (i * 98765) % height;
-      const rSize = (i % 3) + 1.5;
+      const rSize = (i % 3) + (isClay ? 2.5 : 1.5);
       ctx.beginPath();
       ctx.arc(rx, ry, rSize, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // 3. 顶部大标题与副标
+    // 3. 顶部大标题与副标（严格 100% 纯中文零英文）
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#6EE7B7';
+    ctx.fillStyle = isClay ? '#047857' : '#6EE7B7';
     ctx.font = 'bold 32px "PingFang SC", "Microsoft YaHei", sans-serif';
-    ctx.fillText('MINIGAME · 荣誉战报', width / 2, 110);
+    ctx.fillText(isClay ? '轻游天地 · 荣誉战报' : '深空先锋 · 荣誉战报', width / 2, 110);
 
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '900 52px "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillStyle = isClay ? '#0F172A' : '#FFFFFF';
+    ctx.font = '900 54px "PingFang SC", "Microsoft YaHei", sans-serif';
     ctx.fillText(gameTitle, width / 2, 185);
 
     // 4. 中间 3D 拟态卡片背景
@@ -269,17 +279,24 @@ export class SocialManager {
     const radius = 36;
 
     ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-    ctx.shadowBlur = 30;
-    ctx.shadowOffsetY = 15;
-    ctx.fillStyle = 'rgba(30, 41, 69, 0.85)';
+    if (isClay) {
+      ctx.shadowColor = 'rgba(30, 58, 138, 0.16)';
+      ctx.shadowBlur = 36;
+      ctx.shadowOffsetY = 16;
+      ctx.fillStyle = '#FFFDF9';
+    } else {
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+      ctx.shadowBlur = 30;
+      ctx.shadowOffsetY = 15;
+      ctx.fillStyle = 'rgba(30, 41, 69, 0.85)';
+    }
     this._roundRect(ctx, cardX, cardY, cardW, cardH, radius);
     ctx.fill();
     ctx.restore();
 
-    // 卡片内发光边框
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-    ctx.lineWidth = 2;
+    // 卡片边框
+    ctx.strokeStyle = isClay ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.12)';
+    ctx.lineWidth = isClay ? 3.5 : 2;
     this._roundRect(ctx, cardX, cardY, cardW, cardH, radius);
     ctx.stroke();
 
@@ -299,16 +316,16 @@ export class SocialManager {
     }
 
     // 6. 玩家昵称
-    ctx.fillStyle = '#94A3B8';
+    ctx.fillStyle = isClay ? '#64748B' : '#94A3B8';
     ctx.font = 'bold 28px "PingFang SC", "Microsoft YaHei", sans-serif';
     ctx.fillText(`探险家 · ${this.profile.name}`, width / 2, 515);
 
     // 7. 最终得分
-    ctx.fillStyle = '#F8FAFC';
-    ctx.font = '500 28px "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillStyle = isClay ? '#475569' : '#F8FAFC';
+    ctx.font = '600 28px "PingFang SC", "Microsoft YaHei", sans-serif';
     ctx.fillText('最终战绩', width / 2, 575);
 
-    ctx.fillStyle = '#F59E0B';
+    ctx.fillStyle = isClay ? '#D97706' : '#F59E0B';
     ctx.font = '900 96px "PingFang SC", "Microsoft YaHei", sans-serif';
     ctx.fillText(score.toLocaleString(), width / 2, 680);
 
@@ -330,16 +347,16 @@ export class SocialManager {
     ctx.fillText(`超越了 ${percentile}% 的挑战者`, width / 2, pillY + 48);
 
     // 9. 排名信息
-    ctx.fillStyle = '#E2E8F0';
+    ctx.fillStyle = isClay ? '#334155' : '#E2E8F0';
     ctx.font = 'bold 32px "PingFang SC", "Microsoft YaHei", sans-serif';
     ctx.fillText(`荣登风云榜 第 ${rank} 名`, width / 2, 860);
 
     // 10. 底部行动呼吁与挑战提示
-    ctx.fillStyle = '#38BDF8';
+    ctx.fillStyle = isClay ? '#0F766E' : '#38BDF8';
     ctx.font = 'bold 30px "PingFang SC", "Microsoft YaHei", sans-serif';
     ctx.fillText('扫描或点击链接 · 即刻发起挑战', width / 2, 1070);
 
-    ctx.fillStyle = '#64748B';
+    ctx.fillStyle = isClay ? '#475569' : '#64748B';
     ctx.font = '500 24px "PingFang SC", "Microsoft YaHei", sans-serif';
     ctx.fillText('长按图片即可保存至相册并分享好友', width / 2, 1120);
 

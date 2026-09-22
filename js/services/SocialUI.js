@@ -276,7 +276,8 @@ export class SocialUI {
       score: score,
       rank: rank,
       percentile: percentile,
-      iconPath: `${this.iconBasePath}icon_trophy.png`
+      iconPath: `${this.iconBasePath}icon_trophy.png`,
+      theme: this.theme
     });
 
     const img = this.posterModal.querySelector('#social-poster-img');

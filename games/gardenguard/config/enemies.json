@@ -1,0 +1,94 @@
+{
+  "enemies": [
+    {
+      "id": "caterpillar",
+      "name": "毛毛虫",
+      "type": "basic",
+      "baseHP": 30,
+      "speed": 1.0,
+      "damage": 1,
+      "reward": { "seeds": 3, "score": 10 },
+      "color": "#90EE90",
+      "description": "最常见的花园害虫",
+      "scale": 0.6
+    },
+    {
+      "id": "beetle",
+      "name": "甲壳虫",
+      "type": "basic",
+      "baseHP": 100,
+      "speed": 0.6,
+      "damage": 2,
+      "reward": { "seeds": 5, "score": 25 },
+      "color": "#8B4513",
+      "description": "厚甲护身的重装虫",
+      "scale": 0.8
+    },
+    {
+      "id": "moth",
+      "name": "蝴蝶蛾",
+      "type": "basic",
+      "baseHP": 15,
+      "speed": 1.8,
+      "damage": 1,
+      "reward": { "seeds": 4, "score": 15 },
+      "color": "#DDA0DD",
+      "description": "轻盈高速的飞行害虫",
+      "scale": 0.5
+    },
+    {
+      "id": "ladybug",
+      "name": "瓢虫",
+      "type": "basic",
+      "baseHP": 40,
+      "speed": 1.2,
+      "damage": 1,
+      "reward": { "seeds": 6, "score": 20 },
+      "splitOnDeath": {
+        "spawnId": "caterpillar",
+        "count": 2,
+        "hpRatio": 0.5
+      },
+      "color": "#FF6347",
+      "description": "死后会分裂成两只小虫",
+      "scale": 0.55
+    },
+    {
+      "id": "scorpion",
+      "name": "毒刺蝎",
+      "type": "elite",
+      "baseHP": 200,
+      "speed": 0.8,
+      "damage": 3,
+      "reward": { "seeds": 15, "score": 80 },
+      "ability": {
+        "type": "slow_aura",
+        "radius": 2.5,
+        "slowFactor": 0.5,
+        "desc": "经过时减速周围炮台攻速"
+      },
+      "color": "#800080",
+      "description": "剧毒精英，削弱你的防御",
+      "scale": 0.9
+    },
+    {
+      "id": "mushroom_king",
+      "name": "蘑菇王",
+      "type": "elite",
+      "baseHP": 300,
+      "speed": 0.5,
+      "damage": 4,
+      "reward": { "seeds": 20, "score": 120 },
+      "ability": {
+        "type": "summon",
+        "summonId": "caterpillar",
+        "summonCount": 2,
+        "summonInterval": 5.0,
+        "desc": "每 5 秒召唤 2 只毛毛虫"
+      },
+      "color": "#DC143C",
+      "description": "虫群之王，不断召唤援军",
+      "scale": 1.2
+    }
+  ]
+}

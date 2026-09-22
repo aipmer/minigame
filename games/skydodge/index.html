@@ -18,8 +18,11 @@
   <!-- Three.js 画布容器 -->
   <div id="game-container"></div>
 
-  <!-- 返回主页按钮 -->
-  <a href="../../" class="back-home-btn" title="返回游戏大厅"><img src="assets/icons/icon_home.png" alt="Home" class="ui-icon"> 游戏大厅</a>
+  <!-- 顶部左侧导航操作栏 -->
+  <div class="top-nav-bar">
+    <a href="../../" class="nav-pill-btn" title="返回游戏大厅"><img src="assets/icons/icon_home.png" alt="大厅" class="ui-icon"> <span class="nav-btn-text">大厅</span></a>
+    <button id="btn-top-leaderboard" class="nav-pill-btn" title="查看风云榜"><img src="assets/icons/icon_trophy.png" alt="风云榜" class="ui-icon"> <span class="nav-btn-text">风云榜</span></button>
+  </div>
 
   <!-- 顶部科幻 HUD 仪表盘 (中文版) -->
   <div id="hud" class="hud-container hidden">
@@ -29,13 +32,13 @@
         <span class="hud-label">距离</span>
         <span class="hud-value" id="hud-distance">0 <small>米</small></span>
       </div>
-      <div class="hud-item">
+      <div class="hud-item desktop-only">
         <span class="hud-label">航速</span>
-        <span class="hud-value highlight" id="hud-speed">120 <small>km/h</small></span>
+        <span class="hud-value highlight" id="hud-speed">120 <small>公里/时</small></span>
       </div>
       <div class="hud-item">
         <span class="hud-label">星区</span>
-        <span class="hud-value" id="hud-level">Lv.1</span>
+        <span class="hud-value" id="hud-level">1区</span>
       </div>
     </div>
 
@@ -45,13 +48,17 @@
         <span class="hud-label">得分</span>
         <span class="hud-value" id="hud-score">0</span>
       </div>
-      <div class="hud-item align-right">
+      <div class="hud-item align-right desktop-only">
         <span class="hud-label">最高</span>
         <span class="hud-value" id="hud-highscore">0</span>
       </div>
       <div class="hud-item align-right">
         <span class="hud-label">护盾</span>
         <span class="hud-badge shield-offline" id="hud-shield">离线</span>
+      </div>
+      <div class="hud-item align-right">
+        <span class="hud-label">晶币</span>
+        <span class="hud-value neon-gold"><img src="assets/icons/icon_crystal.png" alt="晶币" class="ui-icon-xs"> <span id="hud-crystals">0</span></span>
       </div>
     </div>
   </div>
@@ -62,6 +69,9 @@
     <div class="combo-sub" id="combo-sub">+200 分</div>
   </div>
 
+  <!-- 战术大招浮动通知横幅 -->
+  <div id="skill-toast" class="skill-toast"></div>
+
   <!-- 底部冲刺能量条 -->
   <div id="boost-meter-container" class="boost-container hidden">
     <div class="boost-label">曲速冲刺 [Shift] · 等离子主炮 [空格]</div>
@@ -70,33 +80,67 @@
     </div>
   </div>
 
+  <!-- 桌面端即时战术技能坞 (按键 1/2/3 释放) -->
+  <div id="desktop-skill-dock" class="desktop-skill-dock hidden">
+    <button id="skill-btn-shield" class="dock-skill-btn" data-skill="shield" aria-label="等离子护盾 (按 1 释放)">
+      <span class="skill-hotkey">1</span>
+      <img src="assets/icons/icon_shield.png" alt="护盾" class="dock-icon">
+      <div class="dock-info">
+        <span class="dock-name">等离子护盾</span>
+        <span class="dock-cost">50 晶石</span>
+      </div>
+      <span class="skill-status-text"></span>
+    </button>
+    <button id="skill-btn-emp" class="dock-skill-btn" data-skill="emp" aria-label="超空间脉冲 (按 2 释放)">
+      <span class="skill-hotkey">2</span>
+      <img src="assets/icons/icon_emp.png" alt="脉冲" class="dock-icon">
+      <div class="dock-info">
+        <span class="dock-name">超空间脉冲</span>
+        <span class="dock-cost">100 晶石</span>
+      </div>
+      <span class="skill-status-text"></span>
+    </button>
+    <button id="skill-btn-overdrive" class="dock-skill-btn" data-skill="overdrive" aria-label="火力过载 (按 3 释放)">
+      <span class="skill-hotkey">3</span>
+      <img src="assets/icons/icon_overdrive.png" alt="过载" class="dock-icon">
+      <div class="dock-info">
+        <span class="dock-name">火力过载</span>
+        <span class="dock-cost">80 晶石</span>
+      </div>
+      <span class="skill-status-text"></span>
+    </button>
+  </div>
+
   <!-- 任务准备 / 开始画面 -->
   <div id="start-screen" class="overlay">
     <div class="glass-panel">
       <div class="mission-tag">作战任务简报</div>
       <h1 class="glitch-title"><img src="assets/icons/icon_rocket.png" alt="战机" class="ui-icon-md" style="vertical-align: -3px; margin-right: 4px;">太空战机</h1>
-      <h2 class="sub-title">SPACE FIGHTER 3D</h2>
+      <h2 class="sub-title">次世代星际巡航</h2>
       
       <div class="control-guides">
         <div class="guide-item">
-          <span class="guide-icon"><img src="assets/icons/icon_gamepad.png" alt="Gamepad" class="ui-icon-md"></span>
+          <span class="guide-icon"><img src="assets/icons/icon_gamepad.png" alt="操控" class="ui-icon-md"></span>
           <span class="guide-desc"><strong>[WASD / 方向键 / 拖拽]</strong>：穿梭机动变道</span>
         </div>
         <div class="guide-item">
-          <span class="guide-icon"><img src="assets/icons/icon_fire.png" alt="Fire" class="ui-icon-md"></span>
+          <span class="guide-icon"><img src="assets/icons/icon_fire.png" alt="开火" class="ui-icon-md"></span>
           <span class="guide-desc"><strong>[空格键 / 点击开火]</strong>：等离子双激光，击碎陨石！</span>
         </div>
         <div class="guide-item">
-          <span class="guide-icon"><img src="assets/icons/icon_boost.png" alt="Boost" class="ui-icon-md"></span>
+          <span class="guide-icon"><img src="assets/icons/icon_boost.png" alt="冲刺" class="ui-icon-md"></span>
           <span class="guide-desc"><strong>[Shift / 冲刺键]</strong>：推进加速冲刺，穿透护盾</span>
         </div>
         <div class="guide-item">
-          <span class="guide-icon"><img src="assets/icons/icon_crystal.png" alt="Crystal" class="ui-icon-md"></span>
-          <span class="guide-desc"><strong>收集能量晶体</strong>：维持连击 Combo 并充能护盾</span>
+          <span class="guide-icon"><img src="assets/icons/icon_crystal.png" alt="晶石" class="ui-icon-md"></span>
+          <span class="guide-desc"><strong>收集能量晶体</strong>：维持连击并充能护盾</span>
         </div>
       </div>
 
-      <button id="start-btn" class="action-btn"><img src="assets/icons/icon_rocket.png" alt="Start" class="ui-icon-btn"> 启动引擎，立即起飞</button>
+      <div class="start-btn-group">
+        <button id="start-btn" class="action-btn"><img src="assets/icons/icon_rocket.png" alt="起飞" class="ui-icon-btn"> 启动引擎，立即起飞</button>
+        <button id="btn-start-leaderboard" class="action-btn action-btn-secondary"><img src="assets/icons/icon_trophy.png" alt="风云榜" class="ui-icon-btn"> 查看风云榜</button>
+      </div>
       <p class="key-hint">桌面端按 [空格键] 或点击起飞</p>
     </div>
   </div>
@@ -124,9 +168,24 @@
           <span class="stat-label">最高连击</span>
           <span class="stat-val" id="final-maxcombo">x1</span>
         </div>
+        <div class="stat-card">
+          <span class="stat-label">收集晶币</span>
+          <span class="stat-val" id="final-crystals">0 晶币</span>
+        </div>
+        <div class="stat-card stat-card-wide">
+          <span class="stat-label">星区排名</span>
+          <span class="stat-val highlight" id="final-percentile">正在计算排名...</span>
+        </div>
       </div>
 
-      <button id="restart-btn" class="action-btn restart"><img src="assets/icons/icon_refresh.png" alt="Restart" class="ui-icon-btn"> 重新起飞 (R)</button>
+      <div class="gameover-btn-group">
+        <button id="restart-btn" class="action-btn restart"><img src="assets/icons/icon_refresh.png" alt="重玩" class="ui-icon-btn"> 重新起飞 (R)</button>
+        <div class="gameover-btn-row">
+          <button id="btn-gameover-poster" class="action-btn action-btn-secondary"><img src="assets/icons/icon_share.png" alt="战报" class="ui-icon-btn"> 生成战报</button>
+          <button id="btn-gameover-challenge" class="action-btn action-btn-secondary"><img src="assets/icons/icon_rocket.png" alt="挑战" class="ui-icon-btn"> 发起挑战</button>
+          <button id="btn-gameover-leaderboard" class="action-btn action-btn-secondary"><img src="assets/icons/icon_trophy.png" alt="风云榜" class="ui-icon-btn"> 风云榜</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -136,6 +195,25 @@
       <div class="stick-knob" id="stick-knob"></div>
     </div>
     <div class="touch-actions">
+      <!-- 弧形战术大招技能按键 (开火键上方外延扇形排布) -->
+      <div class="touch-skill-arc">
+        <button id="touch-skill-shield" class="touch-skill-btn" data-skill="shield" aria-label="等离子护盾">
+          <img src="assets/icons/icon_shield.png" alt="护盾" class="ui-icon-skill">
+          <span class="skill-cost-badge">50晶石</span>
+          <span class="skill-status-text"></span>
+        </button>
+        <button id="touch-skill-emp" class="touch-skill-btn" data-skill="emp" aria-label="超空间脉冲">
+          <img src="assets/icons/icon_emp.png" alt="脉冲" class="ui-icon-skill">
+          <span class="skill-cost-badge">100晶石</span>
+          <span class="skill-status-text"></span>
+        </button>
+        <button id="touch-skill-overdrive" class="touch-skill-btn" data-skill="overdrive" aria-label="火力过载">
+          <img src="assets/icons/icon_overdrive.png" alt="过载" class="ui-icon-skill">
+          <span class="skill-cost-badge">80晶石</span>
+          <span class="skill-status-text"></span>
+        </button>
+      </div>
+
       <button id="touch-fire-btn" class="touch-fire-btn" aria-label="主炮开火">
         <img src="assets/icons/icon_fire.png" alt="开火" class="ui-icon-touch">
         <span class="btn-text">开火</span>

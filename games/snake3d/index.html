@@ -18,8 +18,11 @@
   <!-- Three.js 渲染容器 -->
   <div id="game-container"></div>
 
-  <!-- 返回游戏大厅 -->
-  <a href="../../" class="back-home-btn" title="返回游戏大厅"><img src="assets/icons/icon_home.png" alt="Home" class="ui-icon"> 游戏大厅</a>
+  <!-- 顶部左侧导航操作栏 -->
+  <div class="top-nav-bar">
+    <a href="../../" class="nav-pill-btn" title="返回游戏大厅"><img src="assets/icons/icon_home.png" alt="大厅" class="ui-icon"> <span class="nav-btn-text">大厅</span></a>
+    <button id="btn-top-leaderboard" class="nav-pill-btn" title="查看风云榜"><img src="assets/icons/icon_trophy.png" alt="风云榜" class="ui-icon"> <span class="nav-btn-text">风云榜</span></button>
+  </div>
 
   <!-- HUD：顶部状态栏 (中文版) -->
   <div id="hud" class="hud-container hidden">
@@ -40,7 +43,7 @@
       </div>
       <div class="hud-item">
         <span class="hud-label">等级</span>
-        <span class="hud-badge" id="hud-level">Lv.1</span>
+        <span class="hud-badge" id="hud-level">1级</span>
       </div>
     </div>
   </div>
@@ -51,26 +54,37 @@
   <!-- 开始画面 -->
   <div id="start-screen" class="overlay">
     <div class="overlay-content toy-card">
-      <img src="assets/ui/snake3d_start_badge.png" alt="SNAKE 3D" class="modal-badge-img">
+      <img src="assets/ui/snake3d_start_badge.png" alt="3D贪吃蛇" class="modal-badge-img">
       <p class="subtitle">趣味 3D 清新乐园版</p>
       <div class="hint-pill">方向键 / WASD / 摇杆 控制转向</div>
-      <button id="start-btn" class="toy-btn toy-btn-primary"><img src="assets/icons/icon_rocket.png" alt="Start" class="ui-icon-btn"> 开始游戏 (空格 / 轻触)</button>
+      <div class="start-btn-group">
+        <button id="start-btn" class="toy-btn toy-btn-primary"><img src="assets/icons/icon_rocket.png" alt="开始" class="ui-icon-btn"> 开始游戏 (空格 / 轻触)</button>
+        <button id="btn-start-leaderboard" class="toy-btn toy-btn-secondary"><img src="assets/icons/icon_trophy.png" alt="风云榜" class="ui-icon-btn"> 查看风云榜</button>
+      </div>
     </div>
   </div>
 
   <!-- Game Over 画面 -->
   <div id="gameover-screen" class="overlay hidden">
     <div class="overlay-content toy-card">
-      <img src="assets/ui/snake3d_gameover_badge.png" alt="GAME OVER" class="modal-badge-img">
+      <img src="assets/ui/snake3d_gameover_badge.png" alt="游戏结束" class="modal-badge-img">
       <div class="reason-pill">
-        <span class="reason-icon"><img src="assets/icons/icon_collision.png" alt="Boom" class="ui-icon"></span>
+        <span class="reason-icon"><img src="assets/icons/icon_collision.png" alt="碰撞" class="ui-icon"></span>
         <span id="gameover-reason" class="gameover-reason-text">撞到障碍物</span>
       </div>
       <div class="score-card">
         <div class="score-label">最终得分</div>
         <div class="score-number" id="gameover-score">0</div>
+        <div class="score-percentile" id="gameover-percentile">正在计算排名...</div>
       </div>
-      <button id="restart-btn" class="toy-btn toy-btn-primary"><img src="assets/icons/icon_refresh.png" alt="Restart" class="ui-icon-btn"> 重新开始 (R / 空格 / 轻触)</button>
+      <div class="gameover-btn-group">
+        <button id="restart-btn" class="toy-btn toy-btn-primary"><img src="assets/icons/icon_refresh.png" alt="重玩" class="ui-icon-btn"> 重新开始 (R / 空格 / 轻触)</button>
+        <div class="gameover-btn-row">
+          <button id="btn-gameover-poster" class="toy-btn toy-btn-secondary"><img src="assets/icons/icon_share.png" alt="战报" class="ui-icon-btn"> 生成战报</button>
+          <button id="btn-gameover-challenge" class="toy-btn toy-btn-secondary"><img src="assets/icons/icon_rocket.png" alt="挑战" class="ui-icon-btn"> 发起挑战</button>
+          <button id="btn-gameover-leaderboard" class="toy-btn toy-btn-secondary"><img src="assets/icons/icon_trophy.png" alt="风云榜" class="ui-icon-btn"> 风云榜</button>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -1,0 +1,30 @@
+{
+  "seedPoolWeights": {
+    "N": 70,
+    "R": 30
+  },
+  "seriesWeights": {
+    "shooter": 30,
+    "aoe": 25,
+    "slow": 25,
+    "burst": 20
+  },
+  "pitySystem": {
+    "enabled": true,
+    "maxPullsWithoutR": 5,
+    "guaranteedRAfterPity": true
+  },
+  "newPlayerBoost": {
+    "enabled": true,
+    "boostWaves": 3,
+    "rRateBoost": 15
+  },
+  "killRewards": {
+    "basic": { "seeds": 3, "score": 10 },
+    "elite": { "seeds": 15, "score": 80 }
+  },
+  "waveCompletionBonus": {
+    "seeds": 5,
+    "score": 50
+  }
+}

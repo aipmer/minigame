@@ -51,21 +51,26 @@ canvas { display: block; }
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-/* ── 返回大厅按钮 (统一固定左上角) ── */
-.back-home-btn {
+/* ── 顶部左侧操作栏 (大厅与风云榜) ── */
+.top-nav-bar {
   position: fixed;
   top: 16px;
   left: 16px;
-  right: auto;
   z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-pill-btn, .back-home-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.95);
   border-radius: 20px;
   color: #1E293B;
   text-decoration: none;
@@ -73,9 +78,11 @@ canvas { display: block; }
   font-weight: 700;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
   transition: all 0.2s ease;
+  cursor: pointer;
+  outline: none;
 }
 
-.back-home-btn:hover {
+.nav-pill-btn:hover, .back-home-btn:hover {
   background: #fff;
   transform: translateY(-1px);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
@@ -85,7 +92,7 @@ canvas { display: block; }
 .hud-container {
   position: fixed;
   top: 16px;
-  left: 130px; /* 避开左侧返回大厅按钮 */
+  left: 210px; /* 避开左侧大厅与风云榜组合按钮 */
   right: 16px;
   display: flex;
   justify-content: space-between;
@@ -312,6 +319,60 @@ canvas { display: block; }
   box-shadow: 0 2px 0 #047857;
 }
 
+.toy-btn-secondary {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%);
+  color: #1E293B;
+  border: 2px solid #E2E8F0;
+  box-shadow: 0 5px 0 #CBD5E1, 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+.toy-btn-secondary:hover {
+  background: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #CBD5E1, 0 10px 22px rgba(0, 0, 0, 0.12);
+}
+
+.toy-btn-secondary:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #CBD5E1;
+}
+
+.start-btn-group, .gameover-btn-group {
+  width: 100%;
+  max-width: 330px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.gameover-btn-row {
+  width: 100%;
+  display: flex;
+  gap: 8px;
+}
+
+.gameover-btn-row .toy-btn {
+  flex: 1;
+  font-size: 13px;
+  padding: 10px 6px;
+  border-radius: 18px;
+  margin-top: 0;
+}
+
+.score-percentile {
+  font-size: 13px;
+  font-weight: 700;
+  color: #059669;
+  background: #ECFDF5;
+  padding: 4px 12px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-top: 6px;
+  border: 1px solid #A7F3D0;
+}
+
 /* ── 浮动得分 ── */
 #floating-scores {
   position: fixed;
@@ -388,17 +449,25 @@ canvas { display: block; }
 @media (max-width: 600px) {
   .title-glow { font-size: 36px; }
   .gameover-title { font-size: 32px; }
-  .back-home-btn {
-    top: 12px;
-    left: 12px;
-    padding: 6px 10px;
-    font-size: 12px;
-    border-radius: 16px;
+  .top-nav-bar {
+    top: 10px;
+    left: 10px;
+    gap: 6px;
+  }
+  .nav-pill-btn, .back-home-btn {
+    padding: 6px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    justify-content: center;
+  }
+  .nav-pill-btn .nav-btn-text, .back-home-btn span {
+    display: none;
   }
   .hud-container {
-    top: 12px;
-    left: 104px; /* 紧跟在左上角大厅按钮后方，同一水平线优雅排开 */
-    right: 12px;
+    top: 10px;
+    left: 88px; /* 紧跟在左上角两个图标按钮后方 */
+    right: 10px;
     gap: 6px;
   }
   .hud-group {

@@ -20,7 +20,8 @@ async function testMobile() {
   const errors = [];
   page.on('pageerror', err => errors.push(err.toString()));
 
-  await page.goto('http://localhost:3000/games/snake3d/', { waitUntil: 'networkidle0' });
+  const port = process.env.PORT || 3456;
+  await page.goto(`http://localhost:${port}/games/snake3d/`, { waitUntil: 'networkidle0' });
 
   // 截图 1: 移动端开始界面
   await page.screenshot({ path: '/Users/hunkwu/.gemini/antigravity/brain/3c70172b-4a8c-439c-88bf-b8067a345cff/snake3d_mobile_start.png' });

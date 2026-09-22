@@ -347,10 +347,101 @@ export class FlightAudio {
     noiseAmp.gain.setValueAtTime(0.12, now);
     noiseAmp.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
 
-    noiseSrc.connect(noiseFilter);
-    noiseFilter.connect(noiseAmp);
-    noiseAmp.connect(this.ctx.destination);
-
     noiseSrc.start(now);
+  }
+
+  // 量子晶币拾取清响 (清亮双音符金属泛音，类似硬币与水晶共振)
+  playCrystalPickup() {
+    if (!this.ctx || this.isMuted) return;
+
+    const now = this.ctx.currentTime;
+    const notes = [880, 1318.5]; // A5 -> E6
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.04);
+
+      gain.gain.setValueAtTime(0.12, now + idx * 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 0.16);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now + idx * 0.04);
+      osc.stop(now + idx * 0.04 + 0.18);
+    });
+  }
+
+  // 超空间 EMP 震荡波全屏引爆音效 (超重低音能量倾泻 + 极速扩散高频余振)
+  playEMPBlast() {
+    if (!this.ctx || this.isMuted) return;
+
+    const now = this.ctx.currentTime;
+
+    // 1. 次重低音能量下探震荡 (Sub-bass Drop)
+    const subOsc = this.ctx.createOscillator();
+    const subGain = this.ctx.createGain();
+    subOsc.type = 'sine';
+    subOsc.frequency.setValueAtTime(130, now);
+    subOsc.frequency.exponentialRampToValueAtTime(28, now + 0.55);
+
+    subGain.gain.setValueAtTime(0.42, now);
+    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+
+    subOsc.connect(subGain);
+    subGain.connect(this.ctx.destination);
+    subOsc.start(now);
+    subOsc.stop(now + 0.7);
+
+    // 2. 超空间能量撕裂啸叫 (Energy Sweep)
+    const sweepOsc = this.ctx.createOscillator();
+    const sweepGain = this.ctx.createGain();
+    sweepOsc.type = 'sawtooth';
+    sweepOsc.frequency.setValueAtTime(2800, now);
+    sweepOsc.frequency.exponentialRampToValueAtTime(320, now + 0.45);
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(3000, now);
+    filter.frequency.exponentialRampToValueAtTime(500, now + 0.45);
+
+    sweepGain.gain.setValueAtTime(0.18, now);
+    sweepGain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+
+    sweepOsc.connect(filter);
+    filter.connect(sweepGain);
+    sweepGain.connect(this.ctx.destination);
+    sweepOsc.start(now);
+    sweepOsc.stop(now + 0.5);
+  }
+
+  // 主炮火力过载专属射击音效 (更紧凑凌厉的等离子重炮射击)
+  playOverdriveLaser() {
+    if (!this.ctx || this.isMuted) return;
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(1280, now);
+    osc.frequency.exponentialRampToValueAtTime(240, now + 0.07);
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(950, now);
+    filter.Q.value = 3.2;
+
+    gain.gain.setValueAtTime(0.22, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.09);
   }
 }

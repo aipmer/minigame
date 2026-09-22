@@ -166,4 +166,23 @@ export class ObstacleManager {
     }
     return { hit: false };
   }
+
+  // 超空间 EMP 震荡波：清空前方 maxDistance 米范围内的所有障碍物
+  clearAhead(maxDistance = 120, onExplode = null) {
+    const cleared = [];
+    for (let i = this.obstacles.length - 1; i >= 0; i--) {
+      const obs = this.obstacles[i];
+      // 处于战机前方且在指定距离内 (z <= 5 && z >= -maxDistance)
+      if (obs.mesh.position.z <= 5 && obs.mesh.position.z >= -maxDistance) {
+        const pos = obs.mesh.position.clone();
+        this.scene.remove(obs.mesh);
+        this.obstacles.splice(i, 1);
+        cleared.push(pos);
+        if (onExplode) {
+          onExplode(pos, obs.type);
+        }
+      }
+    }
+    return cleared;
+  }
 }

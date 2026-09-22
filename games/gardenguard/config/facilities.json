@@ -1,0 +1,55 @@
+{
+  "facilities": [
+    {
+      "id": "soil_quality",
+      "name": "肥沃土壤",
+      "icon": "icon_sprout.png",
+      "maxLevel": 5,
+      "baseCost": 100,
+      "costMultiplier": 1.5,
+      "description": "滋养根系的沃土。每级开局多送 5 点种子点数，关卡结算金币 +10%",
+      "bonusPerLevel": {
+        "startSeeds": 5,
+        "coinBonusPercent": 10
+      }
+    },
+    {
+      "id": "fountain",
+      "name": "生命清泉",
+      "icon": "icon_heart.png",
+      "maxLevel": 5,
+      "baseCost": 120,
+      "costMultiplier": 1.5,
+      "description": "赋予花园充沛生机的神圣泉水。每级提升花园生命值上限 +2",
+      "bonusPerLevel": {
+        "maxHP": 2
+      }
+    },
+    {
+      "id": "sun_altar",
+      "name": "日光祭坛",
+      "icon": "icon_star.png",
+      "maxLevel": 5,
+      "baseCost": 150,
+      "costMultiplier": 1.6,
+      "description": "积蓄纯净阳辉。每级提升召唤稀有级植物概率 +3%，并有几率暴击返还点数",
+      "bonusPerLevel": {
+        "rRateBoost": 3,
+        "critChance": 5
+      }
+    },
+    {
+      "id": "thorn_fence",
+      "name": "荆棘木篱",
+      "icon": "icon_facility.png",
+      "maxLevel": 5,
+      "baseCost": 130,
+      "costMultiplier": 1.5,
+      "description": "守护终点边缘的锐利荆棘。害虫接近核心时减速 10% 并遭受尖刺伤害",
+      "bonusPerLevel": {
+        "slowPercent": 10,
+        "thornDPS": 5
+      }
+    }
+  ]
+}

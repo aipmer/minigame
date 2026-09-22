@@ -1,0 +1,185 @@
+{
+  "summonCost": 10,
+  "plants": [
+    {
+      "id": "sunflower_shooter",
+      "name": "向日葵射手",
+      "series": "shooter",
+      "rarity": "N",
+      "baseATK": 12,
+      "baseAtkSpeed": 1.0,
+      "range": 4.0,
+      "attackType": "single_target",
+      "projectileType": "seed_bullet",
+      "projectileSpeed": 8,
+      "starMultiplier": [1.0, 1.5, 2.2, 3.0, 5.0],
+      "skill5Star": {
+        "id": "sunbeam_barrage",
+        "name": "葵花连弩",
+        "desc": "向所有怪物同时射出追踪葵花弹",
+        "damage": 80
+      },
+      "color": "#FFD700",
+      "description": "向日葵中的战斗机，发射葵花籽弹丸"
+    },
+    {
+      "id": "cactus_sniper",
+      "name": "仙人掌狙击手",
+      "series": "shooter",
+      "rarity": "R",
+      "baseATK": 25,
+      "baseAtkSpeed": 0.5,
+      "range": 6.0,
+      "attackType": "single_target",
+      "projectileType": "thorn_needle",
+      "projectileSpeed": 12,
+      "starMultiplier": [1.0, 1.6, 2.5, 3.5, 6.0],
+      "skill5Star": {
+        "id": "thorn_storm",
+        "name": "荆棘风暴",
+        "desc": "向全场发射穿透性荆棘刺",
+        "damage": 150
+      },
+      "color": "#228B22",
+      "description": "沙漠生存者，缓慢但致命的远程狙击"
+    },
+    {
+      "id": "mushroom_cannon",
+      "name": "蘑菇炮台",
+      "series": "aoe",
+      "rarity": "N",
+      "baseATK": 8,
+      "baseAtkSpeed": 0.8,
+      "range": 3.0,
+      "attackType": "aoe",
+      "aoeRadius": 1.5,
+      "projectileType": "spore_bomb",
+      "projectileSpeed": 6,
+      "starMultiplier": [1.0, 1.4, 2.0, 2.8, 4.5],
+      "skill5Star": {
+        "id": "fungal_apocalypse",
+        "name": "孢子末日",
+        "desc": "释放全屏毒孢子云，持续伤害所有怪物",
+        "damage": 60,
+        "duration": 3.0
+      },
+      "color": "#FF6347",
+      "description": "弹射孢子炸弹，范围杀伤"
+    },
+    {
+      "id": "rose_firework",
+      "name": "玫瑰烟花",
+      "series": "aoe",
+      "rarity": "R",
+      "baseATK": 15,
+      "baseAtkSpeed": 0.6,
+      "range": 3.5,
+      "attackType": "aoe",
+      "aoeRadius": 2.0,
+      "projectileType": "petal_burst",
+      "projectileSpeed": 7,
+      "starMultiplier": [1.0, 1.5, 2.3, 3.2, 5.5],
+      "skill5Star": {
+        "id": "rose_inferno",
+        "name": "玫瑰烈焰",
+        "desc": "绽放巨型火玫瑰，焚烧全场",
+        "damage": 120,
+        "duration": 2.0
+      },
+      "color": "#FF1493",
+      "description": "华丽的烟花爆炸，美丽又致命"
+    },
+    {
+      "id": "mint_ice",
+      "name": "薄荷冰花",
+      "series": "slow",
+      "rarity": "N",
+      "baseATK": 5,
+      "baseAtkSpeed": 1.2,
+      "range": 3.5,
+      "attackType": "single_target",
+      "projectileType": "ice_shard",
+      "projectileSpeed": 7,
+      "slowFactor": 0.5,
+      "slowDuration": 2.0,
+      "starMultiplier": [1.0, 1.3, 1.8, 2.5, 4.0],
+      "skill5Star": {
+        "id": "absolute_zero",
+        "name": "绝对零度",
+        "desc": "冻结全场怪物 3 秒",
+        "freezeDuration": 3.0
+      },
+      "color": "#00CED1",
+      "description": "清凉薄荷的寒冰之力，减缓敌人脚步"
+    },
+    {
+      "id": "vine_net",
+      "name": "藤蔓网",
+      "series": "slow",
+      "rarity": "R",
+      "baseATK": 8,
+      "baseAtkSpeed": 0.7,
+      "range": 3.0,
+      "attackType": "aoe",
+      "aoeRadius": 1.8,
+      "projectileType": "vine_trap",
+      "projectileSpeed": 5,
+      "slowFactor": 0.3,
+      "slowDuration": 3.0,
+      "starMultiplier": [1.0, 1.4, 2.0, 2.8, 4.5],
+      "skill5Star": {
+        "id": "garden_prison",
+        "name": "花园囚笼",
+        "desc": "全场长出藤蔓，定身所有怪物 4 秒并持续伤害",
+        "freezeDuration": 4.0,
+        "damage": 40
+      },
+      "color": "#32CD32",
+      "description": "纠缠的藤蔓，让猎物无处可逃"
+    },
+    {
+      "id": "chili_bomb",
+      "name": "辣椒炸弹",
+      "series": "burst",
+      "rarity": "N",
+      "baseATK": 40,
+      "baseAtkSpeed": 0.3,
+      "range": 2.5,
+      "attackType": "aoe",
+      "aoeRadius": 2.0,
+      "projectileType": "chili_explosion",
+      "projectileSpeed": 0,
+      "starMultiplier": [1.0, 1.5, 2.2, 3.0, 5.0],
+      "skill5Star": {
+        "id": "volcanic_eruption",
+        "name": "火山爆发",
+        "desc": "全场火山喷发，造成毁灭性伤害",
+        "damage": 300
+      },
+      "color": "#FF4500",
+      "description": "积蓄怒火，一击爆发！"
+    },
+    {
+      "id": "bamboo_mine",
+      "name": "竹笋地雷",
+      "series": "burst",
+      "rarity": "R",
+      "baseATK": 60,
+      "baseAtkSpeed": 0.2,
+      "range": 2.0,
+      "attackType": "aoe",
+      "aoeRadius": 2.5,
+      "projectileType": "bamboo_spike",
+      "projectileSpeed": 0,
+      "starMultiplier": [1.0, 1.6, 2.5, 3.5, 6.0],
+      "skill5Star": {
+        "id": "bamboo_forest",
+        "name": "万竹穿心",
+        "desc": "全场竹笋从地面刺出，贯穿一切",
+        "damage": 500
+      },
+      "color": "#6B8E23",
+      "description": "地底的伏击者，沉默而致命"
+    }
+  ]
+}

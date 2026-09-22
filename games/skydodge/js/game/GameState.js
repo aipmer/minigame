@@ -33,6 +33,14 @@ export class GameState {
     // 护盾
     this.hasShield = false;
 
+    // 独立量子晶币经济 (击毁陨石爆出、空间拾取，用于释放局内即时战术大招)
+    this.crystals = 0;
+    this.totalCrystalsCollected = 0;
+
+    // 战术火力过载状态 (三叉散射等离子重炮)
+    this.overdriveTimer = 0;
+    this.overdriveDuration = 10.0;
+
     // 统计数据
     this.itemsCollected = 0;
     this.obstaclesDodged = 0;
@@ -50,12 +58,38 @@ export class GameState {
     this.boostEnergy = 100;
     this.isBoosting = false;
     this.hasShield = false;
+    this.crystals = 0;
+    this.totalCrystalsCollected = 0;
+    this.overdriveTimer = 0;
     this.itemsCollected = 0;
     this.obstaclesDodged = 0;
   }
 
+  addCrystals(amount) {
+    this.crystals += amount;
+    this.totalCrystalsCollected += amount;
+    return this.crystals;
+  }
+
+  spendCrystals(amount) {
+    if (this.crystals >= amount) {
+      this.crystals -= amount;
+      return true;
+    }
+    return false;
+  }
+
+  isOverdriveActive() {
+    return this.overdriveTimer > 0;
+  }
+
   update(delta) {
     if (this.state !== 'playing') return;
+
+    // 火力过载倒计时
+    if (this.overdriveTimer > 0) {
+      this.overdriveTimer = Math.max(0, this.overdriveTimer - delta);
+    }
 
     // 1. 距离积累
     const moveDist = this.currentSpeed * delta;

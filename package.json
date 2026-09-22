@@ -6,8 +6,11 @@
   "private": true,
   "scripts": {
     "dev": "npx serve . -p 3000",
+    "test:gardenguard": "node scripts/test-gardenguard.mjs",
+    "test:gardenguard:mobile": "node scripts/test-gardenguard-mobile.mjs",
     "generate-models": "node scripts/generate-models.mjs",
-    "generate-skydodge-models": "node scripts/generate-skydodge-models.mjs"
+    "generate-skydodge-models": "node scripts/generate-skydodge-models.mjs",
+    "generate-gardenguard-models": "node scripts/generate-gardenguard-models.mjs"
   },
   "devDependencies": {
     "serve": "^14.2.0"

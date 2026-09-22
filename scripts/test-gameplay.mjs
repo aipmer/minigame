@@ -18,7 +18,8 @@ async function test() {
   page.on('console', msg => logs.push(`[${msg.type()}] ${msg.text()}`));
   page.on('pageerror', err => errors.push(err.toString()));
 
-  await page.goto('http://localhost:3000/games/snake3d/', { waitUntil: 'networkidle0' });
+  const port = process.env.PORT || 3456;
+  await page.goto(`http://localhost:${port}/games/snake3d/`, { waitUntil: 'networkidle0' });
 
   // 等待纹理加载
   await new Promise(r => setTimeout(r, 800));

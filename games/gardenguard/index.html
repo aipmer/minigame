@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>花园守卫 — 3D休闲合成塔防</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="assets/icons/icon_sprout.png">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- 全景天幕背景 -->
+  <div id="sky-bg"></div>
+
+  <!-- Three.js 画布容器 -->
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+  </div>
+
+  <!-- HUD 覆盖层 -->
+  <div id="hud" class="hud hidden">
+    <div class="hud-top">
+      <div class="hud-item hud-wave">
+        <img src="assets/icons/icon_wave.png" class="hud-icon-img" alt="波次">
+        <span class="hud-label">波次</span>
+        <span id="hud-wave-num" class="hud-value">1</span>
+        <div class="wave-timer-bar"><div id="wave-timer-fill" class="wave-timer-fill"></div></div>
+      </div>
+      <div class="hud-item hud-hp">
+        <img src="assets/icons/icon_heart.png" class="hud-icon-img" alt="生命">
+        <span class="hud-label">生命</span>
+        <div class="hp-bar"><div id="hp-bar-fill" class="hp-bar-fill"></div></div>
+        <span id="hud-hp-text" class="hud-value">10/10</span>
+      </div>
+    </div>
+    <div class="hud-bottom">
+      <div class="hud-item hud-seeds">
+        <img src="assets/icons/icon_sprout.png" class="hud-icon-img" alt="种子">
+        <span class="hud-label">种子</span>
+        <span id="hud-seeds-num" class="hud-value">0</span>
+      </div>
+      <div class="hud-item hud-score">
+        <img src="assets/icons/icon_star.png" class="hud-icon-img" alt="积分">
+        <span class="hud-label">积分</span>
+        <span id="hud-score-num" class="hud-value">0</span>
+      </div>
+      <button id="btn-summon" class="toy-btn summon-btn" disabled>
+        <span class="btn-label">召唤植物</span>
+        <span class="btn-cost">
+          <img src="assets/icons/icon_sprout.png" class="btn-cost-icon" alt="消耗">
+          <span id="btn-summon-cost-val">10</span>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 快捷评测胶囊入口（默认完全隐藏，通过 ?debug=1 或连击大厅标题唤起） -->
+  <button id="debug-toggle-btn" class="debug-pill-btn hidden" title="点击展开评测工具箱">
+    <img src="assets/icons/icon_facility.png" class="pill-icon" alt="工具">
+    <span class="debug-pill-text">评测工具</span>
+  </button>
+
+  <!-- 快捷评测面板（安全浮层弹窗） -->
+  <div id="debug-panel" class="debug-panel-modal hidden">
+    <div class="debug-panel-card">
+      <div class="debug-title-row">
+        <div class="debug-title-left">
+          <img src="assets/icons/icon_facility.png" class="debug-title-icon" alt="工具箱">
+          <span class="debug-title">快捷评测工具箱</span>
+        </div>
+        <button class="debug-close-btn" id="debug-close-btn" aria-label="关闭"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      </div>
+      <div class="debug-btn-group">
+        <button id="btn-cheat-seeds" class="debug-action-btn">
+          <img src="assets/icons/icon_sprout.png" class="debug-btn-icon" alt="">
+          <span>增加 500 种子</span>
+        </button>
+        <button id="btn-cheat-coins" class="debug-action-btn">
+          <img src="assets/icons/icon_coin.png" class="debug-btn-icon" alt="">
+          <span>增加 1000 金币</span>
+        </button>
+        <button id="btn-cheat-star4" class="debug-action-btn">
+          <img src="assets/icons/icon_star.png" class="debug-btn-icon" alt="">
+          <span>召唤 4 星植物</span>
+        </button>
+        <button id="btn-cheat-boss" class="debug-action-btn">
+          <img src="assets/icons/icon_skull.png" class="debug-btn-icon" alt="">
+          <span>直达第 10 波首领</span>
+        </button>
+        <button id="btn-cheat-heal" class="debug-action-btn">
+          <img src="assets/icons/icon_heart.png" class="debug-btn-icon" alt="">
+          <span>花园生命回满</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 开始界面 -->
+  <div id="start-screen" class="overlay">
+    <div class="lobby-top-bar">
+      <div id="lobby-coins" class="coin-pill">
+        <img src="assets/icons/icon_coin.png" class="pill-icon" alt="金币">
+        <span id="lobby-coins-num">0</span>
+      </div>
+      <div id="lobby-high-score" class="high-score-pill">
+        <img src="assets/icons/icon_trophy.png" class="pill-icon" alt="最高纪录">
+        <span>最高波次: <span id="lobby-high-wave-num">0</span></span>
+      </div>
+    </div>
+    <div class="clay-card start-card">
+      <div class="card-badge">
+        <img src="assets/icons/icon_sprout.png" class="badge-icon-img" alt="花园徽章">
+      </div>
+      <h1 class="bubble-title" id="start-title">花园守卫</h1>
+      <p class="card-desc">合成升级植物炮台，守护中央丰饶花园！<br>拖拽相同植物融合进阶，阻击侵袭害虫</p>
+      <div class="card-tips">
+        <div class="tip-item">
+          <img src="assets/icons/icon_target.png" class="tip-icon-img" alt="射击">
+          <span>射击系 — 单体高伤</span>
+        </div>
+        <div class="tip-item">
+          <img src="assets/icons/icon_fire.png" class="tip-icon-img" alt="群伤">
+          <span>群伤系 — 范围轰击</span>
+        </div>
+        <div class="tip-item">
+          <img src="assets/icons/icon_frost.png" class="tip-icon-img" alt="减速">
+          <span>减速系 — 冰冻缓速</span>
+        </div>
+        <div class="tip-item">
+          <img src="assets/icons/icon_bomb.png" class="tip-icon-img" alt="爆发">
+          <span>爆发系 — 瞬间巨献</span>
+        </div>
+      </div>
+      <div class="lobby-action-row">
+        <button id="btn-open-facility" class="toy-btn lobby-btn">
+          <img src="assets/icons/icon_facility.png" class="btn-icon-img" alt="设施">
+          <span class="btn-label">设施升级</span>
+        </button>
+        <button id="btn-open-compendium" class="toy-btn lobby-btn">
+          <img src="assets/icons/icon_compendium.png" class="btn-icon-img" alt="图鉴">
+          <span class="btn-label">典藏图鉴</span>
+        </button>
+      </div>
+      <button id="btn-start" class="toy-btn primary-btn start-play-btn">
+        <span class="btn-label">开始守卫</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 暂停界面 -->
+  <div id="pause-screen" class="overlay hidden">
+    <div class="clay-card pause-card">
+      <div class="card-badge">
+        <img src="assets/icons/icon_home.png" class="badge-icon-img" alt="暂停">
+      </div>
+      <h2 class="bubble-title">游戏暂停</h2>
+      <button id="btn-resume" class="toy-btn primary-btn">
+        <span class="btn-label">继续战斗</span>
+      </button>
+      <button id="btn-quit" class="toy-btn secondary-btn">
+        <span class="btn-label">返回大厅</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 游戏结束结算界面 -->
+  <div id="gameover-screen" class="overlay hidden">
+    <div class="clay-card gameover-card">
+      <div class="card-badge gameover-badge">
+        <img src="assets/icons/icon_skull.png" class="badge-icon-img" alt="失败">
+      </div>
+      <h2 class="bubble-title title-defeat">花园陷落</h2>
+      <div class="result-panel">
+        <div class="result-item">
+          <span class="result-label">存活波次</span>
+          <span id="result-waves" class="result-value gold-text">0</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">获得金币</span>
+          <span id="result-coins" class="result-value gold-text">+0</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">最高星级</span>
+          <span class="result-value result-star-badge">
+            <img src="assets/icons/icon_star.png" class="inline-stat-icon" alt="星级">
+            <span id="result-max-star">0</span> 星
+          </span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">击败害虫</span>
+          <span id="result-kills" class="result-value">0</span>
+        </div>
+      </div>
+      <div class="gameover-reason">
+        <span id="gameover-reason-text" class="reason-badge">花园生命值已耗尽</span>
+      </div>
+      <button id="btn-retry" class="toy-btn primary-btn">
+        <span class="btn-label">再来一局</span>
+      </button>
+      <button id="btn-home" class="toy-btn secondary-btn">
+        <span class="btn-label">返回大厅</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 设施升级弹窗 -->
+  <div id="facility-modal" class="overlay hidden">
+    <div class="clay-card modal-card">
+      <div class="card-badge">
+        <img src="assets/icons/icon_facility.png" class="badge-icon-img" alt="设施">
+      </div>
+      <h2 class="bubble-title title-facility">花园设施</h2>
+      <div class="modal-sub-bar">
+        <span id="facility-coins" class="coin-pill">
+          <img src="assets/icons/icon_coin.png" class="pill-icon" alt="金币">
+          <span id="facility-coins-num">0</span>
+        </span>
+        <span class="sub-tip">提升设施增强全局防御与收益</span>
+      </div>
+      <div id="facility-list" class="facility-scroll-list"></div>
+      <button id="btn-close-facility" class="toy-btn secondary-btn modal-close-btn">
+        <span class="btn-label">返回</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 典藏图鉴弹窗 -->
+  <div id="compendium-modal" class="overlay hidden">
+    <div class="clay-card modal-card compendium-modal-card">
+      <div class="card-badge">
+        <img src="assets/icons/icon_compendium.png" class="badge-icon-img" alt="图鉴">
+      </div>
+      <h2 class="bubble-title title-compendium">典藏图鉴</h2>
+      <div class="compendium-tabs">
+        <button id="tab-plants" class="tab-btn active-tab">
+          <img src="assets/icons/icon_sprout.png" class="tab-icon-img" alt="">
+          <span>植物图鉴</span>
+        </button>
+        <button id="tab-enemies" class="tab-btn">
+          <img src="assets/icons/icon_skull.png" class="tab-icon-img" alt="">
+          <span>害虫图鉴</span>
+        </button>
+      </div>
+      <div id="compendium-stats-text" class="comp-stats-header">收集进度: 0%</div>
+      <div id="compendium-list" class="compendium-grid"></div>
+      <button id="btn-close-compendium" class="toy-btn secondary-btn modal-close-btn">
+        <span class="btn-label">返回</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 暂停按钮（游戏中可见） -->
+  <button id="btn-pause" class="toy-btn pause-float-btn hidden" aria-label="暂停游戏">
+    <span class="pause-bars-icon"></span>
+  </button>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

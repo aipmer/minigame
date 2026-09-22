@@ -1,0 +1,59 @@
+{
+  "gardenMaxHP": 10,
+  "waveInterval": 30,
+  "baseCounts": {
+    "caterpillar": 3,
+    "beetle": 1,
+    "moth": 2,
+    "ladybug": 1
+  },
+  "scaling": {
+    "hpMultiplierPerWave": 0.08,
+    "countIncreaseEveryNWaves": 3,
+    "speedMultiplierPerWave": 0.01,
+    "maxSpeedMultiplier": 2.0
+  },
+  "eliteWaves": {
+    "interval": 5,
+    "pool": ["scorpion", "mushroom_king"],
+    "eliteCountBase": 1,
+    "eliteCountIncreaseEveryNWaves": 10
+  },
+  "templates": [
+    {
+      "waveRange": [1, 3],
+      "description": "新手波次：只有毛毛虫",
+      "enemies": [
+        { "id": "caterpillar", "count": 3, "spawnDelay": 1.0 }
+      ]
+    },
+    {
+      "waveRange": [4, 6],
+      "description": "引入甲壳虫",
+      "enemies": [
+        { "id": "caterpillar", "count": 4, "spawnDelay": 0.8 },
+        { "id": "beetle", "count": 1, "spawnDelay": 1.5 }
+      ]
+    },
+    {
+      "waveRange": [7, 9],
+      "description": "引入飞行虫和瓢虫",
+      "enemies": [
+        { "id": "caterpillar", "count": 3, "spawnDelay": 0.8 },
+        { "id": "beetle", "count": 1, "spawnDelay": 1.2 },
+        { "id": "moth", "count": 2, "spawnDelay": 0.6 },
+        { "id": "ladybug", "count": 1, "spawnDelay": 1.0 }
+      ]
+    },
+    {
+      "waveRange": [10, null],
+      "description": "全怪物类型混合，数值按公式递增",
+      "enemies": [
+        { "id": "caterpillar", "count": "scaled", "spawnDelay": 0.6 },
+        { "id": "beetle", "count": "scaled", "spawnDelay": 1.0 },
+        { "id": "moth", "count": "scaled", "spawnDelay": 0.5 },
+        { "id": "ladybug", "count": "scaled", "spawnDelay": 0.8 }
+      ]
+    }
+  ]
+}

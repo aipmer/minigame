@@ -64,13 +64,28 @@ html, body {
   pointer-events: none;
 }
 
-/* 返回大厅按钮 */
-.back-home-btn {
+.ui-icon-xs {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+  vertical-align: -1px;
+  display: inline-block;
+  pointer-events: none;
+}
+
+/* 顶部导航操作栏 */
+.top-nav-bar {
   position: absolute;
-  top: 18px;
-  left: 18px;
+  top: 16px;
+  left: 16px;
   z-index: 50;
-  background: rgba(13, 22, 45, 0.75);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-pill-btn, .back-home-btn {
+  background: rgba(13, 22, 45, 0.85);
   color: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(0, 242, 254, 0.35);
   padding: 8px 14px;
@@ -84,9 +99,11 @@ html, body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  cursor: pointer;
+  outline: none;
 }
 
-.back-home-btn:hover {
+.nav-pill-btn:hover, .back-home-btn:hover {
   background: rgba(0, 242, 254, 0.2);
   border-color: #00f2fe;
   color: #fff;
@@ -112,7 +129,7 @@ html, body {
 }
 
 .hud-left {
-  margin-left: 110px; /* 留出返回按钮空间 */
+  margin-left: 200px; /* 留出大厅与风云榜组合按钮空间 */
 }
 
 .hud-item {
@@ -149,6 +166,12 @@ html, body {
 
 .hud-value.highlight {
   color: #00ffcc;
+}
+
+.hud-value.neon-gold,
+.neon-gold {
+  color: #fbbf24 !important;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.7) !important;
 }
 
 .hud-value small {
@@ -218,17 +241,189 @@ html, body {
   100% { transform: translateX(-50%) scale(1); opacity: 1; }
 }
 
+/* ════ 战术技能浮动通知 ════ */
+.skill-toast {
+  position: absolute;
+  top: 110px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-12px);
+  background: rgba(10, 18, 38, 0.9);
+  border: 1.5px solid #00f2fe;
+  color: #fff;
+  padding: 10px 24px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  z-index: 60;
+  pointer-events: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 0 24px rgba(0, 242, 254, 0.5);
+  opacity: 0;
+  transition: all 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.skill-toast.active {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.skill-toast.type-warn,
+.skill-toast.type-error {
+  border-color: #ff4b4b;
+  box-shadow: 0 0 24px rgba(255, 75, 75, 0.6);
+  color: #ffa3a3;
+}
+
+.skill-toast.type-success {
+  border-color: #00ff87;
+  box-shadow: 0 0 24px rgba(0, 255, 135, 0.6);
+  color: #b7ffdb;
+}
+
+.skill-toast.type-emp {
+  border-color: #00f2fe;
+  box-shadow: 0 0 30px rgba(0, 242, 254, 0.7);
+  color: #e0f7ff;
+}
+
+.skill-toast.type-overdrive {
+  border-color: #fbbf24;
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.75);
+  color: #fff2cc;
+}
+
+/* ════ 桌面端即时战术技能坞 ════ */
+.desktop-skill-dock {
+  position: absolute;
+  bottom: 46px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  z-index: 25;
+  pointer-events: auto;
+}
+
+.dock-skill-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(10, 18, 38, 0.85);
+  border: 1.5px solid rgba(0, 242, 254, 0.35);
+  border-radius: 14px;
+  padding: 8px 16px 8px 10px;
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), inset 0 0 12px rgba(0, 242, 254, 0.06);
+  transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  position: relative;
+}
+
+.dock-skill-btn:hover:not(.skill-disabled) {
+  transform: translateY(-3px);
+  border-color: #00f2fe;
+  box-shadow: 0 8px 24px rgba(0, 242, 254, 0.4);
+}
+
+.dock-skill-btn:active:not(.skill-disabled) {
+  transform: translateY(1px) scale(0.98);
+}
+
+.skill-hotkey {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(0, 242, 254, 0.15);
+  border: 1px solid rgba(0, 242, 254, 0.6);
+  color: #00f2fe;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dock-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+  pointer-events: none;
+}
+
+.dock-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.dock-name {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #fff;
+}
+
+.dock-cost {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fbbf24;
+  text-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
+}
+
+.dock-skill-btn .skill-status-text {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #00ff87;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.dock-skill-btn .skill-status-text:empty {
+  display: none;
+}
+
+.dock-skill-btn.skill-ready {
+  border-color: rgba(0, 242, 254, 0.6);
+}
+
+.dock-skill-btn.skill-active {
+  border-color: #00ff87;
+  background: rgba(0, 40, 25, 0.88);
+  box-shadow: 0 0 22px rgba(0, 255, 135, 0.7);
+  animation: pulseSkill 1.2s infinite alternate;
+}
+
+.dock-skill-btn.skill-disabled {
+  opacity: 0.42;
+  filter: grayscale(0.6);
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+@keyframes pulseSkill {
+  0% { box-shadow: 0 0 10px rgba(0, 255, 135, 0.4); }
+  100% { box-shadow: 0 0 24px rgba(0, 255, 135, 0.9); }
+}
+
 /* ════ 底部脉冲冲刺条 ════ */
 .boost-container {
   position: absolute;
-  bottom: 24px;
+  bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   pointer-events: none;
 }
 
@@ -424,6 +619,52 @@ html, body {
   box-shadow: 0 10px 30px rgba(214, 48, 49, 0.6);
 }
 
+.action-btn-secondary {
+  background: rgba(13, 22, 45, 0.85);
+  color: #38bdf8;
+  border: 1px solid rgba(0, 242, 254, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.action-btn-secondary:hover {
+  background: rgba(0, 242, 254, 0.15);
+  border-color: #00f2fe;
+  color: #fff;
+  box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+}
+
+.start-btn-group, .gameover-btn-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.gameover-btn-row {
+  width: 100%;
+  display: flex;
+  gap: 8px;
+}
+
+.gameover-btn-row .action-btn {
+  flex: 1;
+  font-size: 13px;
+  padding: 10px 6px;
+  border-radius: 10px;
+}
+
+.stat-card-wide {
+  grid-column: span 2;
+}
+
+.stat-val.highlight {
+  color: #00ff87;
+  text-shadow: 0 0 10px rgba(0, 255, 135, 0.5);
+  font-size: 14px;
+}
+
 .key-hint {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.45);
@@ -472,8 +713,98 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   pointer-events: auto;
+}
+
+/* ════ 移动端战术大招技能弧 ════ */
+.touch-skill-arc {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.touch-skill-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(10, 18, 38, 0.88);
+  border: 1.5px solid rgba(0, 242, 254, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.touch-skill-btn:active:not(.skill-disabled) {
+  transform: scale(0.9);
+}
+
+.touch-skill-btn .ui-icon-skill {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.touch-skill-btn .skill-cost-badge {
+  position: absolute;
+  bottom: -4px;
+  background: rgba(0, 0, 0, 0.88);
+  border: 1px solid rgba(251, 191, 36, 0.7);
+  color: #fbbf24;
+  font-size: 8px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 8px;
+  line-height: 1;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.touch-skill-btn .skill-status-text {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #00ff87;
+  color: #000;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.touch-skill-btn .skill-status-text:empty {
+  display: none;
+}
+
+.touch-skill-btn.skill-ready {
+  border-color: rgba(0, 242, 254, 0.75);
+}
+
+.touch-skill-btn.skill-active {
+  border-color: #00ff87;
+  background: rgba(0, 45, 25, 0.9);
+  box-shadow: 0 0 16px rgba(0, 255, 135, 0.8);
+  animation: pulseSkill 1.2s infinite alternate;
+}
+
+.touch-skill-btn.skill-disabled {
+  opacity: 0.4;
+  filter: grayscale(0.6);
+  pointer-events: none;
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .touch-fire-btn {
@@ -555,11 +886,26 @@ html, body {
 
 /* 响应式调整 */
 @media (max-width: 768px) {
+  .top-nav-bar {
+    top: 12px;
+    left: 12px;
+    gap: 6px;
+  }
+  .nav-pill-btn, .back-home-btn {
+    padding: 6px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    justify-content: center;
+  }
+  .nav-pill-btn .nav-btn-text, .back-home-btn span {
+    display: none;
+  }
   .hud-left {
     margin-left: 0;
   }
   .hud-container {
-    top: 58px; /* 避开返回按钮 */
+    top: 54px; /* 避开返回按钮与风云榜 */
     gap: 8px;
   }
   .hud-item {
@@ -590,6 +936,21 @@ html, body {
   .boost-container {
     bottom: 14px;
     width: 130px;
+  }
+  .desktop-only {
+    display: none !important;
+  }
+  .desktop-skill-dock {
+    display: none !important;
+  }
+  .skill-toast {
+    top: 90px;
+    font-size: 12px;
+    padding: 7px 16px;
+    max-width: 88%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 

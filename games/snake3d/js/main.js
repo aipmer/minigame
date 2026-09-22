@@ -11,6 +11,8 @@ import { SoundManager } from './audio/SoundManager.js';
 import { ParticleSystem } from './effects/Particles.js';
 import { CameraFX } from './effects/CameraFX.js';
 import { ModelLoader } from './game/ModelLoader.js';
+import { SocialManager } from '/js/services/SocialManager.js';
+import { SocialUI } from '/js/services/SocialUI.js';
 
 // ── UI 元素 ──
 const ui = {
@@ -24,13 +26,29 @@ const ui = {
   gameoverScreen:document.getElementById('gameover-screen'),
   gameoverReason:document.getElementById('gameover-reason'),
   gameoverScore: document.getElementById('gameover-score'),
+  gameoverPercentile: document.getElementById('gameover-percentile'),
   startBtn:      document.getElementById('start-btn'),
   restartBtn:    document.getElementById('restart-btn'),
+  topLeaderboardBtn: document.getElementById('btn-top-leaderboard'),
+  startLeaderboardBtn: document.getElementById('btn-start-leaderboard'),
+  gameoverLeaderboardBtn: document.getElementById('btn-gameover-leaderboard'),
+  gameoverPosterBtn: document.getElementById('btn-gameover-poster'),
+  gameoverChallengeBtn: document.getElementById('btn-gameover-challenge'),
   floatingScores:document.getElementById('floating-scores'),
   touchControls: document.getElementById('touch-controls'),
   virtualStick:  document.getElementById('virtual-stick'),
   stickKnob:     document.getElementById('stick-knob'),
 };
+
+// ── 社交中枢与排行榜组件 ──
+const socialManager = new SocialManager();
+const socialUI = new SocialUI({
+  game: 'snake3d',
+  gameTitle: '3D 贪吃蛇',
+  theme: 'clay',
+  socialManager,
+  iconBasePath: 'assets/icons/'
+});
 
 // ── 初始化系统 ──
 const container = document.getElementById('game-container');
@@ -117,11 +135,29 @@ if (ui.restartBtn) {
   ui.restartBtn.addEventListener('touchend', onActionBtnClick);
 }
 
+// ── 社交操作按钮绑定 ──
+const bindSocialBtn = (el, handler) => {
+  if (!el) return;
+  const cb = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handler();
+  };
+  el.addEventListener('click', cb);
+  el.addEventListener('touchend', cb);
+};
+
+bindSocialBtn(ui.topLeaderboardBtn, () => socialUI.openLeaderboard());
+bindSocialBtn(ui.startLeaderboardBtn, () => socialUI.openLeaderboard());
+bindSocialBtn(ui.gameoverLeaderboardBtn, () => socialUI.openLeaderboard());
+bindSocialBtn(ui.gameoverPosterBtn, () => socialUI.openPoster(gameState.score));
+bindSocialBtn(ui.gameoverChallengeBtn, () => socialUI.copyChallengeLink(gameState.score));
+
 // ── 移动端检测与文案自适应 ──
 const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 1024);
 if (isTouchDevice) {
-  if (ui.startBtn) ui.startBtn.innerHTML = '<img src="assets/icons/icon_rocket.png" alt="Start" class="ui-icon-btn"> 开始游戏 (轻触)';
-  if (ui.restartBtn) ui.restartBtn.innerHTML = '<img src="assets/icons/icon_refresh.png" alt="Restart" class="ui-icon-btn"> 重新开始 (轻触)';
+  if (ui.startBtn) ui.startBtn.innerHTML = '<img src="assets/icons/icon_rocket.png" alt="开始" class="ui-icon-btn"> 开始游戏 (轻触)';
+  if (ui.restartBtn) ui.restartBtn.innerHTML = '<img src="assets/icons/icon_refresh.png" alt="重玩" class="ui-icon-btn"> 重新开始 (轻触)';
 }
 
 // ── 360° 弹性虚拟摇杆操控 ──
@@ -233,15 +269,26 @@ const SWIPE_THRESHOLD = 24;
 
 document.addEventListener('touchstart', (e) => {
   sound.init();
-  if (e.target.closest('#virtual-stick') || e.target.closest('.back-home-btn')) return;
+  if (
+    e.target.closest('#virtual-stick') ||
+    e.target.closest('.back-home-btn') ||
+    e.target.closest('.top-nav-bar') ||
+    e.target.closest('.social-modal-overlay') ||
+    e.target.closest('.social-challenge-banner') ||
+    e.target.closest('button') ||
+    e.target.closest('a')
+  ) return;
 
   isScreenSwiping = true;
   const touch = e.touches[0];
   touchStartX = touch.clientX;
   touchStartY = touch.clientY;
 
-  // 开始屏或结束屏轻触直接开始
+  // 开始屏或结束屏轻触空白区域开始（排除弹窗与次级卡片交互）
   if (gameState.state !== 'playing') {
+    if (e.target.closest('.toy-card') && !e.target.closest('#start-btn') && !e.target.closest('#restart-btn')) {
+      return;
+    }
     startGame();
   }
 }, { passive: true });
@@ -355,6 +402,7 @@ function handleSnakeStep() {
     }
 
     updateHUD();
+    socialUI.checkScoreForChallenge(gameState.score);
   }
 
   // 障碍物碰撞
@@ -368,6 +416,7 @@ function handleSnakeStep() {
         gameState.addScore(50, true);
         showFloatingScore(snake.head.position, `+50 撞碎障碍!`, '#FFD700');
         updateHUD();
+        socialUI.checkScoreForChallenge(gameState.score);
       }
     } else {
       handleDeath('撞到障碍物');
@@ -390,6 +439,19 @@ function handleDeath(reason) {
     ui.touchControls.classList.add('hidden');
   }
   resetStick();
+
+  // 社交与排行榜上报
+  socialManager.submitScore('snake3d', gameState.score);
+  socialManager.getLeaderboard('snake3d', 'daily').then(list => {
+    const { rank, percentile } = socialManager.calculateRank(gameState.score, list);
+    if (ui.gameoverPercentile) {
+      ui.gameoverPercentile.textContent = `荣登第 ${rank} 名 · 超越 ${percentile}% 挑战者`;
+    }
+  }).catch(() => {
+    if (ui.gameoverPercentile) {
+      ui.gameoverPercentile.textContent = '成绩已同步至风云榜';
+    }
+  });
 }
 
 // ── 特殊食物定时器 ──
@@ -426,7 +488,7 @@ function updateHUD() {
   ui.score.textContent = gameState.score;
   ui.highScore.textContent = gameState.highScore;
   ui.length.textContent = snake.length;
-  ui.level.textContent = `Lv.${gameState.level}`;
+  ui.level.textContent = `${gameState.level}级`;
 }
 
 function showCombo(multiplier) {

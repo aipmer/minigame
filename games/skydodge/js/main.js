@@ -13,6 +13,9 @@ import { WeaponSystem } from './game/WeaponSystem.js';
 import { ParticleFX } from './effects/ParticleFX.js';
 import { CameraFlightFX } from './effects/CameraFlightFX.js';
 import { FlightAudio } from './audio/FlightAudio.js';
+import { TacticalSkillManager } from './game/TacticalSkillManager.js';
+import { SocialManager } from '/js/services/SocialManager.js';
+import { SocialUI } from '/js/services/SocialUI.js';
 
 // ── DOM UI 元素引用 ──
 const ui = {
@@ -28,6 +31,7 @@ const ui = {
   comboSub: document.getElementById('combo-sub'),
   boostContainer: document.getElementById('boost-meter-container'),
   boostFill: document.getElementById('boost-fill'),
+  desktopSkillDock: document.getElementById('desktop-skill-dock'),
   startScreen: document.getElementById('start-screen'),
   startBtn: document.getElementById('start-btn'),
   gameoverScreen: document.getElementById('gameover-screen'),
@@ -36,12 +40,29 @@ const ui = {
   finalHighScore: document.getElementById('final-highscore'),
   finalDistance: document.getElementById('final-distance'),
   finalMaxCombo: document.getElementById('final-maxcombo'),
+  finalCrystals: document.getElementById('final-crystals'),
+  finalPercentile: document.getElementById('final-percentile'),
+  topLeaderboardBtn: document.getElementById('btn-top-leaderboard'),
+  startLeaderboardBtn: document.getElementById('btn-start-leaderboard'),
+  gameoverLeaderboardBtn: document.getElementById('btn-gameover-leaderboard'),
+  gameoverPosterBtn: document.getElementById('btn-gameover-poster'),
+  gameoverChallengeBtn: document.getElementById('btn-gameover-challenge'),
   touchControls: document.getElementById('touch-controls'),
   virtualStick: document.getElementById('virtual-stick'),
   stickKnob: document.getElementById('stick-knob'),
   touchFireBtn: document.getElementById('touch-fire-btn'),
   touchBoostBtn: document.getElementById('touch-boost-btn'),
 };
+
+// ── 社交中枢与排行榜组件 ──
+const socialManager = new SocialManager();
+const socialUI = new SocialUI({
+  game: 'skydodge',
+  gameTitle: '太空战机',
+  theme: 'cyber',
+  socialManager,
+  iconBasePath: 'assets/icons/'
+});
 
 // ── 初始化游戏子系统 ──
 const container = document.getElementById('game-container');
@@ -59,10 +80,22 @@ const playerShip = new PlayerShip(scene, modelLoader);
 const obstacleManager = new ObstacleManager(scene, modelLoader);
 const collectibleManager = new CollectibleManager(scene, modelLoader);
 const weaponSystem = new WeaponSystem(scene);
+const tacticalSkills = new TacticalSkillManager(
+  scene,
+  gameState,
+  obstacleManager,
+  collectibleManager,
+  playerShip,
+  cameraFX,
+  particles,
+  audio
+);
 
 // 异步加载模型并在就绪后无缝热挂载
 window.playerShip = playerShip;
 window.modelLoader = modelLoader;
+window.gameState = gameState;
+window.tacticalSkills = tacticalSkills;
 modelLoader.loadAll().then(() => {
   console.log('[太空战机] 模型资源加载完毕，装配战机外观');
   playerShip.loadShipModel();
@@ -107,7 +140,11 @@ function startGame() {
 
   if (isTouchDevice()) {
     ui.touchControls.classList.remove('hidden');
+    if (ui.desktopSkillDock) ui.desktopSkillDock.classList.add('hidden');
+  } else {
+    if (ui.desktopSkillDock) ui.desktopSkillDock.classList.remove('hidden');
   }
+  tacticalSkills.updateUI();
 }
 
 // ── 战机坠毁结束 ──
@@ -123,21 +160,39 @@ function triggerGameOver() {
     ui.finalHighScore.textContent = gameState.highScore.toLocaleString();
     ui.finalDistance.textContent = `${Math.floor(gameState.distance)} 米`;
     ui.finalMaxCombo.textContent = `x${gameState.maxCombo} 连击`;
+    if (ui.finalCrystals) {
+      ui.finalCrystals.textContent = `${gameState.crystals.toLocaleString()} 晶币`;
+    }
 
     ui.gameoverScreen.classList.remove('hidden');
     ui.hud.classList.add('hidden');
     ui.boostContainer.classList.add('hidden');
     ui.touchControls.classList.add('hidden');
+    if (ui.desktopSkillDock) ui.desktopSkillDock.classList.add('hidden');
+
+    // 社交与排行榜上报
+    socialManager.submitScore('skydodge', gameState.score);
+    socialManager.getLeaderboard('skydodge', 'daily').then(list => {
+      const { rank, percentile } = socialManager.calculateRank(gameState.score, list);
+      if (ui.finalPercentile) {
+        ui.finalPercentile.textContent = `荣登第 ${rank} 名 · 击败 ${percentile}% 飞行员`;
+      }
+    }).catch(() => {
+      if (ui.finalPercentile) {
+        ui.finalPercentile.textContent = '战报已存入本地排行榜';
+      }
+    });
   }, 400);
 }
 
 // ── 更新 HUD 显示 ──
 function updateHUD() {
   ui.distance.innerHTML = `${Math.floor(gameState.distance)} <small>米</small>`;
-  ui.speed.innerHTML = `${Math.floor(gameState.currentSpeed * 3.6)} <small>km/h</small>`;
+  ui.speed.innerHTML = `${Math.floor(gameState.currentSpeed * 3.6)} <small>公里/时</small>`;
   ui.level.textContent = `第 ${gameState.level} 区`;
   ui.score.textContent = gameState.score.toLocaleString();
   ui.highScore.textContent = gameState.highScore.toLocaleString();
+  socialUI.checkScoreForChallenge(gameState.score);
 
   // 护盾状态
   if (gameState.hasShield) {
@@ -187,6 +242,22 @@ window.addEventListener('keydown', (e) => {
   }
 
   if (gameState.state === 'playing') {
+    if (e.code === 'Digit1' || e.code === 'Numpad1') {
+      e.preventDefault();
+      tacticalSkills.triggerSkill('shield');
+      return;
+    }
+    if (e.code === 'Digit2' || e.code === 'Numpad2') {
+      e.preventDefault();
+      tacticalSkills.triggerSkill('emp');
+      return;
+    }
+    if (e.code === 'Digit3' || e.code === 'Numpad3') {
+      e.preventDefault();
+      tacticalSkills.triggerSkill('overdrive');
+      return;
+    }
+
     switch (e.code) {
       case 'KeyW':
       case 'ArrowUp':
@@ -363,6 +434,44 @@ if (ui.touchBoostBtn) {
 ui.startBtn.addEventListener('click', startGame);
 ui.restartBtn.addEventListener('click', startGame);
 
+// 社交操作按钮绑定
+const bindSocialBtn = (el, handler) => {
+  if (!el) return;
+  const cb = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handler();
+  };
+  el.addEventListener('click', cb);
+  el.addEventListener('touchend', cb);
+};
+
+bindSocialBtn(ui.topLeaderboardBtn, () => socialUI.openLeaderboard());
+bindSocialBtn(ui.startLeaderboardBtn, () => socialUI.openLeaderboard());
+bindSocialBtn(ui.gameoverLeaderboardBtn, () => socialUI.openLeaderboard());
+bindSocialBtn(ui.gameoverPosterBtn, () => socialUI.openPoster(gameState.score));
+bindSocialBtn(ui.gameoverChallengeBtn, () => socialUI.copyChallengeLink(gameState.score));
+
+// 战术技能点击与触控事件绑定
+document.querySelectorAll('.dock-skill-btn').forEach((btn) => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    audio.init();
+    const skillId = btn.dataset.skill;
+    tacticalSkills.triggerSkill(skillId);
+  });
+});
+
+document.querySelectorAll('.touch-skill-btn').forEach((btn) => {
+  btn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    audio.init();
+    const skillId = btn.dataset.skill;
+    tacticalSkills.triggerSkill(skillId);
+  }, { passive: false });
+});
+
 // ── 主游戏循环 ──
 const clock = new THREE.Clock();
 
@@ -402,15 +511,17 @@ function animate() {
     playerShip.update(delta, gameState.isBoosting, gameState.hasShield);
     const shipPos = playerShip.getPosition();
 
-    // 激光主炮发射与弹道演进
+    // 激光主炮发射与弹道演进 (支持火力过载三叉齐射)
+    const isOverdrive = gameState.isOverdriveActive();
     if (keys.fire) {
-      weaponSystem.tryFire(shipPos, playerShip.currentRoll, audio);
+      weaponSystem.tryFire(shipPos, playerShip.currentRoll, audio, isOverdrive);
     }
     weaponSystem.update(delta, obstacleManager, particles, audio, (destroyedObstacle, hitPos, pts) => {
       const result = gameState.addScore(pts || 200, 'BLASTER');
       const combo = gameState.increaseCombo();
       cameraFX.triggerShake(0.35, 0.2);
       showComboUI(combo, result.earned);
+      collectibleManager.spawnCrystalsAt(hitPos, 2);
       return combo;
     });
 
@@ -436,7 +547,14 @@ function animate() {
     // 5. 拾取判定 (战机 vs 晶石与道具)
     const collected = collectibleManager.checkPickup(playerShip.collider);
     for (const item of collected) {
-      if (item.type === 'energy_core') {
+      if (item.crystalValue) {
+        gameState.addCrystals(item.crystalValue);
+      }
+      if (item.type === 'crystal') {
+        gameState.addScore(item.points || 50, 'CRYSTAL');
+        audio.playCrystalPickup();
+        particles.createPickupBurst(item.mesh.position, 0x00f2fe);
+      } else if (item.type === 'energy_core') {
         const result = gameState.addScore(item.points, 'ENERGY');
         const combo = gameState.increaseCombo();
         audio.playEnergyPickup();
@@ -450,12 +568,15 @@ function animate() {
       }
     }
 
-    // 6. 尾焰与环境动态
+    // 6. 战术技能演进与 UI 同步
+    tacticalSkills.update(delta);
+
+    // 7. 尾焰与环境动态
     particles.emitThruster(shipPos, gameState.isBoosting);
     spaceEnv.update(delta, gameState.currentSpeed, shipPos.z);
     cameraFX.update(delta, shipPos, gameState.isBoosting);
 
-    // 7. 更新 HUD
+    // 8. 更新 HUD
     updateHUD();
   } else {
     // 非游玩状态 (开始/结算) 下保持星空漫游

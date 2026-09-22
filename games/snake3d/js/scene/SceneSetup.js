@@ -39,12 +39,13 @@ export class SceneSetup {
     this.camera.aspect = aspect;
 
     if (aspect < 1.0) {
-      // 竖屏长窄屏模式：自适应调整垂直 FOV 保证水平视野恒定充足 (>= 46°)
-      // 使得 20x20 地台在各种细长竖屏下两端始终留有 14%~16% 呼吸安全间隙
-      const targetHFOV = 46 * Math.PI / 180;
+      // 竖屏长窄屏模式：执行「上下功能分区法」
+      // 水平 FOV 锁定在约 36.5°，使 20x20 地台左右留出 18%~22% 舒适呼吸边距
+      const targetHFOV = 36.5 * Math.PI / 180;
       this.camera.fov = (2 * Math.atan(Math.tan(targetHFOV / 2) / aspect)) * 180 / Math.PI;
     } else {
-      this.camera.fov = 46;
+      // 横屏近景舞台模式：拉近饱满视野，充满中央主舞台
+      this.camera.fov = 48;
     }
 
     const camBase = this.getAdaptiveCameraBase(aspect);
@@ -56,16 +57,19 @@ export class SceneSetup {
   // 计算视锥自适应基准机位
   getAdaptiveCameraBase(aspect = window.innerWidth / window.innerHeight) {
     if (aspect < 1.0) {
+      // 竖屏上下功能分区：机位后移微仰 (lookZ = 4.8)
+      // 地台稳定投影在屏幕中上部 (35%~56%高度)，下半区腾出 44% 纯净空间留给虚拟摇杆与触控手势
       return {
-        y: 29.5,
-        z: 22.0,
-        lookZ: -0.2
+        y: 41.0,
+        z: 33.0,
+        lookZ: 4.8
       };
     } else {
+      // 横屏双拇指掌机模式：机位适度拉近放大近 30%，地台饱满生动，两端留出双拇指操控区
       return {
-        y: 27.5,
-        z: 18.5,
-        lookZ: 0.5
+        y: 21.0,
+        z: 14.5,
+        lookZ: 0.2
       };
     }
   }

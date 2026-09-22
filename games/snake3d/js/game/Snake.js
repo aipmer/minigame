@@ -34,6 +34,7 @@ export class Snake {
     this.invincibilityTimer = 0;
     this.isGhost = false;
     this.isFrost = false;
+    this.isBoosting = false;
     this.isDead = false;
     
     // 生命感游动与吞咽波动
@@ -323,8 +324,11 @@ export class Snake {
       }
     }
 
-    // ── 亚帧时间余量累加器（支持冰霜减速时间缩放） ──
-    const effectiveInterval = this.isFrost ? this.currentInterval * 1.55 : this.currentInterval;
+    // ── 亚帧时间余量累加器（支持冰霜减速时间缩放与极速冲刺加速） ──
+    let effectiveInterval = this.isFrost ? this.currentInterval * 1.55 : this.currentInterval;
+    if (this.isBoosting) {
+      effectiveInterval *= 0.58; // 极速冲刺步频提速 72%
+    }
     this.moveTimer += delta;
     let stepResult = null;
     if (this.moveTimer >= effectiveInterval) {
@@ -599,9 +603,14 @@ export class Snake {
     this.invincibilityTimer = 0;
     this.isGhost = false;
     this.isFrost = false;
+    this.isBoosting = false;
     this.isDead = false;
     
     this.refreshBodyMaterials();
+  }
+
+  setBoost(active) {
+    this.isBoosting = !!active;
   }
   
   startInvincibility(duration) {

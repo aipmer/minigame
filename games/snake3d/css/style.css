@@ -651,35 +651,61 @@ canvas { display: block; }
   100% { opacity: 0; transform: translateY(-60px) scale(0.7); }
 }
 
-/* ── 移动端 360° 弹性虚拟摇杆 ── */
+/* ── 竖屏横屏指引微标 ── */
+.rotate-hint-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  background: rgba(254, 243, 199, 0.92);
+  border: 1.5px solid #FDE68A;
+  border-radius: 20px;
+  color: #B45309;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+  user-select: none;
+  animation: gentlePulse 2.5s infinite ease-in-out;
+}
+
+@keyframes gentlePulse {
+  0%, 100% { transform: scale(1); opacity: 0.95; }
+  50% { transform: scale(1.04); opacity: 1; }
+}
+
+/* ── 移动端双拇指掌机触控容器 ── */
 .touch-controls {
   position: fixed;
-  bottom: 24px;
-  left: 24px;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  pointer-events: auto;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
 }
 
+/* 左侧 360° 弹性虚拟摇杆 */
 .virtual-stick {
-  width: 110px;
-  height: 110px;
+  position: absolute;
+  bottom: max(22px, env(safe-area-inset-bottom));
+  left: max(22px, env(safe-area-inset-left));
+  width: 106px;
+  height: 106px;
   background: rgba(255, 255, 255, 0.45);
-  border: 2px dashed rgba(116, 192, 67, 0.6);
+  border: 2.5px dashed rgba(116, 192, 67, 0.65);
   border-radius: 50%;
-  position: relative;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  pointer-events: auto;
 }
 
 .stick-knob {
-  width: 48px;
-  height: 48px;
+  width: 46px;
+  height: 46px;
   background: radial-gradient(circle, #86D152 0%, #74C043 100%);
   border: 2.5px solid rgba(255, 255, 255, 0.95);
   border-radius: 50%;
@@ -690,6 +716,54 @@ canvas { display: block; }
   box-shadow: 0 4px 14px rgba(116, 192, 67, 0.6);
   pointer-events: none;
   transition: transform 0.04s linear;
+}
+
+/* 右侧极速冲刺物理按键 (掌机双拇指) */
+.touch-boost-btn {
+  position: absolute;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  right: max(24px, env(safe-area-inset-right));
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 32%, #FDE047 0%, #F59E0B 65%, #D97706 100%);
+  border: 3px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 6px 18px rgba(217, 119, 6, 0.45), inset 0 2px 4px rgba(255, 255, 255, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.08s ease, filter 0.08s ease, box-shadow 0.08s ease;
+}
+
+.touch-boost-btn:active, .touch-boost-btn.active {
+  transform: scale(0.92);
+  filter: brightness(1.15);
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.6), inset 0 3px 6px rgba(0, 0, 0, 0.25);
+}
+
+.boost-icon-img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
+  pointer-events: none;
+}
+
+.boost-btn-text {
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #FFFFFF;
+  text-shadow: 0 1px 2px rgba(180, 83, 9, 0.8);
+  letter-spacing: 0.5px;
+  line-height: 1;
+  pointer-events: none;
 }
 
 /* ── 响应式与触屏显示 ── */
@@ -722,9 +796,12 @@ canvas { display: block; }
   .btn-nav-extra {
     display: none !important;
   }
+  .rotate-hint-pill {
+    display: none !important;
+  }
   .hud-container {
     top: max(10px, env(safe-area-inset-top));
-    left: 88px; /* 紧跟在左上角两个图标按钮后方 */
+    left: 86px; /* 紧跟在左上角两个图标按钮 (34px*2+6px=74px) 后方 */
     right: max(10px, env(safe-area-inset-right));
     gap: 6px;
   }
@@ -782,54 +859,97 @@ canvas { display: block; }
     height: 18px;
   }
   #combo { font-size: 24px; top: 96px; }
-  .touch-controls {
+  .virtual-stick {
+    bottom: max(16px, env(safe-area-inset-bottom));
+    left: max(16px, env(safe-area-inset-left));
+    width: 100px;
+    height: 100px;
+  }
+  .touch-boost-btn {
     bottom: max(18px, env(safe-area-inset-bottom));
-    left: max(18px, env(safe-area-inset-left));
+    right: max(16px, env(safe-area-inset-right));
+    width: 62px;
+    height: 62px;
   }
 }
 
-/* ── 移动端横屏适配 (Landscape) ── */
+/* ── 移动端横屏双拇指掌机适配 (Landscape Console Mode) ── */
 @media (orientation: landscape) and (max-height: 550px) {
+  /* 顶部左侧：极简收束只保留核心导航 */
   .top-nav-bar {
     top: max(8px, env(safe-area-inset-top));
-    left: max(12px, env(safe-area-inset-left));
+    left: max(14px, env(safe-area-inset-left));
     gap: 6px;
   }
-  .hud-container {
-    top: max(8px, env(safe-area-inset-top));
-    right: max(12px, env(safe-area-inset-right));
-    left: auto;
-    gap: 8px;
+  .top-nav-bar .btn-nav-extra {
+    display: none !important;
   }
+  .rotate-hint-pill {
+    display: none !important;
+  }
+  .nav-pill-btn {
+    padding: 5px 10px;
+    font-size: 11.5px;
+  }
+  .nav-pill-btn .ui-icon {
+    width: 15px;
+    height: 15px;
+  }
+
+  /* 顶部居中：微型天气胶囊 */
   .weather-pill {
     top: max(8px, env(safe-area-inset-top));
-    right: 280px;
-    padding: 4px 10px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    padding: 4px 12px;
     font-size: 11px;
   }
-  .weather-banner {
-    top: 48px;
-    font-size: 12px;
-    padding: 5px 12px;
+
+  /* 顶部右侧：紧凑战绩 HUD */
+  .hud-container {
+    top: max(8px, env(safe-area-inset-top));
+    right: max(14px, env(safe-area-inset-right));
+    left: auto;
+    gap: 6px;
   }
   .hud-item {
-    padding: 3px 8px;
+    padding: 3px 7px;
     border-radius: 8px;
   }
+  .hud-label {
+    font-size: 9px;
+  }
   .hud-value {
-    font-size: 15px;
+    font-size: 14px;
   }
-  .touch-controls {
-    bottom: max(12px, env(safe-area-inset-bottom));
-    left: max(20px, env(safe-area-inset-left));
+  .hud-badge {
+    font-size: 10px;
+    padding: 1px 5px;
   }
+
+  /* 双拇指掌机触控布局：左侧弹性摇杆，右侧极速冲刺 */
   .virtual-stick {
-    width: 104px;
-    height: 104px;
+    bottom: max(14px, env(safe-area-inset-bottom));
+    left: max(24px, env(safe-area-inset-left));
+    width: 98px;
+    height: 98px;
   }
   .stick-knob {
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
+  }
+  .touch-boost-btn {
+    bottom: max(16px, env(safe-area-inset-bottom));
+    right: max(24px, env(safe-area-inset-right));
+    width: 62px;
+    height: 62px;
+  }
+
+  .weather-banner {
+    top: 46px;
+    font-size: 12px;
+    padding: 4px 12px;
   }
   .toy-card {
     max-height: 88vh;

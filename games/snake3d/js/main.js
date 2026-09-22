@@ -65,6 +65,8 @@ const ui = {
   touchControls: document.getElementById('touch-controls'),
   virtualStick:  document.getElementById('virtual-stick'),
   stickKnob:     document.getElementById('stick-knob'),
+  touchBoostBtn: document.getElementById('touch-boost-btn'),
+  rotateHint:    document.getElementById('rotate-hint'),
 };
 
 // ── 社交中枢与排行榜组件 ──
@@ -210,10 +212,19 @@ document.addEventListener('keydown', (e) => {
   }
 
   if (gameState.state === 'playing') {
+    if (key === 'Shift') {
+      snake.setBoost(true);
+    }
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(key)) {
       e.preventDefault();
     }
     snake.handleInput(key);
+  }
+});
+
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'Shift') {
+    snake.setBoost(false);
   }
 });
 
@@ -407,6 +418,34 @@ if (ui.virtualStick) {
   });
 }
 
+// ── 移动端极速冲刺按键 (双拇指掌机交互) ──
+if (ui.touchBoostBtn) {
+  const onBoostStart = (e) => {
+    e.preventDefault();
+    sound.init();
+    snake.setBoost(true);
+    ui.touchBoostBtn.classList.add('active');
+  };
+  const onBoostEnd = (e) => {
+    if (e && e.cancelable) e.preventDefault();
+    snake.setBoost(false);
+    ui.touchBoostBtn.classList.remove('active');
+  };
+
+  ui.touchBoostBtn.addEventListener('touchstart', onBoostStart, { passive: false });
+  ui.touchBoostBtn.addEventListener('touchend', onBoostEnd, { passive: false });
+  ui.touchBoostBtn.addEventListener('touchcancel', onBoostEnd, { passive: false });
+  ui.touchBoostBtn.addEventListener('mousedown', onBoostStart);
+  window.addEventListener('mouseup', onBoostEnd);
+}
+
+// ── 旋转横屏提示徽章交互 ──
+if (ui.rotateHint) {
+  ui.rotateHint.addEventListener('click', () => {
+    socialUI.showToast('旋转手机至横屏，即享双拇指掌机沉浸体验！');
+  });
+}
+
 // ── 全局滑动手势 (辅助备用) ──
 let touchStartX = 0, touchStartY = 0;
 let isScreenSwiping = false;
@@ -416,6 +455,7 @@ document.addEventListener('touchstart', (e) => {
   sound.init();
   if (
     e.target.closest('#virtual-stick') ||
+    e.target.closest('#touch-boost-btn') ||
     e.target.closest('.back-home-btn') ||
     e.target.closest('.top-nav-bar') ||
     e.target.closest('.social-modal-overlay') ||
@@ -470,6 +510,10 @@ document.addEventListener('touchend', () => {
 function startGame() {
   gameState.startGame();
   snake.reset();
+  snake.setBoost(false);
+  if (ui.touchBoostBtn) {
+    ui.touchBoostBtn.classList.remove('active');
+  }
   food.dispose();
   obstacles.clearAll();
   cameraFX.reset();
@@ -611,6 +655,10 @@ function handleSnakeStep() {
 // ── 死亡处理 ──
 function handleDeath(reason) {
   powerUpManager.clearSpawned();
+  snake.setBoost(false);
+  if (ui.touchBoostBtn) {
+    ui.touchBoostBtn.classList.remove('active');
+  }
   if (ui.powerupHud) {
     ui.powerupHud.classList.add('hidden');
   }

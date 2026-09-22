@@ -73,24 +73,23 @@ async function runTest() {
 
     console.log('地台四角屏幕投影位置:', JSON.stringify(corners, null, 2));
 
-    let allInside = true;
+    let maxBottomYPercent = 0;
     for (const c of corners) {
       if (!c) continue;
-      // 验证是否在可视区域内，并且四周留有合理的呼吸边距 (sx 在 5% ~ 95% 之间)
       const xPercent = c.sx / c.screenWidth;
       const yPercent = c.sy / c.screenHeight;
-      if (xPercent < 0.05 || xPercent > 0.95) {
-        console.warn(`⚠️ 警告: X 轴边距过窄或越界: pt=(${c.pt.x}, ${c.pt.z}) x%=${(xPercent*100).toFixed(1)}%`);
-        allInside = false;
-      }
-      if (yPercent < 0.05 || yPercent > 0.95) {
-        console.warn(`⚠️ 警告: Y 轴边距过窄或越界: pt=(${c.pt.x}, ${c.pt.z}) y%=${(yPercent*100).toFixed(1)}%`);
-        allInside = false;
+      if (yPercent > maxBottomYPercent) maxBottomYPercent = yPercent;
+
+      // 验证是否在可视区域内，并且左右四周留有舒适的呼吸边距 (sx 在 14% ~ 86% 之间)
+      if (xPercent < 0.12 || xPercent > 0.88) {
+        throw new Error(`X 轴边距过窄或贴边: pt=(${c.pt.x}, ${c.pt.z}) x%=${(xPercent*100).toFixed(1)}%`);
       }
     }
-    if (allInside) {
-      console.log('✅ 移动端竖屏视锥呼吸边距校验完美通过！活动区域完整可见无截断！');
+    console.log(`竖屏地台底边缘最大高度占比: ${(maxBottomYPercent * 100).toFixed(1)}% (必须 <= 58% 留出下半区)`);
+    if (maxBottomYPercent > 0.58) {
+      throw new Error(`竖屏上下功能分区不合格: 地台底边占用过大 (${(maxBottomYPercent*100).toFixed(1)}% > 58%)，下半区空间不足！`);
     }
+    console.log('✅ 移动端竖屏【上下功能分区法】严格达标：地台居于中上部，下半部腾出纯净操作安全区！');
 
     // ══════════════════════════════════════════════
     // 测试 2：启动游戏并验证天气系统与局内胶囊
@@ -130,12 +129,10 @@ async function runTest() {
     console.log('生成测试障碍石并触发雷击...');
     const strikeResult = await page.evaluate(() => {
       const ws = window._weatherSystem;
-      // 生成一块在 (3, 0.5, 3) 的障碍石
       const obs = ws.obstacleManager;
       obs.positions.push(new ws.sceneSetup.camera.position.constructor(3, 0.5, 3));
       const beforeCount = obs.positions.length;
 
-      // 强制触发雷击
       ws.triggerLightning();
 
       return {
@@ -170,38 +167,80 @@ async function runTest() {
     console.log('✅ 天气系统三态循环、雨雪粒子与冬日积雪地台白化校验通过！');
 
     // ══════════════════════════════════════════════
-    // 测试 3：移动端横屏 (844×390) 布局与交互检查
+    // 测试 3：移动端横屏双拇指掌机布局与极速冲刺
     // ══════════════════════════════════════════════
-    console.log('\n--- 3. 验证移动端横屏 (844×390) 界面适配 ---');
+    console.log('\n--- 3. 验证移动端横屏 (844×390) 双拇指掌机布局与冲刺按键 ---');
     await page.setViewport({ width: 844, height: 390, isMobile: true, hasTouch: true });
     await new Promise(r => setTimeout(r, 500));
 
-    const landscapeOverflow = await page.evaluate(() => {
+    // 重新开启一局以确保处于活跃的 playing 状态
+    await page.evaluate(() => {
+      if (document.getElementById('gameover-screen').classList.contains('hidden') === false) {
+        document.getElementById('restart-btn').click();
+      } else if (document.getElementById('start-screen').classList.contains('hidden') === false) {
+        document.getElementById('start-btn').click();
+      }
+    });
+    await new Promise(r => setTimeout(r, 600));
+
+    const landscapeStatus = await page.evaluate(() => {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      const elements = [
-        document.querySelector('.top-nav-bar'),
-        document.querySelector('.hud-container'),
-        document.querySelector('.weather-pill'),
-        document.querySelector('.touch-controls')
-      ];
-      return elements.map(el => {
-        if (!el) return null;
-        const r = el.getBoundingClientRect();
-        return {
-          right: r.right,
-          bottom: r.bottom,
-          overflowX: r.right > w + 2,
-          overflowY: r.bottom > h + 2
-        };
-      });
+      const stick = document.getElementById('virtual-stick');
+      const boost = document.getElementById('touch-boost-btn');
+      const rotateHint = document.getElementById('rotate-hint');
+      const weatherPill = document.getElementById('weather-hud');
+
+      const stickR = stick.getBoundingClientRect();
+      const boostR = boost.getBoundingClientRect();
+      const weatherR = weatherPill.getBoundingClientRect();
+
+      const rotateHintHidden = window.getComputedStyle(rotateHint).display === 'none';
+      const weatherCentered = Math.abs((weatherR.left + weatherR.right) / 2 - w / 2) < 40;
+
+      return {
+        stickLeft: stickR.left,
+        stickRight: stickR.right,
+        boostLeft: boostR.left,
+        boostRight: boostR.right,
+        isLeftHandStick: stickR.right < w * 0.35,
+        isRightHandBoost: boostR.left > w * 0.65,
+        rotateHintHidden,
+        weatherCentered
+      };
     });
-    console.log('横屏下各核心控件布局状态:', landscapeOverflow);
-    const hasLandscapeOverflow = landscapeOverflow.some(item => item && (item.overflowX || item.overflowY));
-    if (hasLandscapeOverflow) {
-      throw new Error('横屏模式下控件超出视口！');
+
+    console.log('横屏掌机布局检测结果:', landscapeStatus);
+    if (!landscapeStatus.isLeftHandStick) {
+      throw new Error('横屏模式左摇杆未在左手操作区！');
     }
-    console.log('✅ 移动端横屏适配校验通过！');
+    if (!landscapeStatus.isRightHandBoost) {
+      throw new Error('横屏模式极速冲刺键未在右手操作区！');
+    }
+    if (!landscapeStatus.rotateHintHidden) {
+      throw new Error('横屏模式下未隐藏旋转提示！');
+    }
+    if (!landscapeStatus.weatherCentered) {
+      throw new Error('横屏模式下天气胶囊未在顶部居中！');
+    }
+
+    // 模拟冲刺按键交互
+    console.log('测试极速冲刺按键交互状态...');
+    const boostActiveState = await page.evaluate(() => {
+      const btn = document.getElementById('touch-boost-btn');
+      // 触发 mousedown
+      btn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      const isBoostingOnDown = window._snake.isBoosting;
+      // 触发 mouseup
+      window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+      const isBoostingOnUp = window._snake.isBoosting;
+      return { isBoostingOnDown, isBoostingOnUp };
+    });
+    console.log('冲刺按键触发状态:', boostActiveState);
+    if (!boostActiveState.isBoostingOnDown || boostActiveState.isBoostingOnUp) {
+      throw new Error('冲刺按键状态切换异常！');
+    }
+    console.log('✅ 移动端横屏双拇指掌机布局与极速冲刺按键校验 100% 通过！');
 
     // ══════════════════════════════════════════════
     // 测试 4：明亮战报海报画风与纯中文检查

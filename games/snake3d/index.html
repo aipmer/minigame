@@ -25,6 +25,10 @@
     <button id="btn-top-leaderboard" class="nav-pill-btn" title="查看风云榜"><img src="assets/icons/icon_trophy.png" alt="风云榜" class="ui-icon"> <span class="nav-btn-text">风云榜</span></button>
     <button id="btn-top-shop" class="nav-pill-btn btn-nav-extra" title="装扮商城"><img src="assets/icons/icon_wardrobe.png" alt="装扮" class="ui-icon"> <span class="nav-btn-text">装扮</span></button>
     <button id="btn-top-achievements" class="nav-pill-btn btn-nav-extra" title="荣誉成就"><img src="assets/icons/icon_crown.png" alt="成就" class="ui-icon"> <span class="nav-btn-text">成就</span></button>
+    <div id="rotate-hint" class="rotate-hint-pill" title="旋转手机体验横屏掌机模式">
+      <img src="assets/icons/icon_gamepad.png" alt="横屏" class="ui-icon">
+      <span class="rotate-hint-text">横屏更佳</span>
+    </div>
   </div>
 
   <!-- HUD：顶部状态栏 (中文版) -->
@@ -137,11 +141,15 @@
   <!-- 浮动得分容器 -->
   <div id="floating-scores"></div>
 
-  <!-- 移动端 360° 弹性虚拟摇杆 -->
+  <!-- 移动端双拇指掌机触控容器 (左摇杆 + 右冲刺) -->
   <div id="touch-controls" class="touch-controls hidden">
     <div id="virtual-stick" class="virtual-stick">
       <div class="stick-knob" id="stick-knob"></div>
     </div>
+    <button id="touch-boost-btn" class="touch-boost-btn" type="button" aria-label="按住极速冲刺">
+      <img src="assets/icons/icon_boost.png" alt="冲刺" class="boost-icon-img">
+      <span class="boost-btn-text">冲刺</span>
+    </button>
   </div>
 
   <script type="module" src="js/main.js"></script>

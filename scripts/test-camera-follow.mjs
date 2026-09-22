@@ -82,31 +82,90 @@ async function testCameraFollowAndRadar() {
     if (toggledText2 !== '跟随') throw new Error(`切回后期望为 "跟随"，实际得到 "${toggledText2}"`);
 
     // 5. 验证随心智能浮动虚拟摇杆交互
-    console.log('🕹️ 测试随心智能浮动摇杆...');
+    console.log('🕹️ 测试随心智能浮动四向十字磁吸摇杆...');
     // 模拟左半屏点击 (x: 120, y: 550)
     await page.touchscreen.touchStart(120, 550);
     await new Promise(r => setTimeout(r, 150));
 
     const stickPos = await page.evaluate(() => {
       const stick = document.getElementById('virtual-stick');
+      const hasUpArrow = !!document.getElementById('stick-arrow-up');
+      const hasRightArrow = !!document.getElementById('stick-arrow-right');
+      const hasDownArrow = !!document.getElementById('stick-arrow-down');
+      const hasLeftArrow = !!document.getElementById('stick-arrow-left');
       return {
         left: stick.style.left,
         top: stick.style.top,
         hasFloating: stick.classList.contains('floating'),
-        hasFadedOut: stick.classList.contains('faded-out')
+        hasFadedOut: stick.classList.contains('faded-out'),
+        hasArrows: hasUpArrow && hasRightArrow && hasDownArrow && hasLeftArrow
       };
     });
-    console.log(`✅ 浮动摇杆激活位置: left = ${stickPos.left}, top = ${stickPos.top}`);
-    if (stickPos.left !== '120px' || stickPos.top !== '550px' || !stickPos.hasFloating) {
-      throw new Error(`浮动摇杆未在手指按下处正确激活: ${JSON.stringify(stickPos)}`);
+    console.log(`✅ 浮动摇杆激活位置: left = ${stickPos.left}, top = ${stickPos.top}, 四向箭头完备: ${stickPos.hasArrows}`);
+    if (stickPos.left !== '120px' || stickPos.top !== '550px' || !stickPos.hasFloating || !stickPos.hasArrows) {
+      throw new Error(`浮动十字摇杆未在手指按下处正确激活或缺失四向指示器: ${JSON.stringify(stickPos)}`);
+    }
+
+    // 向上滑动测试磁吸与高亮 (dy = -30px)
+    await page.touchscreen.touchMove(120, 520);
+    await new Promise(r => setTimeout(r, 100));
+    const upState = await page.evaluate(() => {
+      const arrowUp = document.getElementById('stick-arrow-up');
+      const knob = document.getElementById('stick-knob');
+      return {
+        upActive: arrowUp.classList.contains('active'),
+        knobTransform: knob.style.transform
+      };
+    });
+    console.log(`✅ 向上滑动吸附状态: 上箭头高亮 = ${upState.upActive}, 旋钮偏移 = "${upState.knobTransform}"`);
+    // 保存激活态十字导向摇杆截图
+    await page.screenshot({
+      path: '/Users/hunkwu/.gemini/antigravity/brain/3c70172b-4a8c-439c-88bf-b8067a345cff/snake3d_dpad_stick_active.png'
+    });
+    console.log('📸 已捕获 4 向十字导向磁吸摇杆激活态截图');
+
+    // 微幅对角线抖动测试 (dx = +10, dy = -30)，验证迟滞锁死不误变向
+    await page.touchscreen.touchMove(130, 520);
+    await new Promise(r => setTimeout(r, 100));
+    const jitterState = await page.evaluate(() => {
+      const arrowUp = document.getElementById('stick-arrow-up');
+      const arrowRight = document.getElementById('stick-arrow-right');
+      return {
+        upActive: arrowUp.classList.contains('active'),
+        rightActive: arrowRight.classList.contains('active')
+      };
+    });
+    console.log(`✅ 对角线微抖防抖校验: 锁死向上 = ${jitterState.upActive}, 绝不误触向右 = ${!jitterState.rightActive}`);
+    if (!jitterState.upActive || jitterState.rightActive) {
+      throw new Error(`对角线微颤导致了方向误变动: ${JSON.stringify(jitterState)}`);
+    }
+
+    // 明确向右大幅滑动 (dx = +45, dy = 0)，验证明确意图时顺利变向
+    await page.touchscreen.touchMove(165, 550);
+    await new Promise(r => setTimeout(r, 100));
+    const rightState = await page.evaluate(() => {
+      const arrowUp = document.getElementById('stick-arrow-up');
+      const arrowRight = document.getElementById('stick-arrow-right');
+      return {
+        upActive: arrowUp.classList.contains('active'),
+        rightActive: arrowRight.classList.contains('active')
+      };
+    });
+    console.log(`✅ 明确向右变向校验: 向右激活 = ${rightState.rightActive}, 原向上熄灭 = ${!rightState.upActive}`);
+    if (!rightState.rightActive || rightState.upActive) {
+      throw new Error(`大幅右滑未正确切换至向右: ${JSON.stringify(rightState)}`);
     }
 
     // 松手模拟
     await page.touchscreen.touchEnd();
     await new Promise(r => setTimeout(r, 150));
-    const isFaded = await page.evaluate(() => document.getElementById('virtual-stick').classList.contains('faded-out'));
-    console.log(`✅ 浮动摇杆松手淡出状态: faded-out = ${isFaded}`);
-    if (!isFaded) throw new Error('浮动摇杆松手后未添加 faded-out 淡出样式');
+    const isFaded = await page.evaluate(() => {
+      const stick = document.getElementById('virtual-stick');
+      const anyActiveArrow = !!stick.querySelector('.stick-arrow.active');
+      return stick.classList.contains('faded-out') && !anyActiveArrow;
+    });
+    console.log(`✅ 十字摇杆松手淡出且清除高亮状态: ${isFaded}`);
+    if (!isFaded) throw new Error('十字摇杆松手后未添加 faded-out 或未清除高亮箭头');
 
     // 6. 截图保存实机图
     await page.screenshot({

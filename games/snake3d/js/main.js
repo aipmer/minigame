@@ -78,6 +78,10 @@ const ui = {
   touchControls: document.getElementById('touch-controls'),
   virtualStick:  document.getElementById('virtual-stick'),
   stickKnob:     document.getElementById('stick-knob'),
+  stickArrowUp:    document.getElementById('stick-arrow-up'),
+  stickArrowRight: document.getElementById('stick-arrow-right'),
+  stickArrowDown:  document.getElementById('stick-arrow-down'),
+  stickArrowLeft:  document.getElementById('stick-arrow-left'),
   touchBoostBtn: document.getElementById('touch-boost-btn'),
   rotateHint:    document.getElementById('rotate-hint'),
 };
@@ -530,23 +534,32 @@ if (isTouchDevice) {
   if (ui.restartBtn) ui.restartBtn.innerHTML = '<img src="assets/icons/icon_refresh.png" alt="重玩" class="ui-icon-btn"> 重新开始 (轻触)';
 }
 
-// ── 360° 弹性虚拟摇杆操控（支持智能随心浮动定位） ──
+// ── Q版粘土十字导向磁吸摇杆操控（支持智能随心浮动定位与零晃动防抖） ──
 let stickActive = false;
 let stickCenterX = 0;
 let stickCenterY = 0;
-const STICK_MAX_RADIUS = 38; // 最大视觉拨动半径 (px)
-const STICK_DEAD_ZONE = 8;   // 死区阈值 (px)
+const STICK_MAX_RADIUS = 34; // 十字槽最大位移半径 (px)
+const STICK_DEAD_ZONE = 18;  // 死区阈值 (px)，彻底杜绝生理微颤与手汗误触
+let currentStickDir = null;  // 当前锁定的方向: 'ArrowUp' | 'ArrowRight' | 'ArrowDown' | 'ArrowLeft' | null
 
 function updateStickKnob(dx, dy) {
   if (!ui.stickKnob) return;
   ui.stickKnob.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), calc(-50% + ${dy.toFixed(1)}px))`;
 }
 
+function highlightStickArrow(dir) {
+  if (ui.stickArrowUp) ui.stickArrowUp.classList.toggle('active', dir === 'ArrowUp');
+  if (ui.stickArrowRight) ui.stickArrowRight.classList.toggle('active', dir === 'ArrowRight');
+  if (ui.stickArrowDown) ui.stickArrowDown.classList.toggle('active', dir === 'ArrowDown');
+  if (ui.stickArrowLeft) ui.stickArrowLeft.classList.toggle('active', dir === 'ArrowLeft');
+}
+
 function resetStick() {
   stickActive = false;
-  if (ui.stickKnob) {
-    ui.stickKnob.style.transform = 'translate(-50%, -50%)';
-  }
+  currentStickDir = null;
+  highlightStickArrow(null);
+  updateStickKnob(0, 0);
+
   if (ui.virtualStick && ui.virtualStick.classList.contains('floating')) {
     ui.virtualStick.classList.add('faded-out');
   }
@@ -554,29 +567,78 @@ function resetStick() {
 
 function handleStickVector(dx, dy) {
   const distance = Math.hypot(dx, dy);
-  if (distance < STICK_DEAD_ZONE) return;
-
-  // 限制摇杆钮视觉位移
-  const clampedDist = Math.min(distance, STICK_MAX_RADIUS);
-  const angle = Math.atan2(dy, dx);
-  const knobX = Math.cos(angle) * clampedDist;
-  const knobY = Math.sin(angle) * clampedDist;
-  updateStickKnob(knobX, knobY);
-
-  // 360° 映射至 4 扇区：
-  let dir = null;
-  if (angle >= -Math.PI / 4 && angle <= Math.PI / 4) {
-    dir = 'ArrowRight';
-  } else if (angle > Math.PI / 4 && angle < 3 * Math.PI / 4) {
-    dir = 'ArrowDown';
-  } else if (angle >= -3 * Math.PI / 4 && angle <= -Math.PI / 4) {
-    dir = 'ArrowUp';
-  } else {
-    dir = 'ArrowLeft';
+  if (distance < STICK_DEAD_ZONE) {
+    updateStickKnob(0, 0);
+    highlightStickArrow(null);
+    currentStickDir = null;
+    return;
   }
 
-  if (dir && gameState.state === 'playing') {
-    snake.handleInput(dir);
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+  const SWITCH_BIAS = 1.35; // 迟滞门槛：切换至正交轴位移需超出旧轴 1.35 倍，彻底杜绝对角线摇摆抖动
+
+  let targetDir = currentStickDir;
+
+  if (!currentStickDir) {
+    if (absX >= absY) {
+      targetDir = dx > 0 ? 'ArrowRight' : 'ArrowLeft';
+    } else {
+      targetDir = dy > 0 ? 'ArrowDown' : 'ArrowUp';
+    }
+  } else {
+    const isCurrentHorizontal = (currentStickDir === 'ArrowLeft' || currentStickDir === 'ArrowRight');
+    if (isCurrentHorizontal) {
+      // 当前横向：想要切纵向，纵向位移必须明显占优
+      if (absY > absX * SWITCH_BIAS && absY >= STICK_DEAD_ZONE) {
+        targetDir = dy > 0 ? 'ArrowDown' : 'ArrowUp';
+      } else if (absX >= STICK_DEAD_ZONE) {
+        // 同轴反向
+        targetDir = dx > 0 ? 'ArrowRight' : 'ArrowLeft';
+      }
+    } else {
+      // 当前纵向：想要切横向，横向位移必须明显占优
+      if (absX > absY * SWITCH_BIAS && absX >= STICK_DEAD_ZONE) {
+        targetDir = dx > 0 ? 'ArrowRight' : 'ArrowLeft';
+      } else if (absY >= STICK_DEAD_ZONE) {
+        // 同轴反向
+        targetDir = dy > 0 ? 'ArrowDown' : 'ArrowUp';
+      }
+    }
+  }
+
+  // 轴向强磁吸：摇杆旋钮仅在十字槽主轴上移动
+  let knobX = 0;
+  let knobY = 0;
+  if (targetDir === 'ArrowRight') {
+    knobX = Math.min(absX, STICK_MAX_RADIUS);
+  } else if (targetDir === 'ArrowLeft') {
+    knobX = -Math.min(absX, STICK_MAX_RADIUS);
+  } else if (targetDir === 'ArrowDown') {
+    knobY = Math.min(absY, STICK_MAX_RADIUS);
+  } else if (targetDir === 'ArrowUp') {
+    knobY = -Math.min(absY, STICK_MAX_RADIUS);
+  }
+  updateStickKnob(knobX, knobY);
+
+  // 变向触发：更新高亮箭头、触觉微震、音效与蛇体转向
+  if (targetDir && targetDir !== currentStickDir) {
+    currentStickDir = targetDir;
+    highlightStickArrow(targetDir);
+
+    if (gameState.state === 'playing') {
+      snake.handleInput(targetDir);
+
+      // 触觉微震 (12ms)
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate(12); } catch (e) {}
+      }
+
+      // 清脆转向音效
+      if (sound && sound.playTurn) {
+        sound.playTurn();
+      }
+    }
   }
 }
 
@@ -592,6 +654,8 @@ function activateFloatingStick(clientX, clientY) {
   stickCenterX = clientX;
   stickCenterY = clientY;
   stickActive = true;
+  currentStickDir = null;
+  highlightStickArrow(null);
   updateStickKnob(0, 0);
 }
 
@@ -708,13 +772,11 @@ if (ui.rotateHint) {
   });
 }
 
-// ── 全局滑动手势 (辅助备用) ──
-let touchStartX = 0, touchStartY = 0;
-let isScreenSwiping = false;
-const SWIPE_THRESHOLD = 24;
-
+// ── 屏幕空白区域轻触快速开始（排除交互控件） ──
 document.addEventListener('touchstart', (e) => {
   sound.init();
+  if (gameState.state === 'playing') return;
+
   if (
     e.target.closest('#virtual-stick') ||
     e.target.closest('#touch-boost-btn') ||
@@ -722,6 +784,7 @@ document.addEventListener('touchstart', (e) => {
     e.target.closest('.top-nav-bar') ||
     e.target.closest('.social-modal-overlay') ||
     e.target.closest('.shop-modal-overlay') ||
+    e.target.closest('.custom-modal-overlay') ||
     e.target.closest('.ach-toast-banner') ||
     e.target.closest('.social-challenge-banner') ||
     e.target.closest('.mode-select-wrap') ||
@@ -730,42 +793,11 @@ document.addEventListener('touchstart', (e) => {
     e.target.closest('a')
   ) return;
 
-  isScreenSwiping = true;
-  const touch = e.touches[0];
-  touchStartX = touch.clientX;
-  touchStartY = touch.clientY;
-
   // 开始屏或结束屏轻触空白区域开始（排除弹窗与次级卡片交互）
-  if (gameState.state !== 'playing') {
-    if (e.target.closest('.toy-card') && !e.target.closest('#start-btn') && !e.target.closest('#restart-btn')) {
-      return;
-    }
-    startGame();
+  if (e.target.closest('.toy-card') && !e.target.closest('#start-btn') && !e.target.closest('#restart-btn')) {
+    return;
   }
-}, { passive: true });
-
-document.addEventListener('touchmove', (e) => {
-  if (!isScreenSwiping || gameState.state !== 'playing') return;
-  if (e.target.closest('#virtual-stick') || e.target.closest('.back-home-btn')) return;
-
-  const touch = e.touches[0];
-  const dx = touch.clientX - touchStartX;
-  const dy = touch.clientY - touchStartY;
-  const distance = Math.hypot(dx, dy);
-
-  if (distance >= SWIPE_THRESHOLD) {
-    if (Math.abs(dx) > Math.abs(dy)) {
-      snake.handleInput(dx > 0 ? 'ArrowRight' : 'ArrowLeft');
-    } else {
-      snake.handleInput(dy > 0 ? 'ArrowDown' : 'ArrowUp');
-    }
-    touchStartX = touch.clientX;
-    touchStartY = touch.clientY;
-  }
-}, { passive: true });
-
-document.addEventListener('touchend', () => {
-  isScreenSwiping = false;
+  startGame();
 }, { passive: true });
 
 // ── 开始游戏 ──

@@ -14,6 +14,10 @@ import { ModelLoader } from './game/ModelLoader.js';
 import { PowerUpManager } from './game/PowerUpManager.js';
 import { SocialManager } from '/js/services/SocialManager.js';
 import { SocialUI } from '/js/services/SocialUI.js';
+import { EconomyManager } from '/js/services/EconomyManager.js';
+import { SkinManager } from '/js/services/SkinManager.js';
+import { AchievementManager } from '/js/services/AchievementManager.js';
+import { ShopModalUI } from '/js/services/ShopModalUI.js';
 
 // ── UI 元素 ──
 const ui = {
@@ -35,11 +39,19 @@ const ui = {
   gameoverReason:document.getElementById('gameover-reason'),
   gameoverScore: document.getElementById('gameover-score'),
   gameoverPercentile: document.getElementById('gameover-percentile'),
+  gameoverCoinGain: document.getElementById('gameover-coin-gain'),
+  gameoverCoinTotal: document.getElementById('gameover-coin-total'),
   startBtn:      document.getElementById('start-btn'),
   restartBtn:    document.getElementById('restart-btn'),
   topLeaderboardBtn: document.getElementById('btn-top-leaderboard'),
   startLeaderboardBtn: document.getElementById('btn-start-leaderboard'),
   gameoverLeaderboardBtn: document.getElementById('btn-gameover-leaderboard'),
+  topShopBtn:    document.getElementById('btn-top-shop'),
+  startShopBtn:  document.getElementById('btn-start-shop'),
+  gameoverShopBtn: document.getElementById('btn-gameover-shop'),
+  topAchievementsBtn: document.getElementById('btn-top-achievements'),
+  startAchievementsBtn: document.getElementById('btn-start-achievements'),
+  gameoverAchievementsBtn: document.getElementById('btn-gameover-achievements'),
   gameoverPosterBtn: document.getElementById('btn-gameover-poster'),
   gameoverChallengeBtn: document.getElementById('btn-gameover-challenge'),
   floatingScores:document.getElementById('floating-scores'),
@@ -57,6 +69,21 @@ const socialUI = new SocialUI({
   socialManager,
   iconBasePath: 'assets/icons/'
 });
+
+// ── 代币经济、皮肤装扮与荣誉成就中枢 ──
+const economyManager = new EconomyManager();
+const skinManager = new SkinManager();
+const achievementManager = new AchievementManager(economyManager, skinManager);
+skinManager.achievementManager = achievementManager;
+window._economy = economyManager;
+window._achievements = achievementManager;
+window._skin = skinManager;
+
+// 每日登录奖励检查
+const dailyBonus = economyManager.checkDailyBonus();
+if (dailyBonus > 0) {
+  console.log(`[MiniGame] 每日登录奖励已发放: +${dailyBonus} 金币`);
+}
 
 // ── 初始化系统 ──
 const container = document.getElementById('game-container');
@@ -81,6 +108,25 @@ const particles = new ParticleSystem(scene);
 const cameraFX  = new CameraFX(camera);
 const powerUpManager = new PowerUpManager(scene, sound, particles, cameraFX);
 window._powerUpManager = powerUpManager;
+
+// ── 3D 装扮商城与荣誉成就弹窗 ──
+const shopUI = new ShopModalUI({
+  economyManager,
+  skinManager,
+  achievementManager,
+  soundManager: sound,
+  iconBasePath: 'assets/icons/'
+});
+window._shopUI = shopUI;
+
+let currentTrailDef = skinManager.getActiveTrailDef();
+let trailTimer = 0;
+
+// 实时响应装扮皮肤与流光拖尾材质应用
+skinManager.subscribe((skinDef, trailDef) => {
+  snake.applySkin(skinDef);
+  currentTrailDef = trailDef;
+});
 
 // ── 跟踪蛇上次逻辑位置用于检测 step 发生 ──
 let lastSnakePos = null;
@@ -145,7 +191,7 @@ if (ui.restartBtn) {
   ui.restartBtn.addEventListener('touchend', onActionBtnClick);
 }
 
-// ── 社交操作按钮绑定 ──
+// ── 社交与装扮操作按钮绑定 ──
 const bindSocialBtn = (el, handler) => {
   if (!el) return;
   const cb = (e) => {
@@ -160,6 +206,12 @@ const bindSocialBtn = (el, handler) => {
 bindSocialBtn(ui.topLeaderboardBtn, () => socialUI.openLeaderboard());
 bindSocialBtn(ui.startLeaderboardBtn, () => socialUI.openLeaderboard());
 bindSocialBtn(ui.gameoverLeaderboardBtn, () => socialUI.openLeaderboard());
+bindSocialBtn(ui.topShopBtn, () => shopUI.openShop());
+bindSocialBtn(ui.startShopBtn, () => shopUI.openShop());
+bindSocialBtn(ui.gameoverShopBtn, () => shopUI.openShop());
+bindSocialBtn(ui.topAchievementsBtn, () => shopUI.openAchievements());
+bindSocialBtn(ui.startAchievementsBtn, () => shopUI.openAchievements());
+bindSocialBtn(ui.gameoverAchievementsBtn, () => shopUI.openAchievements());
 bindSocialBtn(ui.gameoverPosterBtn, () => socialUI.openPoster(gameState.score));
 bindSocialBtn(ui.gameoverChallengeBtn, () => socialUI.copyChallengeLink(gameState.score));
 
@@ -325,6 +377,8 @@ document.addEventListener('touchstart', (e) => {
     e.target.closest('.back-home-btn') ||
     e.target.closest('.top-nav-bar') ||
     e.target.closest('.social-modal-overlay') ||
+    e.target.closest('.shop-modal-overlay') ||
+    e.target.closest('.ach-toast-banner') ||
     e.target.closest('.social-challenge-banner') ||
     e.target.closest('.mode-select-wrap') ||
     e.target.closest('.mode-tab-btn') ||
@@ -378,6 +432,8 @@ function startGame() {
   obstacles.clearAll();
   cameraFX.reset();
   powerUpManager.reset();
+  achievementManager.resetSession();
+  achievementManager.recordEvent('score', 0);
 
   const occupied = snake.getOccupiedPositions();
   food.spawn(occupied, []);
@@ -414,6 +470,12 @@ function handleSnakeStep() {
     snake.grow(null, ateSpecial);
 
     const scoreResult = gameState.addScore(basePoints, ateSpecial);
+
+    // 荣誉成就中枢打点
+    achievementManager.recordEvent('score', gameState.score);
+    if (scoreResult.comboMultiplier > 1) {
+      achievementManager.recordEvent('combo', scoreResult.comboMultiplier);
+    }
 
     // 粒子特效
     const pos = snake.head.position.clone();
@@ -468,6 +530,7 @@ function handleSnakeStep() {
     sound.playEatCombo(2);
     const bonusScore = eatenBonus * 30;
     gameState.addScore(bonusScore, true);
+    achievementManager.recordEvent('score', gameState.score);
     particles.spawnEatBurst(snake.head.position.clone(), 0xFFD700);
     showFloatingScore(snake.head.position, `+${bonusScore} 金币奖励!`, '#FFD700');
     updateHUD();
@@ -483,6 +546,8 @@ function handleSnakeStep() {
         particles.spawnRockShatter(removed.pos || snake.head.position);
         cameraFX.shake(0.25, 0.35);
         gameState.addScore(50, true);
+        achievementManager.recordEvent('rock_crushed', 1);
+        achievementManager.recordEvent('score', gameState.score);
         showFloatingScore(snake.head.position, `+50 撞碎障碍!`, '#FFD700');
         updateHUD();
         socialUI.checkScoreForChallenge(gameState.score);
@@ -504,6 +569,18 @@ function handleDeath(reason) {
   sound.playGameOver();
   particles.spawnDeathBurst(snake.head.position.clone());
   cameraFX.shake(0.4, 0.6);
+
+  // 荣誉成就中枢记录对局结束
+  achievementManager.recordEvent('game_end', 1);
+
+  // 代币经济中枢：10:1 得分兑换金币
+  const earnedCoins = economyManager.convertScoreToCoins(gameState.score);
+  if (ui.gameoverCoinGain) {
+    ui.gameoverCoinGain.textContent = earnedCoins;
+  }
+  if (ui.gameoverCoinTotal) {
+    ui.gameoverCoinTotal.textContent = economyManager.getCoins();
+  }
 
   ui.gameoverReason.textContent = reason;
   ui.gameoverScore.textContent = gameState.score;
@@ -607,7 +684,13 @@ function gameLoop() {
   if (gameState.state === 'playing') {
     // 局内疯狂道具逻辑与吸附/减速/清屏更新
     powerUpManager.update(adjustedDelta, currentMode, snake, food, obstacles, gameState, {
-      showFloatingScore
+      showFloatingScore,
+      onPowerUpCollect: (type) => {
+        achievementManager.recordEvent('powerup', 1);
+      },
+      onRocksCrushed: (count) => {
+        achievementManager.recordEvent('rock_crushed', count);
+      }
     });
 
     // 动态同步冰霜减速效果给蛇体
@@ -627,6 +710,18 @@ function gameLoop() {
 
     const stepResult = snake.update(adjustedDelta);
 
+    // 流光拖尾发射
+    if (currentTrailDef && currentTrailDef.id !== 'none') {
+      trailTimer += adjustedDelta;
+      if (trailTimer >= 0.08) {
+        trailTimer = 0;
+        const spawnPos = (snake.segments.length > 0)
+          ? snake.segments[snake.segments.length - 1].position
+          : snake.head.position;
+        particles.spawnTrail(spawnPos, currentTrailDef.id);
+      }
+    }
+
     // 检测是否发生了 step（蛇逻辑位置变了）
     if (!lastSnakePos.equals(snake.logicalPos)) {
       // step 发生了
@@ -634,6 +729,9 @@ function gameLoop() {
         // step() 内部已检测到撞墙/自碰
         handleDeath(stepResult.dieReason || '撞到墙壁');
       } else {
+        if (stepResult && stepResult.isGhostWarp) {
+          achievementManager.recordEvent('ghost_warp', 1);
+        }
         handleSnakeStep();
       }
       lastSnakePos.copy(snake.logicalPos);

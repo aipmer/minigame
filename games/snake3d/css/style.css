@@ -481,18 +481,68 @@ canvas { display: block; }
   margin-top: 4px;
 }
 
+.start-sub-btn-row {
+  width: 100%;
+  display: flex;
+  gap: 6px;
+}
+
+.start-sub-btn-row .toy-btn {
+  flex: 1;
+  font-size: 12px;
+  padding: 8px 4px;
+  border-radius: 16px;
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+.score-reward-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 6px 0 2px;
+}
+
+.coin-gain-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: #FEF3C7;
+  border: 1.2px solid #F59E0B;
+  border-radius: 14px;
+  color: #B45309;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
+}
+
+.coin-total-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748B;
+  background: #F1F5F9;
+  padding: 3px 8px;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+}
+
 .gameover-btn-row {
   width: 100%;
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
 }
 
 .gameover-btn-row .toy-btn {
-  flex: 1;
-  font-size: 13px;
-  padding: 10px 6px;
-  border-radius: 18px;
+  flex: 1 1 28%;
+  font-size: 12px;
+  padding: 8px 4px;
+  border-radius: 16px;
   margin-top: 0;
+  white-space: nowrap;
 }
 
 .score-percentile {
@@ -597,6 +647,9 @@ canvas { display: block; }
   }
   .nav-pill-btn .nav-btn-text, .back-home-btn span {
     display: none;
+  }
+  .btn-nav-extra {
+    display: none !important;
   }
   .hud-container {
     top: 10px;

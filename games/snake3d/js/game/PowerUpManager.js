@@ -329,6 +329,10 @@ export class PowerUpManager {
     const def = this.POWER_UP_DEFS[type];
     if (!def) return;
 
+    if (uiCallbacks && uiCallbacks.onPowerUpCollect) {
+      uiCallbacks.onPowerUpCollect(type);
+    }
+
     // 播放专属音效与通知
     switch (type) {
       case 'magnet':
@@ -385,6 +389,10 @@ export class PowerUpManager {
       // 清除全部障碍物
       obstacles.clearAll();
       gameState.addScore(totalBonus, true);
+
+      if (uiCallbacks && uiCallbacks.onRocksCrushed) {
+        uiCallbacks.onRocksCrushed(positions.length);
+      }
 
       if (uiCallbacks && uiCallbacks.showFloatingScore) {
         uiCallbacks.showFloatingScore(new THREE.Vector3(0, 1.5, 0), `全场爆破! +${totalBonus}分`, '#F59E0B');

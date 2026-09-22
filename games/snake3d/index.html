@@ -23,6 +23,8 @@
   <div class="top-nav-bar">
     <a href="../../" class="nav-pill-btn" title="返回游戏大厅"><img src="assets/icons/icon_home.png" alt="大厅" class="ui-icon"> <span class="nav-btn-text">大厅</span></a>
     <button id="btn-top-leaderboard" class="nav-pill-btn" title="查看风云榜"><img src="assets/icons/icon_trophy.png" alt="风云榜" class="ui-icon"> <span class="nav-btn-text">风云榜</span></button>
+    <button id="btn-top-shop" class="nav-pill-btn btn-nav-extra" title="装扮商城"><img src="assets/icons/icon_wardrobe.png" alt="装扮" class="ui-icon"> <span class="nav-btn-text">装扮</span></button>
+    <button id="btn-top-achievements" class="nav-pill-btn btn-nav-extra" title="荣誉成就"><img src="assets/icons/icon_crown.png" alt="成就" class="ui-icon"> <span class="nav-btn-text">成就</span></button>
   </div>
 
   <!-- HUD：顶部状态栏 (中文版) -->
@@ -81,7 +83,11 @@
       <div class="hint-pill">方向键 / 虚拟摇杆 / 滑动 控制转向</div>
       <div class="start-btn-group">
         <button id="start-btn" class="toy-btn toy-btn-primary"><img src="assets/icons/icon_rocket.png" alt="开始" class="ui-icon-btn"> 开始游戏 (空格 / 轻触)</button>
-        <button id="btn-start-leaderboard" class="toy-btn toy-btn-secondary"><img src="assets/icons/icon_trophy.png" alt="风云榜" class="ui-icon-btn"> 查看风云榜</button>
+        <div class="start-sub-btn-row">
+          <button id="btn-start-shop" class="toy-btn toy-btn-secondary"><img src="assets/icons/icon_wardrobe.png" alt="装扮" class="ui-icon-btn"> 装扮商城</button>
+          <button id="btn-start-achievements" class="toy-btn toy-btn-secondary"><img src="assets/icons/icon_crown.png" alt="成就" class="ui-icon-btn"> 荣誉成就</button>
+          <button id="btn-start-leaderboard" class="toy-btn toy-btn-secondary"><img src="assets/icons/icon_trophy.png" alt="风云榜" class="ui-icon-btn"> 风云榜</button>
+        </div>
       </div>
     </div>
   </div>
@@ -97,13 +103,19 @@
       <div class="score-card">
         <div class="score-label">最终得分</div>
         <div class="score-number" id="gameover-score">0</div>
+        <div class="score-reward-row" id="gameover-reward-row">
+          <span class="coin-gain-badge"><img src="assets/icons/icon_coin.png" alt="金币" class="ui-icon"> +<span id="gameover-coin-gain">0</span> 金币</span>
+          <span class="coin-total-badge">金币余额: <span id="gameover-coin-total">0</span></span>
+        </div>
         <div class="score-percentile" id="gameover-percentile">正在计算排名...</div>
       </div>
       <div class="gameover-btn-group">
         <button id="restart-btn" class="toy-btn toy-btn-primary"><img src="assets/icons/icon_refresh.png" alt="重玩" class="ui-icon-btn"> 重新开始 (R / 空格 / 轻触)</button>
         <div class="gameover-btn-row">
-          <button id="btn-gameover-poster" class="toy-btn toy-btn-secondary"><img src="assets/icons/icon_share.png" alt="战报" class="ui-icon-btn"> 生成战报</button>
-          <button id="btn-gameover-challenge" class="toy-btn toy-btn-secondary"><img src="assets/icons/icon_rocket.png" alt="挑战" class="ui-icon-btn"> 发起挑战</button>
+          <button id="btn-gameover-shop" class="toy-btn toy-btn-secondary"><img src="assets/icons/icon_wardrobe.png" alt="装扮" class="ui-icon-btn"> 装扮</button>
+          <button id="btn-gameover-achievements" class="toy-btn toy-btn-secondary"><img src="assets/icons/icon_crown.png" alt="成就" class="ui-icon-btn"> 成就</button>
+          <button id="btn-gameover-poster" class="toy-btn toy-btn-secondary"><img src="assets/icons/icon_share.png" alt="战报" class="ui-icon-btn"> 战报</button>
+          <button id="btn-gameover-challenge" class="toy-btn toy-btn-secondary"><img src="assets/icons/icon_rocket.png" alt="挑战" class="ui-icon-btn"> 挑战</button>
           <button id="btn-gameover-leaderboard" class="toy-btn toy-btn-secondary"><img src="assets/icons/icon_trophy.png" alt="风云榜" class="ui-icon-btn"> 风云榜</button>
         </div>
       </div>

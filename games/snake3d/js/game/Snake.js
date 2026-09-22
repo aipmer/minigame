@@ -177,6 +177,66 @@ export class Snake {
     // 优先采用高精度圆润手感
   }
 
+  // 动态切换装扮皮肤材质
+  applySkin(skinDef) {
+    if (!skinDef) return;
+    this.currentSkinDef = skinDef;
+
+    // 头部材质
+    this.headMat.color.setHex(skinDef.headColor);
+    this.headMat.roughness = skinDef.roughness ?? 0.25;
+    this.headMat.metalness = skinDef.metalness ?? 0.1;
+    this.headMat.transparent = !!skinDef.transparent;
+    this.headMat.opacity = skinDef.opacity ?? 1.0;
+    if (skinDef.emissive) {
+      this.headMat.emissive.setHex(skinDef.emissive);
+      this.headMat.emissiveIntensity = skinDef.emissiveIntensity ?? 0.2;
+    } else {
+      this.headMat.emissive.setHex(0x000000);
+      this.headMat.emissiveIntensity = 0;
+    }
+
+    // 身体主色材质 1
+    this.bodyMat1.color.setHex(skinDef.bodyColor1);
+    this.bodyMat1.roughness = skinDef.roughness ?? 0.28;
+    this.bodyMat1.metalness = skinDef.metalness ?? 0.08;
+    this.bodyMat1.transparent = !!skinDef.transparent;
+    this.bodyMat1.opacity = skinDef.opacity ?? 1.0;
+    if (skinDef.emissive) {
+      this.bodyMat1.emissive.setHex(skinDef.emissive);
+      this.bodyMat1.emissiveIntensity = skinDef.emissiveIntensity ?? 0.2;
+    } else {
+      this.bodyMat1.emissive.setHex(0x000000);
+      this.bodyMat1.emissiveIntensity = 0;
+    }
+
+    // 身体副色材质 2
+    this.bodyMat2.color.setHex(skinDef.bodyColor2);
+    this.bodyMat2.roughness = skinDef.roughness ?? 0.28;
+    this.bodyMat2.metalness = skinDef.metalness ?? 0.08;
+    this.bodyMat2.transparent = !!skinDef.transparent;
+    this.bodyMat2.opacity = skinDef.opacity ?? 1.0;
+    if (skinDef.emissive) {
+      this.bodyMat2.emissive.setHex(skinDef.emissive);
+      this.bodyMat2.emissiveIntensity = skinDef.emissiveIntensity ?? 0.2;
+    } else {
+      this.bodyMat2.emissive.setHex(0x000000);
+      this.bodyMat2.emissiveIntensity = 0;
+    }
+
+    // 腹部材质
+    if (skinDef.bellyColor) {
+      this.bellyMat.color.setHex(skinDef.bellyColor);
+    }
+
+    this.headMat.needsUpdate = true;
+    this.bodyMat1.needsUpdate = true;
+    this.bodyMat2.needsUpdate = true;
+    this.bellyMat.needsUpdate = true;
+
+    this.refreshBodyMaterials();
+  }
+
   // 幽灵虚化形态切换
   setGhostMode(enabled) {
     this.isGhost = enabled;
@@ -398,6 +458,8 @@ export class Snake {
         if (this.logicalPos.z > 9.5) this.logicalPos.z = -9;
         else if (this.logicalPos.z < -9.5) this.logicalPos.z = 9;
         this.prevLogicalPos.copy(this.logicalPos);
+        result.warped = true;
+        result.isGhostWarp = this.isGhost;
       } else {
         result.died = true;
         result.dieReason = "撞到墙壁";

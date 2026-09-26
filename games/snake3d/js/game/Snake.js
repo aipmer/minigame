@@ -17,13 +17,14 @@ export class Snake {
     this.logicalPos = new THREE.Vector3(0, 0.5, 0);
     this.prevLogicalPos = new THREE.Vector3(0, 0.5, 0);
     
-    // 方向控制
+    // 方向控制与双指令预输入缓冲队列
     this.direction = new THREE.Vector3(0, 0, 1);
     this.nextDirection = new THREE.Vector3(0, 0, 1);
+    this.inputQueue = []; // 最大深度 2，防吞键与快速连招响应
     
-    // 速度与恒速插值定时器
-    this.baseMoveInterval = 0.16;
-    this.minMoveInterval = 0.07;
+    // 速度与恒速插值定时器（优化基础步频至 0.138s，节奏轻快敏捷）
+    this.baseMoveInterval = 0.138;
+    this.minMoveInterval = 0.065;
     this.currentInterval = this.baseMoveInterval;
     this.speedUpFactor = 0.003;
     this.moveTimer = 0;
@@ -36,6 +37,7 @@ export class Snake {
     this.invincibilityTimer = 0;
     this.isGhost = false;
     this.isFrost = false;
+    this.isSnowResistance = false; // 梦幻雪境积雪阻力
     this.isBoosting = false;
     this.isDead = false;
     
@@ -275,7 +277,7 @@ export class Snake {
     });
   }
 
-  // 处理键盘/摇杆输入
+  // 处理键盘/摇杆输入（支持双指令预输入缓冲，彻底消除急转弯吞键）
   handleInput(key) {
     let newDir = null;
     switch (key.toLowerCase()) {
@@ -296,10 +298,23 @@ export class Snake {
         newDir = new THREE.Vector3(1, 0, 0);
         break;
     }
-    
-    // 防止180度自我掉头，并支持预输入转向
-    if (newDir && this.direction.dot(newDir) === 0) {
-      this.nextDirection.copy(newDir);
+    if (!newDir) return;
+
+    if (!this.inputQueue) this.inputQueue = [];
+
+    // 与缓冲队列中最后一个意向方向（若无则与当前 direction）判定正交性
+    const baseDir = this.inputQueue.length > 0 
+      ? this.inputQueue[this.inputQueue.length - 1] 
+      : this.direction;
+
+    // 防止 180 度自我倒车，且必须与基准方向正交
+    if (baseDir.dot(newDir) === 0) {
+      if (this.inputQueue.length < 2) {
+        this.inputQueue.push(newDir);
+      } else {
+        this.inputQueue[1] = newDir;
+      }
+      this.nextDirection.copy(this.inputQueue[0]);
     }
   }
 
@@ -326,8 +341,14 @@ export class Snake {
       }
     }
 
-    // ── 亚帧时间余量累加器（支持冰霜减速时间缩放与极速冲刺加速） ──
-    let effectiveInterval = this.isFrost ? this.currentInterval * 1.55 : this.currentInterval;
+    // ── 亚帧时间余量累加器（支持雪阻/冰霜减速时间缩放与极速冲刺加速） ──
+    let effectiveInterval = this.currentInterval;
+    if (this.isSnowResistance) {
+      effectiveInterval *= 1.18; // 梦幻雪境积雪阻力（放缓约18%）
+    }
+    if (this.isFrost) {
+      effectiveInterval *= 1.45; // 冰霜道具减速（便于高难度微操）
+    }
     if (this.isBoosting) {
       effectiveInterval *= 0.58; // 极速冲刺步频提速 72%
     }
@@ -443,6 +464,13 @@ export class Snake {
 
   // 逻辑步进
   step() {
+    // 从预输入缓冲队列中提取下一个有效转向指令
+    if (this.inputQueue && this.inputQueue.length > 0) {
+      const queuedDir = this.inputQueue.shift();
+      if (this.direction.dot(queuedDir) === 0) {
+        this.nextDirection.copy(queuedDir);
+      }
+    }
     this.direction.copy(this.nextDirection);
     
     // 记录旧逻辑位置
@@ -600,6 +628,7 @@ export class Snake {
     
     this.direction.set(0, 0, 1);
     this.nextDirection.set(0, 0, 1);
+    this.inputQueue = [];
     this.head.quaternion.identity();
     
     this.currentInterval = this.baseMoveInterval;
@@ -608,6 +637,7 @@ export class Snake {
     this.invincibilityTimer = 0;
     this.isGhost = false;
     this.isFrost = false;
+    this.isSnowResistance = false;
     this.isBoosting = false;
     this.isDead = false;
     
@@ -616,6 +646,14 @@ export class Snake {
 
   setBoost(active) {
     this.isBoosting = !!active;
+  }
+
+  setFrostMode(enabled) {
+    this.isFrost = !!enabled;
+  }
+
+  setSnowResistance(enabled) {
+    this.isSnowResistance = !!enabled;
   }
   
   // 玩法工坊规则联动

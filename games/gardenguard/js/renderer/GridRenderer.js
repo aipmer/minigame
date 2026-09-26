@@ -16,15 +16,15 @@ export class GridRenderer {
     this.scene.add(this.group);
     this.time = 0;
     
-    // 材质体系
+    // 材质体系升级为手办标准微粗糙材质（明朗温暖手办调色）
     this.materials = {
-      potClay: new THREE.MeshLambertMaterial({ color: 0xD97D54 }),      // 暖陶土红橙
-      soilBase: new THREE.MeshLambertMaterial({ color: 0x3E2723 }),     // 湿润深褐有机土
-      rimNormal: new THREE.MeshLambertMaterial({ color: 0xED9B77 }),    // 正常花坛边缘
-      rimHover: new THREE.MeshLambertMaterial({ color: 0xFFD54F, emissive: 0x332200 }),   // 悬浮高亮金色
-      rimMerge: new THREE.MeshLambertMaterial({ color: 0x00E676, emissive: 0x003311 }),   // 可合成绿色光晕
-      rimInvalid: new THREE.MeshLambertMaterial({ color: 0xFF5252, emissive: 0x330000 }), // 不可放置红色
-      sproutMat: new THREE.MeshLambertMaterial({ color: 0x81C784 })     // 待种植嫩芽青绿
+      potClay: new THREE.MeshStandardMaterial({ color: 0xF47B42, roughness: 0.6, metalness: 0.02 }),       // 明快暖阳陶土橙
+      soilBase: new THREE.MeshStandardMaterial({ color: 0x543A2F, roughness: 0.85, metalness: 0.02 }),     // 丰饶暖润有机花土
+      rimNormal: new THREE.MeshStandardMaterial({ color: 0xFFA076, roughness: 0.55, metalness: 0.02 }),    // 正常花坛边缘暖蜜桃橙
+      rimHover: new THREE.MeshStandardMaterial({ color: 0xFFE082, emissive: 0x443300, roughness: 0.35 }),  // 悬浮高亮明亮金
+      rimMerge: new THREE.MeshStandardMaterial({ color: 0x00E676, emissive: 0x004411, roughness: 0.35 }),  // 可合成绿色光晕
+      rimInvalid: new THREE.MeshStandardMaterial({ color: 0xFF5252, emissive: 0x440000, roughness: 0.35 }),// 不可放置红色
+      sproutMat: new THREE.MeshStandardMaterial({ color: 0x8CE63C, roughness: 0.4, metalness: 0.02 })     // 待种植嫩芽青绿（鲜嫩萌绿）
     };
   }
   
@@ -50,12 +50,15 @@ export class GridRenderer {
         const baseGeom = new THREE.CylinderGeometry(potOuterSize * 0.48, potOuterSize * 0.52, 0.12, 24);
         const baseMesh = new THREE.Mesh(baseGeom, this.materials.potClay);
         baseMesh.position.y = 0.06;
+        baseMesh.castShadow = true;
+        baseMesh.receiveShadow = true;
         cellGroup.add(baseMesh);
 
         // 2. 凹陷的湿润种植泥土层
         const soilGeom = new THREE.CylinderGeometry(potOuterSize * 0.44, potOuterSize * 0.44, 0.04, 24);
         const soilMesh = new THREE.Mesh(soilGeom, this.materials.soilBase);
         soilMesh.position.y = 0.13;
+        soilMesh.receiveShadow = true;
         cellGroup.add(soilMesh);
 
         // 3. 花坛外沿装饰圆环（用于交互高亮：悬浮、合成提示）
@@ -63,6 +66,8 @@ export class GridRenderer {
         const rimMesh = new THREE.Mesh(rimGeom, this.materials.rimNormal);
         rimMesh.rotation.x = Math.PI / 2;
         rimMesh.position.y = 0.13;
+        rimMesh.castShadow = true;
+        rimMesh.receiveShadow = true;
         cellGroup.add(rimMesh);
 
         // 4. 空槽位萌系双叶幼苗指示器（待种植）
@@ -71,18 +76,21 @@ export class GridRenderer {
 
         const stem = new THREE.Mesh(sproutStemGeom, this.materials.sproutMat);
         stem.position.y = 0.06;
+        stem.castShadow = true;
         sproutGroup.add(stem);
 
         const leafL = new THREE.Mesh(sproutLeafGeom, this.materials.sproutMat);
         leafL.scale.set(1.4, 0.3, 0.8);
         leafL.position.set(-0.08, 0.12, 0);
         leafL.rotation.z = -0.4;
+        leafL.castShadow = true;
         sproutGroup.add(leafL);
 
         const leafR = new THREE.Mesh(sproutLeafGeom, this.materials.sproutMat);
         leafR.scale.set(1.4, 0.3, 0.8);
         leafR.position.set(0.08, 0.12, 0);
         leafR.rotation.z = 0.4;
+        leafR.castShadow = true;
         sproutGroup.add(leafR);
 
         cellGroup.add(sproutGroup);

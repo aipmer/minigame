@@ -12,7 +12,7 @@ async function testCameraFollowAndRadar() {
 
   try {
     const page = await browser.newPage();
-    await page.setViewport({ width: 390, height: 844 }); // 移动端标准长窄屏
+    await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true }); // 移动端标准长窄屏
 
     page.on('console', msg => console.log('BROWSER:', msg.text()));
     page.on('pageerror', err => console.error('PAGE ERROR:', err));
@@ -62,21 +62,21 @@ async function testCameraFollowAndRadar() {
 
     // 3. 验证相机跟随坐标位移（蛇移动后，相机也跟着前进）
     const initialCamZ = await page.evaluate(() => window._sceneSetup ? window._sceneSetup.camera.position.z : null);
-    // 让蛇前进 500ms
-    await new Promise(r => setTimeout(r, 600));
+    // 让蛇前进 300ms 验证位移
+    await new Promise(r => setTimeout(r, 300));
     const movedCamZ = await page.evaluate(() => window._sceneSetup ? window._sceneSetup.camera.position.z : null);
     console.log(`✅ 相机动态平滑跟踪 Z 坐标变化: 初始 = ${initialCamZ?.toFixed(2)}, 移动后 = ${movedCamZ?.toFixed(2)}`);
 
     // 4. 测试点击顶部按钮与按键 V 切换镜头模式
     await page.click('#btn-camera-toggle');
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 150));
     const toggledText1 = await page.$eval('#camera-toggle-text', el => el.textContent.trim());
     console.log(`✅ 点击切换后视角状态: "${toggledText1}" (成功切为鸟瞰)`);
     if (toggledText1 !== '鸟瞰') throw new Error(`切换后期望为 "鸟瞰"，实际得到 "${toggledText1}"`);
 
     // 按 V 键切回跟随
     await page.keyboard.press('v');
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 150));
     const toggledText2 = await page.$eval('#camera-toggle-text', el => el.textContent.trim());
     console.log(`✅ 按 V 键切回后视角状态: "${toggledText2}" (成功切为跟随)`);
     if (toggledText2 !== '跟随') throw new Error(`切回后期望为 "跟随"，实际得到 "${toggledText2}"`);
@@ -85,7 +85,7 @@ async function testCameraFollowAndRadar() {
     console.log('🕹️ 测试随心智能浮动四向十字磁吸摇杆...');
     // 模拟左半屏点击 (x: 120, y: 550)
     await page.touchscreen.touchStart(120, 550);
-    await new Promise(r => setTimeout(r, 150));
+    await new Promise(r => setTimeout(r, 100));
 
     const stickPos = await page.evaluate(() => {
       const stick = document.getElementById('virtual-stick');

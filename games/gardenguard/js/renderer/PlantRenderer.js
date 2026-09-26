@@ -41,7 +41,8 @@ export class PlantRenderer {
       time: Math.random() * 10,
       animState: 'upgrade',
       attackTimer: 0,
-      starRing: null
+      starRing: null,
+      targetAngleY: 0
     };
 
     // 5 星解锁脚底光晕星环
@@ -257,6 +258,16 @@ export class PlantRenderer {
       container.remove(plantObj.visualMesh);
     }
     this.normalizeModel(modelScene, 1.0);
+    modelScene.traverse(node => {
+      if (node.isMesh) {
+        node.castShadow = true;
+        node.receiveShadow = true;
+        if (node.material) {
+          node.material.roughness = 0.65;
+          node.material.metalness = 0.05;
+        }
+      }
+    });
     container.add(modelScene);
     plantObj.visualMesh = modelScene;
   }
@@ -291,19 +302,59 @@ export class PlantRenderer {
     }
   }
 
-  playAttackAnimation(uid) {
+  setPlantTarget(uid, targetWorldPos) {
+    const plantObj = this.plants.get(uid);
+    if (plantObj && targetWorldPos) {
+      const dx = targetWorldPos.x - plantObj.mesh.position.x;
+      const dz = targetWorldPos.z - plantObj.mesh.position.z;
+      if (Math.abs(dx) > 0.001 || Math.abs(dz) > 0.001) {
+        plantObj.targetAngleY = Math.atan2(dx, dz);
+      }
+    }
+  }
+
+  playAttackAnimation(uid, targetWorldPos = null) {
     const plantObj = this.plants.get(uid);
     if (plantObj) {
+      if (targetWorldPos) {
+        const dx = targetWorldPos.x - plantObj.mesh.position.x;
+        const dz = targetWorldPos.z - plantObj.mesh.position.z;
+        if (Math.abs(dx) > 0.001 || Math.abs(dz) > 0.001) {
+          plantObj.targetAngleY = Math.atan2(dx, dz);
+          // 射击瞬间快速校准准星
+          plantObj.mesh.rotation.y = plantObj.targetAngleY;
+        }
+      }
       plantObj.animState = 'attack';
       plantObj.attackTimer = 1.0;
     }
+  }
+
+  getMuzzleWorldPosition(uid) {
+    const p = this.plants.get(uid);
+    if (!p) return null;
+    const pos = p.mesh.position.clone();
+    const angle = p.mesh.rotation.y;
+    // 从头部喷嘴处发射（顺着朝向稍微向前 0.35，高度 0.55）
+    pos.x += Math.sin(angle) * 0.35;
+    pos.y += 0.55;
+    pos.z += Math.cos(angle) * 0.35;
+    return pos;
   }
 
   update(dt) {
     this.plants.forEach((p) => {
       p.time += dt;
 
-      // 升级弹性生长动画 (Spring ease-out)
+      // 1. 守卫平滑旋转锁定目标敌人
+      if (p.targetAngleY !== undefined) {
+        let diff = p.targetAngleY - p.mesh.rotation.y;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        p.mesh.rotation.y += diff * Math.min(1.0, dt * 10);
+      }
+
+      // 2. 升级弹性生长动画 (Spring ease-out)
       if (p.animState === 'upgrade') {
         const cs = p.mesh.scale.x;
         const ds = p.targetScale - cs;
@@ -314,24 +365,28 @@ export class PlantRenderer {
         }
       }
 
-      // 空闲萌系呼吸上下轻弹
+      // 3. 空闲萌系呼吸上下轻弹
       if (p.animState === 'idle') {
         p.mesh.position.y = p.baseY + Math.sin(p.time * 2.5) * 0.03;
-        p.mesh.rotation.x = 0;
-      }
-
-      // 攻击射击前倾回弹动画
-      if (p.animState === 'attack') {
-        p.attackTimer -= dt * 6;
-        if (p.attackTimer <= 0) {
-          p.animState = 'idle';
-          p.mesh.rotation.x = 0;
-        } else {
-          p.mesh.rotation.x = Math.sin(p.attackTimer * Math.PI) * 0.25;
+        if (p.visualMesh && p.visualMesh.rotation.x !== 0) {
+          p.visualMesh.rotation.x = 0;
         }
       }
 
-      // 5 星星环微旋
+      // 4. 攻击射击前倾回弹动画（在局部坐标系沿瞄准方向前倾点头，与旋转朝向完美结合）
+      if (p.animState === 'attack') {
+        p.attackTimer -= dt * 7;
+        if (p.attackTimer <= 0) {
+          p.animState = 'idle';
+          if (p.visualMesh) p.visualMesh.rotation.x = 0;
+        } else {
+          if (p.visualMesh) {
+            p.visualMesh.rotation.x = Math.sin(p.attackTimer * Math.PI) * 0.28;
+          }
+        }
+      }
+
+      // 5. 5 星星环微旋
       if (p.starRing) {
         p.starRing.rotation.z += dt * 2.0;
       }

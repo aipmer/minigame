@@ -262,31 +262,31 @@ body {
 }
 
 .hud-item {
-    background: rgba(46, 32, 24, 0.72);
-    border: 2px solid rgba(255, 235, 180, 0.3);
-    border-radius: 18px;
-    padding: 8px 16px;
+    background: rgba(255, 252, 242, 0.94);
+    border: 2px solid #E8D8B0;
+    border-radius: 20px;
+    padding: 8px 18px;
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #FFFFFF;
+    color: #5D4037;
     font-weight: 800;
     font-size: 14px;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 0 #D4BF92, 0 6px 16px rgba(93, 64, 55, 0.14);
 }
 
 .hud-value {
-    color: #FFD54F;
+    color: #D97706;
     font-weight: 900;
     font-size: 16px;
     letter-spacing: 0.5px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .hud-label {
     font-size: 13px;
     font-weight: 800;
-    color: #FFE082;
+    color: #795548;
 }
 
 .hud-icon-img {
@@ -294,7 +294,7 @@ body {
     height: 26px;
     object-fit: contain;
     flex-shrink: 0;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    filter: drop-shadow(0 2px 3px rgba(93, 64, 55, 0.2));
 }
 
 .btn-cost-icon {
@@ -314,27 +314,31 @@ body {
 .hp-bar {
     width: 110px;
     height: 14px;
-    border-radius: 7px;
-    background-color: rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 8px;
+    background-color: #E6D5B8;
+    box-shadow: inset 0 2px 4px rgba(93, 64, 55, 0.25);
+    border: 1.5px solid #D7C49E;
     overflow: hidden;
 }
 
 .hp-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #66BB6A, #43A047);
+    background: linear-gradient(90deg, #81C784, #4CAF50);
     width: 100%;
-    transition: width 0.3s ease, background-color 0.3s ease;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    transition: width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease;
 }
 
 .wave-timer-bar {
-    width: 90px;
+    width: 60px;
     height: 8px;
     border-radius: 4px;
-    background-color: rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background-color: #E6D5B8;
+    box-shadow: inset 0 1px 3px rgba(93, 64, 55, 0.2);
+    border: 1px solid #D7C49E;
     overflow: hidden;
-    margin-top: 4px;
+    margin-left: 6px;
 }
 
 #wave-timer-fill {

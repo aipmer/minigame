@@ -26,6 +26,10 @@ export class SceneManager {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.22;
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
     // 灯光
     this.setupLighting();
@@ -36,18 +40,34 @@ export class SceneManager {
   }
   
   setupLighting() {
-    // 主光源：暖白阳光
-    const dirLight = new THREE.DirectionalLight(0xfff5e6, 1.2);
-    dirLight.position.set(5, 12, 5);
+    // 1. 主光源：明媚阳光暖金日照（投射柔和接触阴影）
+    const dirLight = new THREE.DirectionalLight(0xfff6e5, 1.65);
+    dirLight.position.set(8, 16, 7);
+    dirLight.castShadow = true;
+    
+    // 配置高精度阴影相机包围盒，刚好覆盖浮空岛和跑道
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.near = 1.0;
+    dirLight.shadow.camera.far = 35;
+    const d = 10.5;
+    dirLight.shadow.camera.left = -d;
+    dirLight.shadow.camera.right = d;
+    dirLight.shadow.camera.top = d;
+    dirLight.shadow.camera.bottom = -d;
+    dirLight.shadow.bias = -0.0004;
+    dirLight.shadow.normalBias = 0.02;
     this.scene.add(dirLight);
     
-    // 环境光：天蓝 + 草绿双色半球光
-    const hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x98FB98, 0.8);
+    // 2. 环境半球光：清澈天青蓝 + 阳光明亮草地漫反射（动森纯正治愈系采光）
+    const hemiLight = new THREE.HemisphereLight(0x9aebff, 0xbff765, 0.95);
+    hemiLight.position.set(0, 20, 0);
     this.scene.add(hemiLight);
     
-    // 柔和环境光补充
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-    this.scene.add(ambientLight);
+    // 3. 柔和背光补光：温暖蜜桃象牙白，消除暗面死角沉闷感
+    const fillLight = new THREE.DirectionalLight(0xffebd9, 0.45);
+    fillLight.position.set(-8, 7, -7);
+    this.scene.add(fillLight);
   }
   
   onResize() {

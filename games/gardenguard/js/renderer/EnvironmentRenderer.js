@@ -19,19 +19,80 @@ export class EnvironmentRenderer {
     this.time = 0;
   }
   
+  createStylizedGrassTexture(isPlaza = false) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    // 底色：阳光明丽嫩草绿（与治愈系童话背景自然融为一体）
+    ctx.fillStyle = isPlaza ? '#92E23E' : '#85D632';
+    ctx.fillRect(0, 0, 512, 512);
+
+    // 动森经典微棋盘格手绘交替草纹
+    const tileSize = 64;
+    for (let x = 0; x < 512; x += tileSize) {
+      for (let y = 0; y < 512; y += tileSize) {
+        if ((x / tileSize + y / tileSize) % 2 === 0) {
+          ctx.fillStyle = isPlaza ? '#A4EC4E' : '#99E242'; // 浅一层手绘明快高光绿
+          ctx.fillRect(x, y, tileSize, tileSize);
+        }
+      }
+    }
+
+    // 细腻手绘花粉点、草尖与微小草斑
+    for (let i = 0; i < 480; i++) {
+      const px = Math.random() * 512;
+      const py = Math.random() * 512;
+      const r = Math.random() * 2.2 + 0.8;
+      const rand = Math.random();
+      if (rand > 0.7) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'; // 阳光雏菊小亮点
+      } else if (rand > 0.35) {
+        ctx.fillStyle = 'rgba(202, 250, 92, 0.55)'; // 阳光鹅黄高光斑
+      } else {
+        ctx.fillStyle = 'rgba(92, 172, 28, 0.4)';  // 翡翠深草微阴影
+      }
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(4, 4);
+    return texture;
+  }
+
   create() {
     // 1. 浮空岛台地基（厚重焦糖泥土层 + 倒锥岩底）
-    // 1.1 顶层草皮（粘土暖翠绿，圆角边缘）
+    const grassTexture = this.createStylizedGrassTexture(false);
+
+    // 1.1 顶层草皮（微缩动森手绘草坪，圆角边缘）
     const grassTopGeom = new THREE.CylinderGeometry(8.6, 8.8, 0.45, 64);
-    const grassTopMat = new THREE.MeshLambertMaterial({ color: 0x7CB342 }); // 阳光暖草绿
+    const grassTopMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: grassTexture,
+      roughness: 0.65,
+      metalness: 0.02
+    });
     const grassTop = new THREE.Mesh(grassTopGeom, grassTopMat);
     grassTop.position.y = -0.22;
     grassTop.receiveShadow = true;
     this.group.add(grassTop);
 
     // 1.2 中心台地（微高起 0.08，给 4x4 棋盘创造专属花园庭院基座感）
+    const plazaTexture = this.createStylizedGrassTexture(true);
+    plazaTexture.repeat.set(3, 3);
     const gardenPlazaGeom = new THREE.BoxGeometry(7.2, 0.16, 7.2);
-    const gardenPlazaMat = new THREE.MeshLambertMaterial({ color: 0x8BC34A }); // 阳光青草绿
+    const gardenPlazaMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: plazaTexture,
+      roughness: 0.6,
+      metalness: 0.02
+    });
     const gardenPlaza = new THREE.Mesh(gardenPlazaGeom, gardenPlazaMat);
     gardenPlaza.position.set(0, -0.04, 0);
     gardenPlaza.receiveShadow = true;
@@ -42,22 +103,40 @@ export class EnvironmentRenderer {
 
     // 1.3 焦糖泥土断层（多层厚实断层切面）
     const soilGeom = new THREE.CylinderGeometry(8.8, 8.4, 0.9, 64);
-    const soilMat = new THREE.MeshLambertMaterial({ color: 0x8D6E63 }); // 焦糖泥土色
+    const soilMat = new THREE.MeshStandardMaterial({
+      color: 0x9E7051,
+      roughness: 0.85,
+      metalness: 0.05
+    });
     const soil = new THREE.Mesh(soilGeom, soilMat);
     soil.position.y = -0.85;
+    soil.receiveShadow = true;
     this.group.add(soil);
 
     // 1.4 下层泥土暗纹与倒锥浮空岩底
     const rockGeom = new THREE.CylinderGeometry(8.4, 3.2, 2.4, 32);
-    const rockMat = new THREE.MeshLambertMaterial({ color: 0x5D4037 }); // 深褐岩石
+    const rockMat = new THREE.MeshStandardMaterial({
+      color: 0x6E4C38,
+      roughness: 0.9,
+      metalness: 0.05
+    });
     const rock = new THREE.Mesh(rockGeom, rockMat);
     rock.position.y = -2.4;
+    rock.receiveShadow = true;
     this.group.add(rock);
 
-    // 2. 岛屿外围圆润木质桩围栏（带横梁连接）
+    // 2. 岛屿外围圆润木质桩围栏（暖阳光泽原木色）
     const postGeom = new THREE.CylinderGeometry(0.12, 0.15, 0.55, 12);
-    const postMat = new THREE.MeshLambertMaterial({ color: 0xD7CCC8 }); // 暖米木桩
-    const railMat = new THREE.MeshLambertMaterial({ color: 0xBCAAA4 }); // 围栏横木
+    const postMat = new THREE.MeshStandardMaterial({ 
+      color: 0xF3C98B, // 暖阳蜜糖金木
+      roughness: 0.7,
+      metalness: 0.05
+    });
+    const railMat = new THREE.MeshStandardMaterial({ 
+      color: 0xE0B272, // 暖色原木横木
+      roughness: 0.7,
+      metalness: 0.05
+    });
 
     const numPosts = 24;
     for (let i = 0; i < numPosts; i++) {
@@ -68,6 +147,8 @@ export class EnvironmentRenderer {
 
       const post = new THREE.Mesh(postGeom, postMat);
       post.position.set(x, 0.12, z);
+      post.castShadow = true;
+      post.receiveShadow = true;
       this.group.add(post);
 
       // 横木连接下一根柱子
@@ -80,6 +161,8 @@ export class EnvironmentRenderer {
       const rail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, len), railMat);
       rail.position.copy(mid);
       rail.lookAt(new THREE.Vector3(nx, 0.16, nz));
+      rail.castShadow = true;
+      rail.receiveShadow = true;
       this.group.add(rail);
     }
 
@@ -317,10 +400,23 @@ export class EnvironmentRenderer {
   }
   
   createCourtyardAccents() {
-    // 庭院石砖包边材质
-    const curbMat = new THREE.MeshLambertMaterial({ color: 0xD7CCC8 }); // 暖白陶石
-    const cornerPillarMat = new THREE.MeshLambertMaterial({ color: 0xBCAAA4 }); // 灰粉陶石
-    const capGlowMat = new THREE.MeshLambertMaterial({ color: 0xFFE082, emissive: 0x443311 }); // 顶端暖光
+    // 庭院石砖包边材质（暖象牙白与蜜糖陶石）
+    const curbMat = new THREE.MeshStandardMaterial({ 
+      color: 0xFFF9EE, 
+      roughness: 0.65, 
+      metalness: 0.02 
+    });
+    const cornerPillarMat = new THREE.MeshStandardMaterial({ 
+      color: 0xF7E4C8, 
+      roughness: 0.65, 
+      metalness: 0.02 
+    });
+    const capGlowMat = new THREE.MeshStandardMaterial({ 
+      color: 0xFFD54F, 
+      emissive: 0xFFA000, 
+      emissiveIntensity: 0.55, 
+      roughness: 0.35 
+    });
 
     const half = 3.6;
     const curbHeight = 0.12;
@@ -332,18 +428,26 @@ export class EnvironmentRenderer {
 
     const curbN = new THREE.Mesh(northSouthGeom, curbMat);
     curbN.position.set(0, 0.04, -half);
+    curbN.castShadow = true;
+    curbN.receiveShadow = true;
     this.group.add(curbN);
 
     const curbS = new THREE.Mesh(northSouthGeom, curbMat);
     curbS.position.set(0, 0.04, half);
+    curbS.castShadow = true;
+    curbS.receiveShadow = true;
     this.group.add(curbS);
 
     const curbE = new THREE.Mesh(eastWestGeom, curbMat);
     curbE.position.set(half, 0.04, 0);
+    curbE.castShadow = true;
+    curbE.receiveShadow = true;
     this.group.add(curbE);
 
     const curbW = new THREE.Mesh(eastWestGeom, curbMat);
     curbW.position.set(-half, 0.04, 0);
+    curbW.castShadow = true;
+    curbW.receiveShadow = true;
     this.group.add(curbW);
 
     // 四个转角：萌系微型陶土灯柱
@@ -363,10 +467,14 @@ export class EnvironmentRenderer {
 
       const pillar = new THREE.Mesh(pillarGeom, cornerPillarMat);
       pillar.position.y = 0.19;
+      pillar.castShadow = true;
+      pillar.receiveShadow = true;
       pillarGroup.add(pillar);
 
       const cap = new THREE.Mesh(capGeom, capGlowMat);
       cap.position.y = 0.42;
+      cap.castShadow = true;
+      cap.receiveShadow = true;
       pillarGroup.add(cap);
 
       this.group.add(pillarGroup);

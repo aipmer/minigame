@@ -85,28 +85,31 @@ export class ModelLoader {
         if (child.material) {
           const mat = child.material;
 
-          // 战机次世代 PBR 材质强化：保留高精贴图，增强金属质感与迎光面漫反射
+          // 战机次世代 PBR 材质强化：钛金亮银装甲底色 + 高清金属切面反光 + 天青流线自发光
           if (key === 'spaceship' && mat.isMeshStandardMaterial) {
-            mat.metalness = 0.55;
-            mat.roughness = 0.28;
-            mat.envMapIntensity = 2.0;
+            mat.color = new THREE.Color(0xe0eaff);
+            mat.metalness = 0.65;
+            mat.roughness = 0.22;
+            mat.envMapIntensity = 2.6;
             if (mat.normalMap) {
-              mat.normalScale = new THREE.Vector2(1.2, 1.2);
+              mat.normalScale = new THREE.Vector2(1.5, 1.5);
             }
-            // 柔和幽蓝底光，消除死黑
-            mat.emissive = new THREE.Color(0x0f172a);
-            mat.emissiveIntensity = 0.2;
+            // 绚丽天青自发光流线，轮廓在深空中极度鲜明
+            mat.emissive = new THREE.Color(0x0284c7);
+            mat.emissiveIntensity = 0.38;
           }
 
-          // 熔岩晶脉陨石次世代 PBR 材质强化：凸显深灰色真实岩体表皮与火山口裂隙蓝光
+          // 熔岩晶脉陨石次世代 PBR 材质强化：深灰板岩底色 + 高对比天青自发光晶脉裂隙
           if (key === 'asteroid' && mat.isMeshStandardMaterial) {
-            mat.roughness = 0.85;
-            mat.metalness = 0.15;
+            mat.color = new THREE.Color(0x475569); // 从暗褐提升为高级深灰板岩
+            mat.roughness = 0.45; // 降低粗糙度，产生晶石锐利高光切面
+            mat.metalness = 0.25;
             if (mat.normalMap) {
-              mat.normalScale = new THREE.Vector2(1.6, 1.6);
+              mat.normalScale = new THREE.Vector2(2.0, 2.0);
             }
-            mat.emissive = new THREE.Color(0x0284c7);
-            mat.emissiveIntensity = 0.15;
+            // 注入璀璨发光晶脉（天青晶石光泽，即使远距也能一眼辨析危险）
+            mat.emissive = new THREE.Color(0x38bdf8);
+            mat.emissiveIntensity = 0.65;
           }
         }
       }

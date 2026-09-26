@@ -226,6 +226,16 @@ export class EnemyRenderer {
       container.remove(enemyObj.visualMesh);
     }
     this.normalizeModel(modelScene, 0.8);
+    modelScene.traverse(node => {
+      if (node.isMesh) {
+        node.castShadow = true;
+        node.receiveShadow = true;
+        if (node.material) {
+          node.material.roughness = 0.65;
+          node.material.metalness = 0.05;
+        }
+      }
+    });
     container.add(modelScene);
     enemyObj.visualMesh = modelScene;
   }

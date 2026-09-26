@@ -16,27 +16,28 @@ export class CombatResolver {
       const plant = slot.plant;
       plant.cooldownTimer -= dt;
       
-      if (plant.cooldownTimer <= 0) {
-        const plantWorldPos = this.getPlantWorldPos(slot.row, slot.col);
-        if (!plantWorldPos) continue;
-        
-        const target = this.selectTarget(plant, plantWorldPos, activeEnemies);
-        
-        if (target) {
-          plant.cooldownTimer = plant.getAtkInterval();
-          const projectile = {
-            from: plantWorldPos,
-            targetEnemy: target, 
-            type: plant.projectileType,
-            speed: plant.projectileSpeed,
-            damage: plant.getATK(),
-            aoeRadius: plant.aoeRadius,
-            slowFactor: plant.slowFactor,
-            slowDuration: plant.slowDuration
-          };
-          results.projectiles.push(projectile);
-          this.projectileListeners.forEach(cb => cb(projectile));
-        }
+      const plantWorldPos = this.getPlantWorldPos(slot.row, slot.col);
+      if (!plantWorldPos) continue;
+      
+      // 实时索敌：每帧锁定射程内最靠前的活跃目标，供守卫实时瞄准转向
+      const target = this.selectTarget(plant, plantWorldPos, activeEnemies);
+      plant.currentTarget = target;
+      
+      if (plant.cooldownTimer <= 0 && target) {
+        plant.cooldownTimer = plant.getAtkInterval();
+        const projectile = {
+          plantUid: plant.uid,
+          from: plantWorldPos,
+          targetEnemy: target, 
+          type: plant.projectileType,
+          speed: plant.projectileSpeed,
+          damage: plant.getATK(),
+          aoeRadius: plant.aoeRadius,
+          slowFactor: plant.slowFactor,
+          slowDuration: plant.slowDuration
+        };
+        results.projectiles.push(projectile);
+        this.projectileListeners.forEach(cb => cb(projectile));
       }
     }
     return results;

@@ -37,14 +37,18 @@ export class PathRenderer {
     this.pathLength = 0;
     this.segments = [];
 
-    // 1. 暖沙泥土垫层材质
-    const baseBedMaterial = new THREE.MeshLambertMaterial({ color: 0xD7CCC8 }); // 暖赭石米砂土
+    // 1. 暖阳光泽细沙垫层材质
+    const baseBedMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xE8D2B0, // 温暖阳光细沙
+      roughness: 0.8,
+      metalness: 0.02
+    });
     
-    // 2. 鹅卵石石板材质库（米白、浅焦糖、暖灰三种自然粘土色）
+    // 2. 鹅卵石石板材质库（暖象牙白、金砂米黄、蜜糖焦糖三种自然温暖手办石）
     const stoneMats = [
-      new THREE.MeshLambertMaterial({ color: 0xFFF8E7 }), // 米白石
-      new THREE.MeshLambertMaterial({ color: 0xE0D7C6 }), // 暖砂灰
-      new THREE.MeshLambertMaterial({ color: 0xC7B299 })  // 浅焦糖卵石
+      new THREE.MeshStandardMaterial({ color: 0xFFFBF2, roughness: 0.65, metalness: 0.02 }), // 暖象牙白卵石
+      new THREE.MeshStandardMaterial({ color: 0xF5E4CA, roughness: 0.65, metalness: 0.02 }), // 金砂米黄卵石
+      new THREE.MeshStandardMaterial({ color: 0xE2C9A6, roughness: 0.65, metalness: 0.02 })  // 暖蜜糖焦糖卵石
     ];
 
     for (let i = 0; i < this.waypoints.length - 1; i++) {
@@ -64,6 +68,7 @@ export class PathRenderer {
       bedMesh.position.copy(p1).add(p2).multiplyScalar(0.5);
       bedMesh.position.y = 0.04;
       bedMesh.lookAt(new THREE.Vector3(p2.x, 0.04, p2.z));
+      bedMesh.receiveShadow = true;
       this.pathGroup.add(bedMesh);
 
       // 2.2 沿线密铺圆润粘土鹅卵石拼砌板
@@ -83,13 +88,15 @@ export class PathRenderer {
           const stoneGeom = new THREE.CylinderGeometry(
             0.18 + Math.abs(Math.sin(s + stoneIdx)) * 0.06,
             0.22 + Math.abs(Math.cos(s)) * 0.05,
-            0.05,
+            0.06,
             12
           );
           const stoneMesh = new THREE.Mesh(stoneGeom, stoneMats[(s + stoneIdx) % stoneMats.length]);
           stoneMesh.position.set(stoneX, 0.075, stoneZ);
           stoneMesh.rotation.y = Math.sin(s) * Math.PI;
           stoneMesh.scale.set(1.1, 1.0, 0.85); // 微椭圆
+          stoneMesh.castShadow = true;
+          stoneMesh.receiveShadow = true;
           this.pathGroup.add(stoneMesh);
         });
       }

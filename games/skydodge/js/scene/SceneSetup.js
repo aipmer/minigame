@@ -14,10 +14,10 @@ export class SceneSetup {
     // 检测移动设备
     this.isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 900);
 
-    // 1. 场景与星空迷雾 (深邃蓝紫星云基底，降低雾浓度至 0.0009，赋予深空无限景深与远景行星通透度)
+    // 1. 场景与深空迷雾 (深邃暗空底色 0x040612，搭配高对比星云天幕，确保深空既深邃又不死黑)
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x050816);
-    this.scene.fog = new THREE.FogExp2(0x050816, 0.0009);
+    this.scene.background = new THREE.Color(0x040612);
+    this.scene.fog = new THREE.FogExp2(0x040612, 0.0009);
 
     // 2. 摄像机 (微俯视第三人称英雄机动视角，呈现机体立体装甲与双翼)
     this.camera = new THREE.PerspectiveCamera(
@@ -42,7 +42,7 @@ export class SceneSetup {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(targetDPR);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.38; // 均衡曝光度，明亮清晰，杜绝暗部死黑
+    this.renderer.toneMappingExposure = 1.35; // 精确校准曝光度，既明亮高光又保持深空高对比度
     
     // 空间场景无地面投射，移动端关闭实时阴影以释放 30%+ 算力
     this.renderer.shadowMap.enabled = !this.isMobile;
@@ -72,9 +72,9 @@ export class SceneSetup {
 
     // 移动端采用 0.5x 降采样辉光分辨率（模糊运算提速 4 倍，且辉光更柔和细腻）
     const bloomScale = this.isMobile ? 0.5 : 1.0;
-    const bloomStrength = this.isMobile ? 0.78 : 0.92;
-    const bloomRadius = this.isMobile ? 0.28 : 0.36;
-    const bloomThreshold = 0.58; // 动态阈值：让自发光晶核、激光和引擎产生绚丽泛光
+    const bloomStrength = this.isMobile ? 0.75 : 0.85;
+    const bloomRadius = this.isMobile ? 0.28 : 0.32;
+    const bloomThreshold = 0.62; // 动态阈值：让自发光晶核、激光和引擎产生绚丽泛光
 
     this.bloomPass = new UnrealBloomPass(
       new THREE.Vector2(Math.floor(w * bloomScale), Math.floor(h * bloomScale)),
@@ -106,9 +106,9 @@ export class SceneSetup {
 
     const bloomScale = this.isMobile ? 0.5 : 1.0;
     this.bloomPass.resolution.set(Math.floor(w * bloomScale), Math.floor(h * bloomScale));
-    this.bloomPass.strength = this.isMobile ? 0.72 : 0.88;
-    this.bloomPass.radius = this.isMobile ? 0.28 : 0.36;
-    this.bloomPass.threshold = 0.65;
+    this.bloomPass.strength = this.isMobile ? 0.75 : 0.85;
+    this.bloomPass.radius = this.isMobile ? 0.28 : 0.32;
+    this.bloomPass.threshold = 0.62;
   }
 
   render() {

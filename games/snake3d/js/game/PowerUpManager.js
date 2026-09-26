@@ -51,8 +51,30 @@ export class PowerUpManager {
       }
     };
 
-    this.typesList = ['magnet', 'frost', 'ghost', 'bomb'];
+    this.currentWeather = 'sunny';
+    this.typesList = ['magnet', 'ghost', 'bomb']; // 默认非雪天不生成冰霜减速道具
     this.time = 0;
+  }
+
+  // 根据天气动态绑定道具刷新池（严禁在非雪天生成冰霜减速道具）
+  updateWeatherBinding(currentWeather, snake) {
+    this.currentWeather = currentWeather;
+    if (currentWeather === 'snow') {
+      this.typesList = ['magnet', 'frost', 'ghost', 'bomb'];
+    } else {
+      this.typesList = ['magnet', 'ghost', 'bomb'];
+      // 清理场上已生成的冰霜道具
+      if (this.currentPowerUp && this.currentPowerUp.type === 'frost') {
+        this.clearSpawned();
+      }
+      // 立即终止生效中的冰霜效果
+      if (this.activeEffect && this.activeEffect.type === 'frost') {
+        this.activeEffect = null;
+      }
+      if (snake && snake.setFrostMode) {
+        snake.setFrostMode(false);
+      }
+    }
   }
 
   // 重置道具状态
@@ -285,19 +307,20 @@ export class PowerUpManager {
     return group;
   }
 
-  // 尝试在空闲网格生成道具
-  spawnRandomPowerUp(occupiedPositions) {
+  // 尝试在空闲网格生成道具（适配 32x32 开阔群岛与不同尺寸地图）
+  spawnRandomPowerUp(occupiedPositions, boundLimit = 15) {
     if (this.currentPowerUp) return;
 
-    // 随机选择道具类型
+    // 随机选择道具类型 (若非雪天，typesList 严禁包含 frost)
     const type = this.typesList[Math.floor(Math.random() * this.typesList.length)];
     
-    // 寻找空闲网格 (-9 ~ 9)
+    // 寻找空闲网格
+    const span = Math.max(7, Math.floor(boundLimit || 15) - 1);
     let pos = null;
     let attempts = 0;
     while (attempts < 100) {
-      const x = Math.floor(Math.random() * 19) - 9;
-      const z = Math.floor(Math.random() * 19) - 9;
+      const x = Math.floor(Math.random() * (span * 2 + 1)) - span;
+      const z = Math.floor(Math.random() * (span * 2 + 1)) - span;
       const candidate = new THREE.Vector3(x, 0.5, z);
       const isOccupied = occupiedPositions.some(p => p.distanceTo(candidate) < 0.2);
       if (!isOccupied) {
@@ -355,6 +378,11 @@ export class PowerUpManager {
       return;
     }
 
+    // 减速类道具仅在雪天生效；非雪天直接拒绝
+    if (type === 'frost' && this.currentWeather !== 'snow') {
+      return;
+    }
+
     // 持续类道具（磁铁、冰霜、幽灵）设置 5 秒
     this.activeEffect = {
       type,
@@ -366,6 +394,10 @@ export class PowerUpManager {
     // 幽灵形态下蛇体虚化
     if (type === 'ghost') {
       snake.setGhostMode(true);
+    }
+    // 冰霜减速下蛇体冰晶化与步频放缓
+    if (type === 'frost') {
+      snake.setFrostMode(true);
     }
   }
 
@@ -491,38 +523,65 @@ export class PowerUpManager {
         if (eff.type === 'ghost') {
           snake.setGhostMode(false);
         }
+        if (eff.type === 'frost') {
+          snake.setFrostMode(false);
+        }
         this.activeEffect = null;
       }
     }
   }
 
-  // 磁力向心加速吸附食物
+  // 磁力向心加速吸附食物（支持开阔群岛 8.0 格强力范围磁吸与多果实对象池）
   applyMagnetAttraction(delta, snake, food) {
     if (!snake.head) return;
     const headPos = snake.head.position;
+    const MAGNET_RADIUS = 8.0;
 
-    // 1. 普通食物吸引
-    if (food.mesh) {
-      const dist = food.mesh.position.distanceTo(headPos);
-      if (dist < 5.5) {
-        // 加速度飞向蛇头
-        const pullSpeed = Math.max(6.0, 18.0 - dist * 2.0);
-        food.mesh.position.lerp(headPos, Math.min(1.0, delta * pullSpeed));
-        // 如果被吸到蛇嘴极近处，同步逻辑位置以加速判定
-        if (dist < 0.6) {
-          food.logicalPos.copy(snake.logicalPos);
+    // 1. 普通食物列表吸引 (支持 1/3/5 颗多果实对象池)
+    if (food.foodList && food.foodList.length > 0) {
+      for (let i = 0; i < food.foodList.length; i++) {
+        const f = food.foodList[i];
+        if (!f || !f.group) continue;
+        const dist = f.group.position.distanceTo(headPos);
+        if (dist < MAGNET_RADIUS) {
+          // 向心加速拉向蛇嘴
+          const pullSpeed = Math.max(9.0, 26.0 - dist * 2.2);
+          f.group.position.lerp(headPos, Math.min(1.0, delta * pullSpeed));
+          f.logicalPos.copy(f.group.position);
+          // 靠近蛇嘴 0.82 格内立即吸附到判定点
+          if (dist < 0.82) {
+            f.logicalPos.copy(snake.logicalPos || headPos);
+          }
         }
       }
     }
 
-    // 2. 特殊食物吸引
+    // 2. 特殊黄金大星吸引
     if (food.hasSpecial && food.specialMesh) {
       const dist = food.specialMesh.position.distanceTo(headPos);
-      if (dist < 5.5) {
-        const pullSpeed = Math.max(6.0, 18.0 - dist * 2.0);
+      if (dist < MAGNET_RADIUS) {
+        const pullSpeed = Math.max(9.0, 26.0 - dist * 2.2);
         food.specialMesh.position.lerp(headPos, Math.min(1.0, delta * pullSpeed));
-        if (dist < 0.6) {
-          food.specialPosition.copy(snake.logicalPos);
+        food.specialPosition.copy(food.specialMesh.position);
+        if (dist < 0.82) {
+          food.specialPosition.copy(snake.logicalPos || headPos);
+        }
+      }
+    }
+
+    // 3. 爆裂清屏产生的黄金食物/金币吸引
+    if (food.bonusList && food.bonusList.length > 0) {
+      for (let i = 0; i < food.bonusList.length; i++) {
+        const item = food.bonusList[i];
+        if (!item || !item.group) continue;
+        const dist = item.group.position.distanceTo(headPos);
+        if (dist < MAGNET_RADIUS) {
+          const pullSpeed = Math.max(10.0, 28.0 - dist * 2.2);
+          item.group.position.lerp(headPos, Math.min(1.0, delta * pullSpeed));
+          item.logicalPos.copy(item.group.position);
+          if (dist < 0.82) {
+            item.logicalPos.copy(snake.logicalPos || headPos);
+          }
         }
       }
     }
@@ -540,9 +599,9 @@ export class PowerUpManager {
     };
   }
 
-  // 状态查询接口
+  // 状态查询接口（冰霜减速效果严格限定只在雪天下生效）
   isFrostActive() {
-    return this.activeEffect && this.activeEffect.type === 'frost';
+    return this.currentWeather === 'snow' && this.activeEffect && this.activeEffect.type === 'frost';
   }
 
   isGhostActive() {

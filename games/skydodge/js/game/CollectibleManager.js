@@ -107,28 +107,40 @@ export class CollectibleManager {
     });
   }
 
-  // 生成独立的散落量子晶币网格 (微型正八面体发光晶石 + 金色量子微环)
+  // 生成独立的散落量子晶币网格 (高透双棱台八面体晶石 + 白炽微核 + 双轴金青微环)
   createCrystalMesh() {
     const group = new THREE.Group();
 
-    // 核心双棱锥发光水晶
-    const gemGeo = new THREE.OctahedronGeometry(0.48, 0);
+    // 核心双棱台高透八面体发光晶石 (极度通透、多面璀璨反光)
+    const gemGeo = new THREE.OctahedronGeometry(0.56, 0);
     const gemMat = new THREE.MeshStandardMaterial({
-      color: 0x00f2fe,
-      roughness: 0.2,
-      metalness: 0.8,
-      emissive: new THREE.Color(0x00d2ff),
-      emissiveIntensity: 0.85,
+      color: 0x38bdf8,
+      roughness: 0.12,
+      metalness: 0.85,
+      emissive: new THREE.Color(0x00f2fe),
+      emissiveIntensity: 1.6, // 提高自发光强度，在深空中闪闪发光
     });
     const gem = new THREE.Mesh(gemGeo, gemMat);
     group.add(gem);
 
-    // 金色自转能量微环
-    const ringGeo = new THREE.TorusGeometry(0.72, 0.035, 8, 20);
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.rotation.x = Math.PI / 3;
-    group.add(ring);
+    // 内部微型白炽能量核 (Bloom 泛光聚焦点)
+    const coreGeo = new THREE.OctahedronGeometry(0.25, 0);
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const core = new THREE.Mesh(coreGeo, coreMat);
+    group.add(core);
+
+    // 金色自转能量双环
+    const ring1Geo = new THREE.TorusGeometry(0.85, 0.045, 8, 24);
+    const ring1Mat = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
+    const ring1 = new THREE.Mesh(ring1Geo, ring1Mat);
+    ring1.rotation.x = Math.PI / 3;
+    group.add(ring1);
+
+    const ring2Geo = new THREE.TorusGeometry(1.02, 0.03, 8, 24);
+    const ring2Mat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+    const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
+    ring2.rotation.y = Math.PI / 4;
+    group.add(ring2);
 
     return group;
   }

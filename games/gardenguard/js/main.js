@@ -280,28 +280,29 @@ class GardenGuardGame {
       this.saveManager.unlockEnemy(enemy.id);
     });
 
-    // 战斗发射子弹
+    // 战斗发射子弹（守卫与子弹动态随怪物位移转向瞄准）
     this.combatResolver.onProjectileFired((proj) => {
-      const { from, targetEnemy, speed, damage } = proj;
+      const { plantUid, from, targetEnemy, speed, damage } = proj;
       if (!targetEnemy || !targetEnemy.alive) return;
       
       const plantCfg = this.plantRegistry.getConfig(proj.type) || {};
       const color = plantCfg.color ? parseInt(plantCfg.color.replace('#', '0x')) : 0xFFD700;
 
-      // 攻击动画与音效
+      // 攻击动画与音效（仅触发真正开火的守卫）
       this.audio.playShoot();
-      for (const slot of this.grid.slots) {
-        if (slot.plant && slot.plant.projectileType === proj.type) {
-          this.plantRenderer.playAttackAnimation(slot.plant.uid);
-        }
+      if (plantUid) {
+        this.plantRenderer.playAttackAnimation(plantUid, targetEnemy.worldPos);
       }
 
+      // 获取当前精确炮口世界坐标发射
+      const muzzlePos = (plantUid && this.plantRenderer.getMuzzleWorldPosition(plantUid)) || from;
+
       this.projectileRenderer.fire(
-        from,
-        targetEnemy.worldPos,
+        muzzlePos,
+        targetEnemy,
         proj.type,
         color,
-        speed || 8,
+        speed || 9,
         () => {
           // 子弹命中回调
           if (!targetEnemy.alive) return;
@@ -708,6 +709,13 @@ class GardenGuardGame {
 
     // 3. 战斗求解：植物索敌与发射
     this.combatResolver.update(dt, this.activeEnemies);
+
+    // 4. 守卫实时动态瞄准：将索敌目标的世界坐标注入植物渲染器进行平滑跟踪
+    for (const slot of this.grid.slots) {
+      if (slot.plant && slot.plant.currentTarget && slot.plant.currentTarget.worldPos) {
+        this.plantRenderer.setPlantTarget(slot.plant.uid, slot.plant.currentTarget.worldPos);
+      }
+    }
   }
 }
 

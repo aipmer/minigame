@@ -37,17 +37,26 @@ export class PlayerShip {
     this.mesh.add(this.dorsalLight);
 
     // 2. 侧前翼缘轮廓光 (Wing Rim Light): 冰蓝色侧前锐利边缘光，勾勒钛金双翼
-    this.rimLight = new THREE.PointLight(0x38bdf8, 2.8, 12, 1.2);
+    this.rimLight = new THREE.PointLight(0x38bdf8, 2.6, 12, 1.2);
     this.rimLight.position.set(-3.5, 1.2, -1.5);
     this.mesh.add(this.rimLight);
 
     // 3. 侧下方暖光补光 (Fill Kicker): 展现机械接缝与立体凹凸感
-    this.fillLight = new THREE.PointLight(0xfde047, 1.8, 10, 1.2);
+    this.fillLight = new THREE.PointLight(0xfde047, 1.6, 10, 1.2);
     this.fillLight.position.set(3.0, -1.8, 0.8);
     this.mesh.add(this.fillLight);
 
-    // 4. 引擎动态光源 (柔和尾焰光晕)
-    this.engineLight = new THREE.PointLight(0x00f2fe, 1.2, 6);
+    // 4. 机头高亮前照聚光灯 (Headlight): 锥形前射，照亮航道前方迎面障碍
+    this.headLight = new THREE.SpotLight(0xdbeafe, 3.2, 42, Math.PI / 4.5, 0.45);
+    this.headLight.position.set(0, 0.3, -0.8);
+    this.headLightTarget = new THREE.Object3D();
+    this.headLightTarget.position.set(0, 0, -30);
+    this.mesh.add(this.headLightTarget);
+    this.headLight.target = this.headLightTarget;
+    this.mesh.add(this.headLight);
+
+    // 5. 引擎动态光源 (柔和尾焰光晕)
+    this.engineLight = new THREE.PointLight(0x00f2fe, 1.4, 6);
     this.engineLight.position.set(0, 0.1, 1.6);
     this.mesh.add(this.engineLight);
 
@@ -57,7 +66,15 @@ export class PlayerShip {
 
   loadShipModel() {
     // 保护光源与护盾，只替换几何外观
-    const protectedNodes = [this.shieldMesh, this.engineLight, this.dorsalLight, this.rimLight, this.fillLight];
+    const protectedNodes = [
+      this.shieldMesh, 
+      this.engineLight, 
+      this.dorsalLight, 
+      this.rimLight, 
+      this.fillLight,
+      this.headLight,
+      this.headLightTarget
+    ];
     for (let i = this.mesh.children.length - 1; i >= 0; i--) {
       const child = this.mesh.children[i];
       if (!protectedNodes.includes(child)) {

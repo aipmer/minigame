@@ -173,6 +173,13 @@ weatherSystem.onWeatherChange((weather, meta) => {
   if (ui.weatherIcon) ui.weatherIcon.src = meta.icon;
   if (ui.weatherName) ui.weatherName.textContent = meta.name;
 
+  // 联动道具刷新池（非雪天绝对剔除冰霜道具）与蛇体积雪阻力
+  powerUpManager.updateWeatherBinding(weather, snake);
+  snake.setSnowResistance(weather === 'snow');
+  if (weather !== 'snow') {
+    snake.setFrostMode(false);
+  }
+
   if (ui.weatherBanner && ui.weatherBannerIcon && ui.weatherBannerText) {
     ui.weatherBannerIcon.src = meta.icon;
     ui.weatherBannerText.textContent = `天气变幻：${meta.name}！`;
@@ -203,6 +210,7 @@ let lastSnakePos = null;
 
 // ── 镜头跟随与视角控制中枢（支持沉浸跟随与全局鸟瞰） ──
 let currentLookAtTarget = new THREE.Vector3(0, 0, 4.8);
+let smoothedLookAhead = new THREE.Vector3(0, 0, 1.8);
 
 function updateCamera(delta) {
   if (!snake.head) return;
@@ -213,21 +221,22 @@ function updateCamera(delta) {
     // 沉浸平滑跟随模式（Slither 风格）：
     const base = sceneSetup.getFollowCameraBase(aspect, snake.length, snake.isBoosting);
 
-    // 前瞻预判 Look-ahead 偏移
+    // 前瞻预判 Look-ahead 偏移（采用低通指数平滑滤波，彻底消除直角拐弯瞬间机位顿挫拉扯）
     const dir = snake.direction || new THREE.Vector3(0, 0, 1);
     const leadDist = base.lookAheadZ || 2.0;
-    const lookAheadX = dir.x * leadDist;
-    const lookAheadZ = dir.z * leadDist;
+    const targetLookAhead = new THREE.Vector3(dir.x * leadDist, 0, dir.z * leadDist);
+    const lookSmooth = 1 - Math.pow(0.002, delta);
+    smoothedLookAhead.lerp(targetLookAhead, lookSmooth);
 
     // 目标机位：平移锁定在蛇头上方与后方，倾角维持 45°~52°
-    const targetX = headPos.x + lookAheadX * 0.35;
+    const targetX = headPos.x + smoothedLookAhead.x * 0.35;
     const targetY = base.y;
-    const targetZ = headPos.z + base.z + lookAheadZ * 0.35;
+    const targetZ = headPos.z + base.z + smoothedLookAhead.z * 0.35;
 
     // 目标注视点
-    const targetLookX = headPos.x + lookAheadX * 0.8;
+    const targetLookX = headPos.x + smoothedLookAhead.x * 0.75;
     const targetLookY = 0.5;
-    const targetLookZ = headPos.z + lookAheadZ * 0.8;
+    const targetLookZ = headPos.z + smoothedLookAhead.z * 0.75;
 
     // 高响应临界阻尼平滑插值（杜绝急转眩晕与卡顿）
     const smooth = 1 - Math.pow(0.003, delta);
@@ -853,7 +862,7 @@ function startGame() {
     radarMinimap.setGridSize(32);
     snake.setBoundLimit(15.5);
     snake.setWrapMode(false);
-    snake.setBaseSpeed(0.16);
+    snake.setBaseSpeed(0.138); // 优化常态步频至 0.138s，节奏轻快敏捷
     food.configureRules({
       foodType: 'apple',
       foodCount: 3, // 开阔大岛默认常驻 3 颗果实
@@ -862,6 +871,13 @@ function startGame() {
     if (ui.hudCustomPill) {
       ui.hudCustomPill.classList.add('hidden');
     }
+  }
+
+  // 同步天候与道具池绑定（非雪天绝不出现冰霜道具或减速）
+  powerUpManager.updateWeatherBinding(weatherSystem.currentWeather, snake);
+  snake.setSnowResistance(weatherSystem.currentWeather === 'snow');
+  if (weatherSystem.currentWeather !== 'snow') {
+    snake.setFrostMode(false);
   }
 
   radarMinimap.show();
@@ -897,6 +913,77 @@ function startGame() {
   updateHUD();
 }
 
+// ── 食物吞食统一处理（支持步进碰撞与磁铁帧级即时吞入） ──
+function onFoodEaten(ateSpecial) {
+  const basePoints = ateSpecial ? 30 : 10;
+  snake.grow(null, ateSpecial);
+
+  const scoreResult = gameState.addScore(basePoints, ateSpecial);
+
+  // 荣誉成就中枢打点
+  achievementManager.recordEvent('score', gameState.score);
+  if (scoreResult.comboMultiplier > 1) {
+    achievementManager.recordEvent('combo', scoreResult.comboMultiplier);
+  }
+
+  // 粒子特效
+  const pos = snake.head.position.clone();
+  particles.spawnEatBurst(pos, ateSpecial ? 0xFFD700 : 0xFF6600);
+
+  // 音效
+  if (scoreResult.comboMultiplier > 1) {
+    sound.playEatCombo(scoreResult.comboMultiplier);
+    showCombo(scoreResult.comboMultiplier);
+  } else {
+    sound.playEat();
+  }
+
+  // 浮动得分
+  const label = scoreResult.comboMultiplier > 1
+    ? `+${scoreResult.finalAmount} x${scoreResult.comboMultiplier}`
+    : `+${scoreResult.finalAmount}`;
+  showFloatingScore(pos, label, ateSpecial ? '#FFD700' : '#FFFFFF');
+
+  // 升级
+  if (scoreResult.leveledUp) {
+    sound.playLevelUp();
+    snake.speedUp();
+  }
+
+  // 特殊食物效果
+  if (ateSpecial) {
+    food.consumeSpecial();
+    snake.startInvincibility(5);
+    sound.playInvincible();
+  }
+
+  // 普通食物重新生成（补充维持目标数量）
+  if (!ateSpecial && (!food.foodList || food.foodList.length < food.targetFoodCount)) {
+    food.spawn(snake.getOccupiedPositions(), obstacles.getPositions());
+  }
+
+  // 障碍物生成
+  if (gameState.shouldSpawnObstacle() && obstacles.count < 8) {
+    const occ = snake.getOccupiedPositions();
+    occ.push(food.getPosition());
+    obstacles.spawn(occ);
+  }
+
+  updateHUD();
+  socialUI.checkScoreForChallenge(gameState.score);
+}
+
+function onBonusEaten(count) {
+  sound.playEatCombo(2);
+  const bonusScore = count * 30;
+  gameState.addScore(bonusScore, true);
+  achievementManager.recordEvent('score', gameState.score);
+  particles.spawnEatBurst(snake.head.position.clone(), 0xFFD700);
+  showFloatingScore(snake.head.position, `+${bonusScore} 金币奖励!`, '#FFD700');
+  updateHUD();
+  socialUI.checkScoreForChallenge(gameState.score);
+}
+
 // ── 蛇步进后碰撞检测 ──
 function handleSnakeStep() {
   const headPos = snake.logicalPos;
@@ -905,76 +992,17 @@ function handleSnakeStep() {
   const ateNormal = food.checkFoodCollision(headPos, snake.getOccupiedPositions(), obstacles.getPositions()) || snake.checkFoodCollision(food.getPosition());
   const ateSpecial = food.hasSpecial && snake.checkFoodCollision(food.specialPosition);
 
-  if (ateNormal || ateSpecial) {
-    const basePoints = ateSpecial ? 30 : 10;
-    snake.grow(null, ateSpecial);
-
-    const scoreResult = gameState.addScore(basePoints, ateSpecial);
-
-    // 荣誉成就中枢打点
-    achievementManager.recordEvent('score', gameState.score);
-    if (scoreResult.comboMultiplier > 1) {
-      achievementManager.recordEvent('combo', scoreResult.comboMultiplier);
-    }
-
-    // 粒子特效
-    const pos = snake.head.position.clone();
-    particles.spawnEatBurst(pos, ateSpecial ? 0xFFD700 : 0xFF6600);
-
-    // 音效
-    if (scoreResult.comboMultiplier > 1) {
-      sound.playEatCombo(scoreResult.comboMultiplier);
-      showCombo(scoreResult.comboMultiplier);
-    } else {
-      sound.playEat();
-    }
-
-    // 浮动得分
-    const label = scoreResult.comboMultiplier > 1
-      ? `+${scoreResult.finalAmount} x${scoreResult.comboMultiplier}`
-      : `+${scoreResult.finalAmount}`;
-    showFloatingScore(pos, label, ateSpecial ? '#FFD700' : '#FFFFFF');
-
-    // 升级
-    if (scoreResult.leveledUp) {
-      sound.playLevelUp();
-      snake.speedUp();
-    }
-
-    // 特殊食物效果
-    if (ateSpecial) {
-      food.consumeSpecial();
-      snake.startInvincibility(5);
-      sound.playInvincible();
-    }
-
-    // 普通食物重新生成（补充维持目标数量）
-    if (ateNormal && (!food.foodList || food.foodList.length < food.targetFoodCount)) {
-      food.spawn(snake.getOccupiedPositions(), obstacles.getPositions());
-    }
-
-    // 障碍物生成
-    if (gameState.shouldSpawnObstacle() && obstacles.count < 8) {
-      const occ = snake.getOccupiedPositions();
-      occ.push(food.getPosition());
-      obstacles.spawn(occ);
-    }
-
-    updateHUD();
-    socialUI.checkScoreForChallenge(gameState.score);
+  if (ateNormal) {
+    onFoodEaten(false);
+  }
+  if (ateSpecial) {
+    onFoodEaten(true);
   }
 
   // 检测吃到了炸弹爆破产生的黄金食物/金币
   const eatenBonus = food.checkBonusCollisions(headPos);
   if (eatenBonus > 0) {
-    sound.playEatCombo(2);
-    const bonusScore = eatenBonus * 30;
-    gameState.addScore(bonusScore, true);
-    achievementManager.recordEvent('score', gameState.score);
-    particles.spawnEatBurst(snake.head.position.clone(), 0xFFD700);
-    showFloatingScore(snake.head.position, `+${bonusScore} 金币奖励!`, '#FFD700');
-    updateHUD();
-    socialUI.checkScoreForChallenge(gameState.score);
+    onBonusEaten(eatenBonus);
   }
 
   // 障碍物碰撞
@@ -1175,6 +1203,21 @@ function gameLoop() {
           ? snake.segments[snake.segments.length - 1].position
           : snake.head.position;
         particles.spawnTrail(spawnPos, currentTrailDef.id);
+      }
+    }
+
+    // 磁铁激活期间执行帧级即时吞入判定（食物被吸入嘴前 0.85 格内立即吞咽得分，无需等待步进）
+    if (powerUpManager.isMagnetActive() && snake.head) {
+      const ateMagnetNormal = food.checkFoodCollision(snake.head.position, snake.getOccupiedPositions(), obstacles.getPositions());
+      if (ateMagnetNormal) {
+        onFoodEaten(false);
+      }
+      if (food.hasSpecial && snake.head.position.distanceTo(food.specialPosition) < 0.85) {
+        onFoodEaten(true);
+      }
+      const eatenMagnetBonus = food.checkBonusCollisions(snake.head.position);
+      if (eatenMagnetBonus > 0) {
+        onBonusEaten(eatenMagnetBonus);
       }
     }
 
